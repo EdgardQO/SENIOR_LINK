@@ -1,0 +1,28 @@
+---
+const features = [
+  {
+    icon: "🛡️",
+    title: "Acompañantes validados",
+    description: "Revisamos identidad, estudios y documentos antes de publicar cada perfil."
+  },
+  {
+    icon: "📅",
+    title: "Reserva por horas",
+    description: "Eliges fecha, horario y ves el importe antes de confirmar."
+  },
+  {
+    icon: "📊",
+    title: "Seguimiento y calificación",
+    description: "Consulta el historial y vuelve a contratar a tu acompañante favorito."
+  }
+];
+---
+<section class="grid grid-cols-1 md:grid-cols-3 gap-5 py-8" id="feature">
+  {features.map((item) => (
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col gap-2">
+      <span class="text-2xl mb-1">{item.icon}</span>
+      <h4 class="font-bold text-sky-950 text-base">{item.title}</h4>
+      <p class="text-slate-500 text-sm leading-relaxed">{item.description}</p>
+    </div>
+  ))}
+</section>

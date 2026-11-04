@@ -1,0 +1,25 @@
+---
+import "../styles/global.css";
+import Navbar from "../components/Navbar.astro";
+import Hero from "../components/Hero.astro";
+import Features from "../components/Features.astro";
+import Services from "../components/Services.astro";
+---
+
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SeniorLink - Acompañamiento de confianza</title>
+  </head>
+  <body class="bg-[#ebf6fc] text-slate-800 antialiased min-h-screen">
+    <Navbar />
+
+    <main class="w-full max-w-5xl mx-auto px-6 py-6 flex flex-col gap-8">
+      <Hero />
+      <Features />
+      <Services />
+    </main>
+  </body>
+</html>

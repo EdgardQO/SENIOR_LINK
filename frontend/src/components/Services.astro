@@ -1,0 +1,19 @@
+---
+const services = [
+  { icon: "🩺", label: "Citas médicas" },
+  { icon: "📄", label: "Trámites" },
+  { icon: "🛍️", label: "Compras" },
+  { icon: "🚶", label: "Caminatas" }
+];
+---
+<section class="py-8">
+  <h2 class="text-xl font-bold text-sky-950 mb-5">¿Con qué necesitas apoyo?</h2>
+  <div class="flex flex-wrap gap-4">
+    {services.map((service) => (
+      <button class="flex items-center gap-2.5 bg-white px-5 py-3 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow font-semibold text-sm text-sky-950 cursor-pointer">
+        <span>{service.icon}</span>
+        <span>{service.label}</span>
+      </button>
+    ))}
+  </div>
+</section>

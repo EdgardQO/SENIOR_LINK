@@ -1,0 +1,30 @@
+---
+import HeroCard from "./HeroCard.astro";
+---
+<section class="grid grid-cols-1 md:grid-cols-12 gap-8 items-center pt-4 pb-12">
+  <div class="md:col-span-7 flex flex-col gap-5">
+    <h1 class="text-4xl md:text-5xl font-extrabold text-sky-950 tracking-tight leading-[1.15]">
+      Acompañamiento de confianza para quienes más quieres
+    </h1>
+    <p class="text-slate-600 text-base md:text-lg leading-relaxed max-w-xl">
+      Reserva por horas a un acompañante validado para citas médicas, trámites, compras y paseos. Sin atención clínica, con seguimiento para tu familia.
+    </p>
+
+    <div class="flex flex-wrap gap-3 pt-2">
+      <a href="#" class="px-5 py-2.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-semibold text-sm transition-colors shadow-sm">
+        Ver acompañantes
+      </a>
+      <a href="#" class="px-5 py-2.5 rounded-lg bg-white hover:bg-slate-50 text-sky-950 border border-slate-200 font-semibold text-sm transition-colors shadow-sm">
+        Reservar ahora
+      </a>
+    </div>
+
+    <p class="text-xs font-medium text-slate-500 pt-1">
+      Disponible en Miraflores, San Isidro, San Borja, Surco y La Molina.
+    </p>
+  </div>
+
+  <div class="md:col-span-5">
+    <HeroCard />
+  </div>
+</section>
