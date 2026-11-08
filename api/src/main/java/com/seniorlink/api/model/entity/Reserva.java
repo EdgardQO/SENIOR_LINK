@@ -4,36 +4,31 @@ import com.seniorlink.api.model.enums.EstadoReserva;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
-import java.util.UUID;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "reservas")
 public class Reserva {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "codigo_identificador", updatable = false, nullable = false)
-    private UUID codigoIdentificador;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "familiar_codigo_id", nullable = false)
-    private Usuario familiar;
+    @JoinColumn(name = "cliente_dni", nullable = false)
+    private Usuario cliente;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "acompanante_codigo_id", nullable = false)
+    @JoinColumn(name = "acompanante_dni", nullable = false)
     private Usuario acompanante;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "adulto_mayor_codigo_id", nullable = false)
-    private PerfilAdultoMayor adultoMayor;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "servicio_codigo_id", nullable = false)
-    private Servicio servicio;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "descuento_codigo_id")
+    @JoinColumn(name = "descuento_id")
     private Descuento descuento;
+
+    @OneToMany(mappedBy = "reserva", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ReservaServicio> servicios = new ArrayList<>();
 
     @Column(name = "fecha_hora_inicio", nullable = false)
     private OffsetDateTime fechaHoraInicio;
@@ -75,19 +70,24 @@ public class Reserva {
     @Column(name = "actualizado_en", nullable = false)
     private OffsetDateTime actualizadoEn = OffsetDateTime.now();
 
-    // Getters y Setters
-    public UUID getCodigoIdentificador() { return codigoIdentificador; }
-    public void setCodigoIdentificador(UUID codigoIdentificador) { this.codigoIdentificador = codigoIdentificador; }
-    public Usuario getFamiliar() { return familiar; }
-    public void setFamiliar(Usuario familiar) { this.familiar = familiar; }
+    public void agregarServicio(Servicio servicio, BigDecimal horas) {
+        ReservaServicio rs = new ReservaServicio();
+        rs.setReserva(this);
+        rs.setServicio(servicio);
+        rs.setHoras(horas);
+        this.servicios.add(rs);
+    }
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public Usuario getCliente() { return cliente; }
+    public void setCliente(Usuario cliente) { this.cliente = cliente; }
     public Usuario getAcompanante() { return acompanante; }
     public void setAcompanante(Usuario acompanante) { this.acompanante = acompanante; }
-    public PerfilAdultoMayor getAdultoMayor() { return adultoMayor; }
-    public void setAdultoMayor(PerfilAdultoMayor adultoMayor) { this.adultoMayor = adultoMayor; }
-    public Servicio getServicio() { return servicio; }
-    public void setServicio(Servicio servicio) { this.servicio = servicio; }
     public Descuento getDescuento() { return descuento; }
     public void setDescuento(Descuento descuento) { this.descuento = descuento; }
+    public List<ReservaServicio> getServicios() { return servicios; }
+    public void setServicios(List<ReservaServicio> servicios) { this.servicios = servicios; }
     public OffsetDateTime getFechaHoraInicio() { return fechaHoraInicio; }
     public void setFechaHoraInicio(OffsetDateTime fechaHoraInicio) { this.fechaHoraInicio = fechaHoraInicio; }
     public OffsetDateTime getFechaHoraFin() { return fechaHoraFin; }

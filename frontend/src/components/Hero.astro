@@ -1,30 +1,216 @@
 ---
-import HeroCard from "./HeroCard.astro";
----
-<section class="grid grid-cols-1 md:grid-cols-12 gap-8 items-center pt-4 pb-12">
-  <div class="md:col-span-7 flex flex-col gap-5">
-    <h1 class="text-4xl md:text-5xl font-extrabold text-sky-950 tracking-tight leading-[1.15]">
-      Acompañamiento de confianza para quienes más quieres
-    </h1>
-    <p class="text-slate-600 text-base md:text-lg leading-relaxed max-w-xl">
-      Reserva por horas a un acompañante validado para citas médicas, trámites, compras y paseos. Sin atención clínica, con seguimiento para tu familia.
-    </p>
+// Rutas web servidas desde public/actividades/
+const baseImages = [
+  "/actividades/ajedrez.png",
+  "/actividades/caminata.png",
+  "/actividades/charla.png",
+  "/actividades/conversacion.png",
+  "/actividades/parque.png",
+  "/actividades/tecnologia.png",
+];
 
-    <div class="flex flex-wrap gap-3 pt-2">
-      <a href="#" class="px-5 py-2.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-semibold text-sm transition-colors shadow-sm">
-        Ver acompañantes
-      </a>
-      <a href="#" class="px-5 py-2.5 rounded-lg bg-white hover:bg-slate-50 text-sky-950 border border-slate-200 font-semibold text-sm transition-colors shadow-sm">
-        Reservar ahora
-      </a>
+// Triplicamos el array para cubrir pantallas panorámicas
+const trackImages = [...baseImages, ...baseImages, ...baseImages];
+---
+
+<section
+  id="inicio"
+  class="relative overflow-hidden bg-white lg:min-h-[640px] lg:h-[calc(100vh-5rem)] lg:flex lg:items-center"
+>
+  <!-- ========================================================
+       CARRUSEL: tira fija en móvil, fondo completo en escritorio
+       ======================================================== -->
+  <div
+    class="relative h-44 sm:h-52 overflow-hidden pointer-events-none select-none flex flex-col gap-4 p-3 lg:absolute lg:inset-0 lg:z-0 lg:h-auto lg:p-4"
+  >
+    <!-- Fila 1 (visible siempre) -->
+    <div
+      class="marquee-track flex gap-4 lg:gap-6 w-max flex-1 min-h-0 opacity-90 lg:opacity-75"
+    >
+      {
+        trackImages.map((src, index) => (
+          <div class="w-56 sm:w-72 md:w-[420px] h-full rounded-2xl lg:rounded-3xl overflow-hidden shadow-lg lg:shadow-2xl shrink-0">
+            <img
+              src={src}
+              alt={`Actividad SeniorLink ${index + 1}`}
+              class="w-full h-full object-cover filter contrast-[1.08] saturate-110"
+              loading="eager"
+            />
+          </div>
+        ))
+      }
     </div>
 
-    <p class="text-xs font-medium text-slate-500 pt-1">
-      Disponible en Miraflores, San Isidro, San Borja, Surco y La Molina.
-    </p>
+    <!-- Fila 2 (solo escritorio) -->
+    <div
+      class="marquee-track-reverse hidden lg:flex gap-6 w-max flex-1 min-h-0 opacity-70"
+    >
+      {
+        trackImages.map((src, index) => (
+          <div class="w-80 sm:w-96 md:w-[420px] h-full rounded-3xl overflow-hidden shadow-2xl shrink-0">
+            <img
+              src={src}
+              alt={`Actividad SeniorLink Reversa ${index + 1}`}
+              class="w-full h-full object-cover filter contrast-[1.08] saturate-110"
+              loading="eager"
+            />
+          </div>
+        ))
+      }
+    </div>
+
+    <!-- Velo de degradado (solo escritorio) -->
+    <div class="hidden lg:block absolute inset-0"></div>
   </div>
 
-  <div class="md:col-span-5">
-    <HeroCard />
+  <!-- ========================================================
+       CONTENIDO PRINCIPAL
+       ======================================================== -->
+  <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-8">
+    <div class="grid lg:grid-cols-2 gap-12 items-center">
+      <div
+        class="lg:bg-white/85 lg:backdrop-blur-xl lg:rounded-3xl lg:border lg:border-white/70 lg:shadow-2xl lg:ring-1 lg:ring-slate-900/5 lg:p-10"
+      >
+        <div
+          class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-teal-50 border border-teal-200 text-teal-800 text-xs font-bold uppercase tracking-wider mb-6 shadow-sm"
+        >
+          <span class="w-2.5 h-2.5 rounded-full bg-teal-600 animate-pulse"
+          ></span>
+          Acompañamiento certificado en Lima y Perú
+        </div>
+
+        <h1
+          class="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-tight mb-6"
+        >
+          El cuidado y compañía que tu <span class="text-teal-600"
+            >familiar merece</span
+          >.
+        </h1>
+
+        <p
+          class="text-lg text-slate-700 leading-relaxed mb-8 max-w-xl font-medium"
+        >
+          Conectamos a adultos mayores con acompañantes verificados para
+          asistencia a citas médicas, trámites, paseos o compañía cálida.
+          Tarifas transparentes por hora y reserva protegida.
+        </p>
+
+        <div class="flex flex-col sm:flex-row gap-4">
+          <a
+            href="#servicios"
+            class="px-8 py-3.5 text-base font-bold text-white bg-teal-600 hover:bg-teal-700 rounded-xl shadow-lg shadow-teal-600/25 hover:shadow-xl transition text-center active:scale-95"
+          >
+            Explorar Servicios
+          </a>
+          <a
+            href="#como-funciona"
+            class="px-8 py-3.5 text-base font-bold text-slate-800 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl transition text-center shadow-sm active:scale-95"
+          >
+            ¿Cómo Funciona?
+          </a>
+        </div>
+
+        <div
+          class="mt-10 grid grid-cols-3 gap-6 border-t border-slate-200 pt-6"
+        >
+          <div>
+            <div class="text-2xl font-black text-slate-900">+500</div>
+            <div class="text-xs text-slate-600 font-bold">
+              Horas de asistencia
+            </div>
+          </div>
+          <div>
+            <div class="text-2xl font-black text-slate-900">100%</div>
+            <div class="text-xs text-slate-600 font-bold">Verificación DNI</div>
+          </div>
+          <div>
+            <div class="text-2xl font-black text-teal-600">4.9 ★</div>
+            <div class="text-xs text-slate-600 font-bold">
+              Satisfacción familiar
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hero Card (oculta en móvil para acortar la pantalla; quita "hidden sm:block" si quieres verla) -->
+      <div class="relative hidden sm:block">
+        <div
+          class="w-full bg-white/95 backdrop-blur-md rounded-3xl p-8 flex flex-col justify-between border border-teal-100 shadow-2xl"
+        >
+          <div class="flex items-center justify-between mb-6">
+            <span
+              class="bg-teal-50 border border-teal-200 px-3 py-1 rounded-full text-xs font-semibold text-teal-800 shadow-2xs"
+            >
+              Reserva en Tiempo Real
+            </span>
+            <span class="text-xs text-slate-500 font-semibold"
+              >SeniorLink App</span
+            >
+          </div>
+
+          <div
+            class="bg-white rounded-2xl p-6 shadow-md border border-slate-100 space-y-4"
+          >
+            <div class="flex items-center gap-4">
+              <div
+                class="w-12 h-12 rounded-full bg-teal-600 text-white flex items-center justify-center font-bold text-lg shadow-sm"
+              >
+                LR
+              </div>
+              <div>
+                <h4 class="font-bold text-slate-900">Lucía Ramos</h4>
+                <p class="text-xs text-slate-500">
+                  Estudiante de Gerontología • 9no ciclo
+                </p>
+              </div>
+              <div class="ml-auto text-right">
+                <span class="text-sm font-bold text-teal-600">S/. 25.00/h</span>
+                <p class="text-[11px] text-slate-400">★ 4.98 (32)</p>
+              </div>
+            </div>
+            <div
+              class="p-3 bg-slate-50 rounded-xl text-xs text-slate-600 flex justify-between items-center"
+            >
+              <span>Acompañamiento a Citas Médicas</span>
+              <span class="font-bold text-slate-800">3 horas</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
+
+<style>
+  .marquee-track {
+    display: flex;
+    animation: scroll-left 45s linear infinite;
+  }
+
+  .marquee-track-reverse {
+    animation: scroll-right 50s linear infinite;
+  }
+
+  @keyframes scroll-left {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-33.333%);
+    }
+  }
+
+  @keyframes scroll-right {
+    0% {
+      transform: translateX(-33.333%);
+    }
+    100% {
+      transform: translateX(0);
+    }
+  }
+
+  .marquee-track:hover,
+  .marquee-track-reverse:hover {
+    animation-play-state: paused;
+  }
+</style>

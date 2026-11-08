@@ -1,19 +1,54 @@
 ---
 const services = [
-  { icon: "🩺", label: "Citas médicas" },
-  { icon: "📄", label: "Trámites" },
-  { icon: "🛍️", label: "Compras" },
-  { icon: "🚶", label: "Caminatas" }
+  {
+    icon: '🏥',
+    title: 'Acompañamiento a Citas Médicas',
+    desc: 'Traslado seguro, espera en sala, toma de indicaciones y entrega de informe detallado al familiar.',
+  },
+  {
+    icon: '📋',
+    title: 'Gestión de Trámites y Compras',
+    desc: 'Asistencia y soporte físico para compras en supermercado, farmacias y trámites bancarios o públicos.',
+  },
+  {
+    icon: '☕',
+    title: 'Paseos y Compañía Diaria',
+    desc: 'Paseos al aire libre, conversaciones amenas, lectura compartida y estimulación social activa.',
+  },
+  {
+    icon: '📱',
+    title: 'Capacitación Tecnológica',
+    desc: 'Enseñanza práctica de uso de smartphones, videollamadas con nietos y aplicaciones esenciales.',
+  },
 ];
 ---
-<section class="py-8">
-  <h2 class="text-xl font-bold text-sky-950 mb-5">¿Con qué necesitas apoyo?</h2>
-  <div class="flex flex-wrap gap-4">
-    {services.map((service) => (
-      <button class="flex items-center gap-2.5 bg-white px-5 py-3 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow font-semibold text-sm text-sky-950 cursor-pointer">
-        <span>{service.icon}</span>
-        <span>{service.label}</span>
-      </button>
-    ))}
+
+<section id="servicios" class="py-24 bg-white border-t border-slate-100">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center max-w-3xl mx-auto mb-16">
+      <span class="text-teal-600 font-bold text-sm uppercase tracking-wider">Catálogo Especializado</span>
+      <h2 class="text-3xl sm:text-4xl font-black text-slate-900 mt-2">
+        Servicios diseñados para su bienestar y tu tranquilidad
+      </h2>
+      <p class="text-slate-600 mt-4 text-base">
+        Puedes combinar múltiples servicios en una sola reserva con cálculo proporcional de horas.
+      </p>
+    </div>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+      {services.map((s) => (
+        <div class="p-8 rounded-2xl bg-slate-50 hover:bg-teal-50/50 border border-slate-200/60 hover:border-teal-200 transition-all duration-300 group hover:-translate-y-1 shadow-xs hover:shadow-md">
+          <div class="text-4xl mb-4 p-3 bg-white w-fit rounded-xl shadow-xs border border-slate-100 group-hover:scale-110 transition-transform">
+            {s.icon}
+          </div>
+          <h3 class="text-lg font-bold text-slate-900 group-hover:text-teal-700 transition-colors">
+            {s.title}
+          </h3>
+          <p class="text-slate-600 text-sm mt-3 leading-relaxed">
+            {s.desc}
+          </p>
+        </div>
+      ))}
+    </div>
   </div>
 </section>

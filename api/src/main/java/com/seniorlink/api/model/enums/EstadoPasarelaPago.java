@@ -1,5 +1,7 @@
 package com.seniorlink.api.model.enums;
 
+import com.fasterxml.jackson.annotation.JsonValue;
+
 public enum EstadoPasarelaPago {
     PENDIENTE("pendiente"),
     APROBADO("aprobado"),
@@ -14,6 +16,7 @@ public enum EstadoPasarelaPago {
         this.valor = valor;
     }
 
+    @JsonValue
     public String getValor() {
         return valor;
     }

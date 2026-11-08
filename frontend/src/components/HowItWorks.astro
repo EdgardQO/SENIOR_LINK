@@ -1,0 +1,54 @@
+---
+const steps = [
+  {
+    step: '01',
+    title: 'Regístrate y Vincula',
+    desc: 'Crea tu cuenta con DNI. Si eres familiar, envía la solicitud de vinculación para que el adulto mayor la apruebe.',
+  },
+  {
+    step: '02',
+    title: 'Elige los Servicios y Horas',
+    desc: 'Selecciona las horas necesarias por servicio y elige un acompañante según tarifa, calificaciones y perfil.',
+  },
+  {
+    step: '03',
+    title: 'Pago Protegido',
+    desc: 'Paga con Mercado Pago en Soles (S/.). La reserva queda confirmada al instante con snapshot de precio congelado.',
+  },
+  {
+    step: '04',
+    title: 'Acompañamiento y Calificación',
+    desc: 'Al terminar la asistencia, califica del 1 al 5 estrellas para ajustar la reputación de tu acompañante.',
+  },
+];
+---
+
+<section id="como-funciona" class="py-24 bg-slate-50 border-t border-slate-100">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center max-w-3xl mx-auto mb-16">
+      <span class="text-teal-600 font-bold text-sm uppercase tracking-wider">Paso a Paso</span>
+      <h2 class="text-3xl sm:text-4xl font-black text-slate-900 mt-2">
+        ¿Cómo funciona SeniorLink?
+      </h2>
+      <p class="text-slate-600 mt-4 text-base">
+        Una plataforma segura diseñada para la facilidad de familias y adultos mayores.
+      </p>
+    </div>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+      {steps.map((st) => (
+        <div class="bg-white p-8 rounded-2xl border border-slate-200/80 shadow-xs relative">
+          <span class="text-3xl font-black text-teal-600/30 absolute top-6 right-6">
+            {st.step}
+          </span>
+          <h3 class="text-xl font-bold text-slate-900 mt-4">
+            {st.title}
+          </h3>
+          <p class="text-slate-600 text-sm mt-3 leading-relaxed">
+            {st.desc}
+          </p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

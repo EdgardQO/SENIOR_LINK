@@ -1,0 +1,74 @@
+/* SeniorLink | Identidad visual para portal público y panel administrativo */
+/* Importar una vez desde el punto de entrada de React o desde la hoja global. */
+:root {
+  --color-primary: #0B3D91;        /* Azul confianza */
+  --color-primary-hover: #082E70;
+  --color-primary-soft: #EAF2FC;
+  --color-secondary: #1976D2;      /* Celeste claridad */
+  --color-secondary-hover: #125CAA;
+  --color-accent: #4CAF87;         /* Menta bienestar */
+  --color-accent-soft: #E6F5EE;
+  --color-bg-light: #F7FAFC;
+  --color-surface: #FFFFFF;
+  --color-border: #D9E2EC;
+  --color-text-main: #243447;
+  --color-text-soft: #526477;
+  --color-success: #24834B;
+  --color-success-soft: #E7F5EC;
+  --color-warning-soft: #FFF3D6;
+  --color-warning-text: #7A5000;
+  --color-danger: #B42332;
+  --color-danger-soft: #FCEBED;
+  --color-focus: #1976D2;
+
+  --font-family-base: Inter, "Segoe UI", Arial, sans-serif;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --shadow-card: 0 6px 24px rgba(11, 61, 145, 0.08);
+}
+
+/* Clases opcionales de referencia. Se pueden usar directamente o traducir a Tailwind. */
+body {
+  background-color: var(--color-bg-light);
+  color: var(--color-text-main);
+  font-family: var(--font-family-base);
+}
+.sl-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+}
+.sl-button-primary {
+  background: var(--color-primary);
+  color: #FFFFFF;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1.25rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.sl-button-primary:hover { background: var(--color-primary-hover); }
+.sl-button-primary:focus-visible,
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 3px;
+}
+.sl-badge-success {
+  color: var(--color-success);
+  background: var(--color-success-soft);
+  border-radius: 999px;
+  padding: 0.25rem 0.75rem;
+}
+.sl-alert-warning {
+  background: var(--color-warning-soft);
+  color: var(--color-warning-text);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+}

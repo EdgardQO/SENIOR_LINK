@@ -1,37 +1,113 @@
 ---
+const navLinks = [
+  { name: 'Inicio', href: '#inicio' },
+  { name: 'Servicios', href: '#servicios' },
+  { name: '¿Cómo funciona?', href: '#como-funciona' },
+  { name: 'Acompañantes', href: '#acompanantes' },
+  { name: 'Sobre Nosotros', href: '#nosotros' },
+  { name: 'Contacto', href: '#contacto' },
+];
 ---
-<header class="w-full flex justify-center px-6 py-5">
-  <nav class="w-full max-w-5xl flex items-center justify-between">
-    <!-- Logo -->
-    <div class="flex items-center gap-2">
-      <div class="w-7 h-7 bg-sky-600 text-white rounded flex items-center justify-center text-sm font-bold shadow-sm">
-        ♡
+
+<header class="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md shadow-sm border-b border-slate-100 transition-all">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-20">
+      
+      <!-- Brand Logo -->
+      <a href="#inicio" class="flex items-center gap-2 group">
+        <div class="w-10 h-10 rounded-xl bg-teal-600 flex items-center justify-center text-white font-bold text-xl shadow-md group-hover:bg-teal-700 transition">
+          S
+        </div>
+        <span class="text-2xl font-black tracking-tight text-slate-900">
+          Senior<span class="text-teal-600">Link</span>
+        </span>
+      </a>
+
+      <!-- Desktop Navigation -->
+      <nav class="hidden lg:flex items-center gap-8">
+        {navLinks.map((link) => (
+          <a
+            href={link.href}
+            class="text-sm font-semibold text-slate-600 hover:text-teal-600 transition-colors py-1 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-teal-600 hover:after:w-full after:transition-all"
+          >
+            {link.name}
+          </a>
+        ))}
+      </nav>
+
+      <!-- Auth Action Buttons -->
+      <div class="hidden lg:flex items-center gap-3">
+        <a
+          href="/login"
+          class="px-4 py-2 text-sm font-semibold text-slate-700 hover:text-teal-700 transition"
+        >
+          Iniciar Sesión
+        </a>
+        <a
+          href="/registro"
+          class="px-5 py-2.5 text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-xl shadow-sm hover:shadow transition transform active:scale-95"
+        >
+          Registrarse
+        </a>
       </div>
-      <span class="text-sky-950 font-bold text-lg tracking-tight">SeniorLink</span>
+
+      <!-- Mobile Menu Toggle Button -->
+      <div class="lg:hidden flex items-center">
+        <button
+          id="mobile-menu-btn"
+          type="button"
+          aria-label="Abrir menú"
+          class="p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+        </button>
+      </div>
+
     </div>
+  </div>
 
-    <!-- Enlaces centrales -->
-    <ul class="flex items-center gap-2 text-sm font-medium">
-      <li>
-        <a href="#" class="px-4 py-1.5 rounded-full bg-sky-100 text-sky-700 font-semibold transition-colors">
-          Inicio
-        </a>
-      </li>
-      <li>
-        <a href="#" class="px-4 py-1.5 rounded-full text-slate-600 hover:text-sky-900 transition-colors">
-          Acompañantes
-        </a>
-      </li>
-      <li>
-        <a href="#" class="px-4 py-1.5 rounded-full text-slate-600 hover:text-sky-900 transition-colors">
-          Reservar
-        </a>
-      </li>
-    </ul>
-
-    <!-- Botón login -->
-    <a href="#" class="px-4 py-1.5 rounded-lg border border-sky-200 bg-white text-sky-950 text-sm font-semibold hover:bg-slate-50 transition-colors shadow-sm">
-      Iniciar sesión
-    </a>
-  </nav>
+  <!-- Mobile Dropdown -->
+  <div id="mobile-menu" class="hidden lg:hidden bg-white border-b border-slate-200 px-4 pt-3 pb-6 space-y-3">
+    {navLinks.map((link) => (
+      <a
+        href={link.href}
+        class="block px-3 py-2 rounded-lg text-base font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700 mobile-nav-link"
+      >
+        {link.name}
+      </a>
+    ))}
+    <div class="pt-4 border-t border-slate-100 flex flex-col gap-2">
+      <a
+        href="/login"
+        class="w-full text-center py-2.5 text-sm font-semibold text-slate-700 border border-slate-200 rounded-lg"
+      >
+        Iniciar Sesión
+      </a>
+      <a
+        href="/registro"
+        class="w-full text-center py-2.5 text-sm font-semibold text-white bg-teal-600 rounded-lg shadow-sm"
+      >
+        Registrarse
+      </a>
+    </div>
+  </div>
 </header>
+
+<script>
+  const btn = document.getElementById('mobile-menu-btn');
+  const menu = document.getElementById('mobile-menu');
+  const links = document.querySelectorAll('.mobile-nav-link');
+
+  btn?.addEventListener('click', () => {
+    menu?.classList.toggle('hidden');
+  });
+
+  // Cerrar menú al hacer click en un ancla
+  links.forEach(link => {
+    link.addEventListener('click', () => {
+      menu?.classList.add('hidden');
+    });
+  });
+</script>

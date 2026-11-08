@@ -1,0 +1,74 @@
+---
+const companions = [
+  {
+    name: 'Lucía Ramos',
+    dni: '***433',
+    role: 'Estudiante de Gerontología (9no ciclo)',
+    rating: '4.98',
+    reviews: 34,
+    rate: '25.00',
+    bio: 'Paciencia, vocación y empatía. Experiencia con adultos de movilidad reducida.',
+  },
+  {
+    name: 'Jorge Quispe',
+    dni: '***698',
+    role: 'Técnico de Fisioterapia',
+    rating: '4.85',
+    reviews: 21,
+    rate: '22.00',
+    bio: 'Especialista en caminatas activas al aire libre y ejercicios articulares suaves.',
+  },
+  {
+    name: 'Camila Valdivia',
+    dni: '***812',
+    role: 'Estudiante de Psicología',
+    rating: '4.92',
+    reviews: 19,
+    rate: '24.00',
+    bio: 'Compañía de lectura, estimulación de memoria y conversación afectiva.',
+  },
+];
+---
+
+<section id="acompanantes" class="py-24 bg-white border-t border-slate-100">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center max-w-3xl mx-auto mb-16">
+      <span class="text-teal-600 font-bold text-sm uppercase tracking-wider">Acompañantes Destacados</span>
+      <h2 class="text-3xl sm:text-4xl font-black text-slate-900 mt-2">
+        Profesionales y estudiantes con vocación humana
+      </h2>
+      <p class="text-slate-600 mt-4 text-base">
+        Cada tarifa se ajusta de forma moderada según la satisfacción y valoraciones recibidas.
+      </p>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-8">
+      {companions.map((c) => (
+        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-6 flex flex-col justify-between hover:shadow-lg transition">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-xs font-semibold px-2.5 py-1 bg-teal-100 text-teal-800 rounded-md">
+                Verificado
+              </span>
+              <span class="text-xs text-slate-400">DNI: {c.dni}</span>
+            </div>
+            <h3 class="text-xl font-bold text-slate-900">{c.name}</h3>
+            <p class="text-xs font-medium text-teal-700 mt-0.5">{c.role}</p>
+            <p class="text-sm text-slate-600 mt-4 italic">"{c.bio}"</p>
+          </div>
+
+          <div class="mt-6 pt-4 border-t border-slate-200 flex items-center justify-between">
+            <div>
+              <div class="text-xs text-slate-400">Tarifa actual</div>
+              <div class="text-lg font-black text-slate-900">S/. {c.rate} <span class="text-xs font-normal">/h</span></div>
+            </div>
+            <div class="text-right">
+              <span class="text-sm font-bold text-amber-500">★ {c.rating}</span>
+              <div class="text-xs text-slate-400">({c.reviews} reseñas)</div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
