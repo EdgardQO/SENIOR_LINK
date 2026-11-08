@@ -1,0 +1,133 @@
+---
+interface Props {
+  videoSrc?: string;
+}
+
+const { videoSrc = '/videos/splash_screen.mp4' } = Astro.props;
+---
+
+<div id="splash-screen" class="splash-container">
+  <div class="video-wrapper" id="splash-video-box">
+    <video
+      id="splash-video"
+      autoplay
+      muted
+      playsinline
+      preload="auto"
+      class="splash-media"
+    >
+      <source src={videoSrc} type="video/mp4" />
+      Tu navegador no soporta videos HTML5.
+    </video>
+  </div>
+</div>
+
+<style>
+  /* Contenedor principal a pantalla completa */
+  .splash-container {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 99999;
+    background-color: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    animation: autoDismissSplash 3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  .video-wrapper {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: shrinkVideoBox 3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  .splash-media {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  @keyframes shrinkVideoBox {
+    0% {
+      transform: scale(1);
+      border-radius: 0px;
+      opacity: 1;
+    }
+    66% {
+      transform: scale(1);
+      border-radius: 0px;
+      opacity: 1;
+    }
+    85% {
+      transform: scale(0.65);
+      border-radius: 2rem;
+      opacity: 0.9;
+    }
+    100% {
+      transform: scale(0.45);
+      border-radius: 2.5rem;
+      opacity: 0;
+    }
+  }
+
+  @keyframes autoDismissSplash {
+    0% {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: all;
+    }
+    75% {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: all;
+    }
+    92% {
+      opacity: 0;
+      visibility: visible;
+      pointer-events: none;
+    }
+    100% {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      display: none;
+    }
+  }
+</style>
+
+<script is:inline>
+  const STORAGE_KEY = 'seniorlink_splash_visto';
+  const yaLoVio = localStorage.getItem(STORAGE_KEY);
+  const splash = document.getElementById('splash-screen');
+  const video = document.getElementById('splash-video');
+
+  if (yaLoVio) {
+    // Si ya existe la marca en localStorage, se destruye de inmediato sin mostrarse
+    if (splash) {
+      splash.style.display = 'none';
+      splash.remove();
+    }
+  } else {
+    // Primera vez: reproduce el video
+    if (video) {
+      video.muted = true;
+      video.play().catch(() => {});
+    }
+
+    // A los 3 segundos se corta, se oculta y se guarda en localStorage
+    setTimeout(() => {
+      if (video) video.pause();
+      if (splash) {
+        splash.style.display = 'none';
+        splash.remove();
+      }
+      localStorage.setItem(STORAGE_KEY, 'true');
+    }, 3000);
+  }
+</script>
