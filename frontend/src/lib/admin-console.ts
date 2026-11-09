@@ -62,27 +62,103 @@ function fill(form: HTMLFormElement, data: AnyRecord) {
     else if (value != null) el.value = String(value);
   }
 }
+function ensureEditorStyles() {
+  if (document.getElementById('admin-modal-styles')) return;
+  const style=document.createElement('style');
+  style.id='admin-modal-styles';
+  style.textContent=`
+  .admin-modal-overlay{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:rgba(12,35,32,.55);backdrop-filter:blur(3px);padding:22px}
+  .admin-modal-dialog{width:min(760px,100%);max-height:min(88vh,900px);display:flex;flex-direction:column;overflow:hidden;background:#fff;border-radius:20px;box-shadow:0 25px 90px rgba(0,0,0,.24);border:1px solid #dceae5}
+  .admin-modal-header{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:22px 26px;border-bottom:1px solid #e6efeb;background:#f8fcfa}
+  .admin-modal-heading{margin:0;font-size:20px;color:#173d39;line-height:1.4}
+  .admin-modal-subtitle{margin:6px 0 0;font-size:12px;color:#708b81}
+  .admin-modal-close{border:0;border-radius:9px;background:#e9f4ef;color:#37665b;width:35px;height:35px;font-size:23px;line-height:1;cursor:pointer;flex:none}
+  .admin-modal-form{display:flex;flex-direction:column;min-height:0;flex:1}
+  .admin-modal-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px 20px;padding:25px 26px;overflow-y:auto;min-height:0}
+  .admin-modal-fields label{display:block;font-size:12px;font-weight:600;color:#54736a;min-width:0}
+  .admin-modal-fields input,.admin-modal-fields select,.admin-modal-fields textarea{display:block;width:100%;margin-top:8px;padding:12px;border:1px solid #d5e7df;border-radius:10px;font:inherit;background:white;color:#15302e}
+  .admin-modal-fields input:focus,.admin-modal-fields select:focus,.admin-modal-fields textarea:focus{outline:2px solid #83d1bd;outline-offset:1px}
+  .admin-modal-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;padding:18px 26px;border-top:1px solid #e6efeb;background:#fff}
+  .admin-modal-actions .admin-btn{margin:0!important;min-width:110px}
+  .admin-modal-error{color:#b42336;font-size:12px;margin:0;padding:0 26px 12px}
+  @media(max-width:600px){.admin-modal-overlay{padding:10px}.admin-modal-dialog{max-height:94vh;border-radius:14px}.admin-modal-header{padding:17px}.admin-modal-fields{grid-template-columns:1fr;padding:18px;gap:14px}.admin-modal-actions{padding:15px}}
+  `;
+  document.head.appendChild(style);
+}
 function formBox(root: HTMLElement, title: string, fields: Array<[string,string,string]>,
                  defaults: AnyRecord, onSave: (data: AnyRecord) => Promise<void>) {
-  const container = $<HTMLElement>(root,'#module-content');
-  if (!container) return;
-  $<HTMLElement>(container,'#editor')?.remove();
-  const panel = node('section','','admin-shell'); panel.id='editor';
-  panel.appendChild(node('h3',title));
-  const form = document.createElement('form'); form.className='admin-form';
-  for (const [key,label,type] of fields) form.appendChild(field(key,label,type));
+  ensureEditorStyles();
+  document.querySelector<HTMLElement>('#admin-modal-overlay')?.remove();
+  const overlay=node('div','','admin-modal-overlay');
+  overlay.id='admin-modal-overlay';
+  const dialog=node('section','','admin-modal-dialog');
+  dialog.setAttribute('role','dialog');
+  dialog.setAttribute('aria-modal','true');
+  const headingId='admin-modal-heading';
+  dialog.setAttribute('aria-labelledby',headingId);
+  const header=node('div','','admin-modal-header');
+  const heading=node('div');
+  const titleNode=node('h2',title,'admin-modal-heading');
+  titleNode.id=headingId;
+  heading.append(titleNode,node('p','Modifica los campos y guarda los cambios.','admin-modal-subtitle'));
+  const closeBtn=node('button','×','admin-modal-close') as HTMLButtonElement;
+  closeBtn.type='button';closeBtn.setAttribute('aria-label','Cerrar ventana');
+  header.append(heading,closeBtn);
+  const form=document.createElement('form');
+  form.className='admin-modal-form';
+  const fieldGrid=node('div','','admin-modal-fields');
+  for(const [key,label,type] of fields)fieldGrid.appendChild(field(key,label,type));
+  form.appendChild(fieldGrid);
   fill(form,defaults);
-  const actions = node('div'); actions.style.cssText='grid-column:1/-1;display:flex;gap:9px';
-  const save = document.createElement('button'); save.type='submit';save.className='admin-btn';save.textContent='Guardar';
-  actions.append(save,action('Cancelar',()=>panel.remove(),'admin-secondary'));
-  form.appendChild(actions);panel.appendChild(form);container.prepend(panel);
+  const error=node('p','','admin-modal-error');
+  error.setAttribute('role','alert');error.hidden=true;
+  const actions=node('div','','admin-modal-actions');
+  const save=document.createElement('button');
+  save.type='submit';save.className='admin-btn';save.textContent='Guardar cambios';
+  const cancel=action('Cancelar',()=>close(),'admin-secondary');
+  actions.append(cancel,save);
+  form.append(error,actions);
+  dialog.append(header,form);overlay.appendChild(dialog);
+  const previousFocus=document.activeElement instanceof HTMLElement?document.activeElement:null;
+  const previousOverflow=document.body.style.overflow;
+  document.body.style.overflow='hidden';
+  document.body.appendChild(overlay);
+  let busy=false;
+  function close(){
+    if(busy)return;
+    overlay.remove();
+    document.body.style.overflow=previousOverflow;
+    previousFocus?.focus();
+    document.removeEventListener('keydown',onKey);
+  }
+  function onKey(event:KeyboardEvent){
+    if(event.key==='Escape'){event.preventDefault();close();}
+    if(event.key!=='Tab')return;
+    const focusable=Array.from(dialog.querySelectorAll<HTMLElement>('button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled])'));
+    if(!focusable.length)return;
+    const first=focusable[0],last=focusable[focusable.length-1];
+    if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+    else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+  }
+  closeBtn.addEventListener('click',close);
+  overlay.addEventListener('click',event=>{if(event.target===overlay)close();});
+  document.addEventListener('keydown',onKey);
+  (fieldGrid.querySelector('input,select,textarea') as HTMLElement|null)?.focus() || closeBtn.focus();
   form.addEventListener('submit',async event=>{
-    event.preventDefault();save.disabled=true;
-    try { await onSave(values(form)); panel.remove(); status(root,'Cambios guardados correctamente.'); }
-    catch(e){status(root,e instanceof Error?e.message:'Error al guardar.',true);}
-    finally{save.disabled=false;}
+    event.preventDefault();if(busy)return;
+    busy=true;save.disabled=true;cancel.disabled=true;closeBtn.disabled=true;
+    error.hidden=true;
+    try{
+      await onSave(values(form));
+      busy=false;
+      close();
+      status(root,'Cambios guardados correctamente.');
+    }catch(e){
+      error.textContent=e instanceof Error?e.message:'Error al guardar.';
+      error.hidden=false;
+      busy=false;
+    }finally{save.disabled=false;cancel.disabled=false;closeBtn.disabled=false;}
   });
-  panel.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 function table(root: HTMLElement, headers: string[], rows: AnyRecord[], render: (row: AnyRecord,tr: HTMLTableRowElement)=>void) {
   const content = $<HTMLElement>(root,'#module-content');
