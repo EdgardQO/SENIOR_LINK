@@ -163,7 +163,8 @@ public class UsuarioService {
                 new UsuarioDetalleDTO.Acompanante(
                         p.getBiografia(), p.getNivelAcademico(), p.getTarifaBasePorHora(),
                         p.getTarifaActualPorHora(), p.getPromedioCalificacion(),
-                        p.getTotalCalificaciones())).orElse(null);
+                        p.getTotalCalificaciones(),
+                        p.getInstitucionAliada() == null ? null : InstitucionAliadaDTO.desdeEntidad(p.getInstitucionAliada()))).orElse(null);
         var soporte = soporteRepository.findById(dni).map(p ->
                 new UsuarioDetalleDTO.Soporte(
                         p.getTurno(), p.getExtensionTelefonica(), p.getCasosAtendidos())).orElse(null);

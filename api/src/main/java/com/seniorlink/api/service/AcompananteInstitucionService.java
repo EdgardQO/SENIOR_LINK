@@ -35,41 +35,34 @@ public class AcompananteInstitucionService {
     }
 
     @Transactional(readOnly = true)
-    public List<InstitucionAliadaDTO> listarPorAcompanante(String dni) {
-        return buscarAcompanante(dni).getInstitucionesAliadas().stream()
-                .sorted(Comparator.comparing(InstitucionAliada::getNombre, String.CASE_INSENSITIVE_ORDER))
-                .map(InstitucionAliadaDTO::desdeEntidad)
-                .toList();
+    public InstitucionAliadaDTO obtenerPorAcompanante(String dni) {
+        InstitucionAliada institucion = buscarAcompanante(dni).getInstitucionAliada();
+        if (institucion == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "El acompañante no tiene institución asignada");
+        }
+        return InstitucionAliadaDTO.desdeEntidad(institucion);
     }
 
     @Transactional
-    public void vincular(String dni, String ruc) {
+    public void asignarInstitucion(String dni, String ruc) {
         validarRuc(ruc);
         PerfilAcompanante acompanante = buscarAcompanante(dni);
         InstitucionAliada institucion = institucionRepository.findById(ruc)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "La institución aliada no existe"));
-
-        boolean yaVinculado = acompanante.getInstitucionesAliadas().stream()
-                .anyMatch(i -> i.getRuc().equals(ruc));
-        if (yaVinculado) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "El acompañante ya está vinculado a esta institución");
-        }
-        acompanante.getInstitucionesAliadas().add(institucion);
+        acompanante.setInstitucionAliada(institucion);
         acompananteRepository.save(acompanante);
     }
 
     @Transactional
-    public void desvincular(String dni, String ruc) {
-        validarRuc(ruc);
+    public void quitarInstitucion(String dni) {
         PerfilAcompanante acompanante = buscarAcompanante(dni);
-        boolean eliminado = acompanante.getInstitucionesAliadas()
-                .removeIf(i -> i.getRuc().equals(ruc));
-        if (!eliminado) {
+        if (acompanante.getInstitucionAliada() == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "No existe la vinculación indicada");
+                    "El acompañante no tiene institución asignada");
         }
+        acompanante.setInstitucionAliada(null);
         acompananteRepository.save(acompanante);
     }
 

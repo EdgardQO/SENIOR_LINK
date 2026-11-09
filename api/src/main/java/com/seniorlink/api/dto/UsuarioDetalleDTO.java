@@ -31,7 +31,8 @@ public record UsuarioDetalleDTO(
             BigDecimal tarifaBasePorHora,
             BigDecimal tarifaActualPorHora,
             BigDecimal promedioCalificacion,
-            Integer totalCalificaciones
+            Integer totalCalificaciones,
+            InstitucionAliadaDTO institucionAliada
     ) {}
 
     public record Soporte(String turno, String extensionTelefonica, Integer casosAtendidos) {}
