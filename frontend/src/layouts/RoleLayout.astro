@@ -406,6 +406,8 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
     .sidebar-compact{display:none!important}
     .sidebar-mobile-open .sidebar-mobile-actions{left:min(260px,calc(88vw - 48px));top:80px;z-index:54;box-shadow:none;border:0;background:transparent}
     .sidebar-mobile-open .sidebar-mobile-actions .panel-icon-button{background:#e7f7f2}
+    /* En móvil el control flotante es el único botón para abrir/cerrar el panel. */
+    .sidebar-top-controls #menu-toggle{display:none!important}
     .sidebar-top-row{padding-right:40px}
   }
 </style>
