@@ -1,27 +1,20 @@
 ---
-/**
- * Imágenes temporales. Para reemplazarlas, guarda tus fotos en
- * frontend/public/Servicios/ y cambia cada valor "image" por
- * "/Servicios/nombre-de-tu-imagen.jpg".
- */
 const services = [
-  { title: 'Caminatas y recreación', description: 'Paseos y momentos al aire libre, siempre en buena compañía.', image: '/public/Servicios/caminata.png' },
-  { title: 'Compras y trámites', description: 'Una mano amiga para resolver las tareas del día a día.', image: '/public/Servicios/compras.png' },
-  { title: 'Acompañamiento a citas', description: 'Apoyo y compañía para acudir a citas y diligencias.', image: '/public/Servicios/citas.png' },
-  { title: 'Apoyo digital', description: 'Ayuda sencilla para usar el celular y otras tecnologías.', image: '/public/Servicios/tecnologia.png' },
-  { title: 'Compañía y actividades', description: 'Compartir conversaciones, aficiones y buenos momentos.', image: '/public/Servicios/compania.png' },
-  { title: 'Lectura y estimulación', description: 'Lecturas y actividades para mantener la mente activa.', image: '/public/Servicios/lectura.png' },
-  { title: 'Alimentación consciente', description: 'Compañía en las rutinas de alimentación cotidianas.', image: '/public/Servicios/alimentacion.png' },
-  { title: 'Otros servicios', description: 'Acompañamiento personalizado según cada necesidad.', image: '/public/Servicios/otros.png' },
+  { title: 'Caminatas y recreación', description: 'Paseos y momentos al aire libre, siempre en buena compañía.', image: '/Servicios/caminata.png' },
+  { title: 'Compras y trámites', description: 'Una mano amiga para resolver las tareas del día a día.', image: '/Servicios/compras.png' },
+  { title: 'Acompañamiento a citas', description: 'Apoyo y compañía para acudir a citas y diligencias.', image: '/Servicios/citas.png' },
+  { title: 'Apoyo digital', description: 'Ayuda sencilla para usar el celular y otras tecnologías.', image: '/Servicios/tecnologia.png' },
+  { title: 'Compañía y actividades', description: 'Compartir conversaciones, aficiones y buenos momentos.', image: '/Servicios/compania.png' },
+  { title: 'Lectura y estimulación', description: 'Lecturas y actividades para mantener la mente activa.', image: '/Servicios/lectura.png' },
+  { title: 'Alimentación consciente', description: 'Compañía en las rutinas de alimentación cotidianas.', image: '/Servicios/alimentacion.png' },
+  { title: 'Otros servicios', description: 'Acompañamiento personalizado según cada necesidad.', image: '/Servicios/otros.png' },
 ];
 ---
 
 <section id="servicios" class="services-section" aria-labelledby="services-title">
   <div class="services-container">
     <div class="services-heading">
-      <span class="services-eyebrow">SERVICIOS SENIORLINK</span>
-      <h2 id="services-title">Acompañamiento para cada momento</h2>
-      <p>Estamos presentes en las pequeñas cosas que hacen la diferencia.</p>
+      <h2 id="services-title">NUESTROS SERVICIOS</h2>
     </div>
 
     <div class="services-grid">
@@ -41,24 +34,22 @@ const services = [
 </section>
 
 <style>
-  .services-section{position:relative;isolation:isolate;overflow:hidden;padding:80px 0 92px;background:#f7faf9;scroll-margin-top:85px}
-  .services-section::before{content:"";position:absolute;z-index:-1;left:0;right:0;top:40%;height:36%;background:#d9efe7}
-  .services-container{max-width:1190px;margin:0 auto;padding:0 26px}
-  .services-heading{text-align:center;margin:0 auto 38px;max-width:750px}
-  .services-eyebrow{display:block;color:#158679;font-size:11px;font-weight:750;letter-spacing:.14em;margin-bottom:13px}
-  .services-heading h2{color:#183f3d;font-size:clamp(30px,3.4vw,43px);line-height:1.16;font-weight:800;letter-spacing:-.035em;margin:0 0 12px}
-  .services-heading p{color:#5e7773;font-size:15px;line-height:1.6;margin:0}
-  .services-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
-  .service-card{min-width:0;background:#fff;border-radius:17px;padding:16px 16px 22px;box-shadow:0 7px 24px rgba(21,65,59,.075);border:1px solid rgba(27,88,75,.07);transition:transform .22s ease,box-shadow .22s ease}
-  .service-card:hover{transform:translateY(-4px);box-shadow:0 13px 32px rgba(21,65,59,.13)}
-  .service-photo{width:100%;aspect-ratio:1.34;overflow:hidden;border-radius:11px;background:#e7f0ed}
-  .service-photo img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .35s ease}
+  .services-section{padding:76px 0 88px;background:#f8faf9;scroll-margin-top:85px}
+  .services-container{max-width:1240px;margin:0 auto;padding:0 28px}
+  .services-heading{display:flex;align-items:center;justify-content:center;margin:0 0 38px}
+  .services-heading h2{position:relative;margin:0;color:#173e3a;font-size:clamp(25px,2.8vw,37px);font-weight:800;line-height:1.25;letter-spacing:.015em;text-align:center}
+  .services-heading h2::after{content:"";display:block;margin:14px auto 0;width:54px;height:3px;background:#0d9488;border-radius:10px}
+  .services-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px}
+  .service-card{min-width:0;overflow:hidden;display:flex;flex-direction:column;background:#fff;border:1px solid #e3eae7;border-radius:15px;box-shadow:0 5px 18px rgba(18,65,59,.045);transition:box-shadow .22s ease,transform .22s ease,border-color .22s ease}
+  .service-card:hover{transform:translateY(-4px);border-color:#bfdad1;box-shadow:0 13px 32px rgba(18,65,59,.1)}
+  .service-photo{width:100%;aspect-ratio:1.35;overflow:hidden;background:#e7f0ed}
+  .service-photo img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .4s ease}
   .service-card:hover .service-photo img{transform:scale(1.035)}
-  .service-content{text-align:center;padding:19px 3px 0}
-  .service-content h3{color:#204540;font-size:16px;font-weight:750;line-height:1.35;letter-spacing:-.015em;margin:0 0 10px}
-  .service-content p{font-size:12.5px;color:#6b807c;line-height:1.6;margin:0 auto;max-width:215px}
-  @media(max-width:950px){.services-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.services-container{max-width:700px}}
-  @media(max-width:600px){.services-section{padding:56px 0 66px}.services-container{padding:0 15px}.services-heading{margin-bottom:27px}.services-heading h2{font-size:29px}.services-heading p{font-size:13px}.services-grid{gap:12px}.service-card{padding:10px 10px 17px;border-radius:13px}.service-photo{border-radius:8px;aspect-ratio:1.05}.service-content{padding:14px 2px 0}.service-content h3{font-size:13px;margin-bottom:8px}.service-content p{font-size:11px;line-height:1.45}}
-  @media(max-width:360px){.services-grid{grid-template-columns:1fr}.service-photo{aspect-ratio:1.5}}
+  .service-content{flex:1;text-align:left;padding:21px 22px 25px}
+  .service-content h3{color:#234943;font-size:16px;font-weight:750;line-height:1.35;letter-spacing:-.012em;margin:0 0 9px}
+  .service-content p{font-size:13px;color:#6c827b;line-height:1.55;margin:0}
+  @media(max-width:950px){.services-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.services-container{max-width:750px}}
+  @media(max-width:600px){.services-section{padding:54px 0 62px}.services-container{padding:0 16px}.services-heading{margin-bottom:28px}.services-grid{gap:13px}.service-card{border-radius:12px}.service-photo{aspect-ratio:1.12}.service-content{padding:15px 14px 19px}.service-content h3{font-size:13px;line-height:1.3}.service-content p{font-size:11px;line-height:1.5}}
+  @media(max-width:360px){.services-grid{grid-template-columns:1fr}.service-photo{aspect-ratio:1.5}.service-content h3{font-size:15px}.service-content p{font-size:12px}}
   @media(prefers-reduced-motion:reduce){.service-card,.service-photo img{transition:none}.service-card:hover,.service-card:hover .service-photo img{transform:none}}
 </style>
