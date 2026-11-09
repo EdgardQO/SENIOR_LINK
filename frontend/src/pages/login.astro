@@ -1,0 +1,51 @@
+---
+// src/pages/login.astro
+import BrandPanel from '../components/auth/BrandPanel.astro';
+import LoginForm from '../components/auth/LoginForm.astro';
+
+// Pon aquí la ruta de tu logo:
+const logoUrl = "/LOGO/LOGO CON FRASE.png";
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SeniorLink | Ingresar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <style is:global>
+    :root{
+      --navy:#0b2e4f; --blue:#1a8fcb; --blue-dark:#127bb0; --text:#5b6b7a;
+      --line:#dbe6ee; --soft:#e1f0fa; --bg:#fff; --err:#c0392b;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0}
+    body{font-family:"Lexend",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--navy);background:var(--bg)}
+    .layout{display:grid;grid-template-columns:1fr 1fr;min-height:100vh}
+    .form-side{display:flex;align-items:center;justify-content:center;padding:40px 24px}
+    .form-wrap{width:100%;max-width:440px}
+    .back{display:inline-block;color:var(--blue);font-weight:600;font-size:.95rem;margin-bottom:34px;text-decoration:none}
+    
+    @media (max-width:860px){
+      .layout{grid-template-columns:1fr}
+      .form-side{padding:32px 20px 48px;align-items:flex-start}
+    }
+    @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <BrandPanel logoSrc={logoUrl} />
+    <main class="form-side">
+      <div class="form-wrap">
+        <a class="back" href="/">← Volver al inicio</a>
+        <LoginForm />
+      </div>
+    </main>
+  </div>
+</body>
+</html>

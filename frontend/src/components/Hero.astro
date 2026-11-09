@@ -82,7 +82,7 @@ const trackImages = [...baseImages, ...baseImages, ...baseImages];
         <h1
           class="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-tight mb-6"
         >
-          El cuidado y compañía que tu <span class="text-teal-600"
+          El cuidado y compañía que tu <span class="texto resaltado"
             >familiar merece</span
           >.
         </h1>
@@ -98,7 +98,7 @@ const trackImages = [...baseImages, ...baseImages, ...baseImages];
         <div class="flex flex-col sm:flex-row gap-4">
           <a
             href="#servicios"
-            class="px-8 py-3.5 text-base font-bold text-white bg-teal-600 hover:bg-teal-700 rounded-xl shadow-lg shadow-teal-600/25 hover:shadow-xl transition text-center active:scale-95"
+            class="px-8 py-3.5 text-base font-bold explorar-servicios"
           >
             Explorar Servicios
           </a>
@@ -213,4 +213,12 @@ const trackImages = [...baseImages, ...baseImages, ...baseImages];
   .marquee-track-reverse:hover {
     animation-play-state: paused;
   }
+  .resaltado {
+      color: var(--color-primary);
+  }
+  .explorar-servicios {
+  color: var(--color-primary-light);
+  background-color: var(--color-primary);
+  border-radius: 10;
+}
 </style>

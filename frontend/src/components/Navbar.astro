@@ -9,17 +9,17 @@ const navLinks = [
 ];
 ---
 
-<header class="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md shadow-sm border-b border-slate-100 transition-all">
+<header class="custom-header sticky top-0 z-50 w-full backdrop-blur-md shadow-sm transition-all">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex items-center justify-between h-20">
       
       <!-- Brand Logo -->
       <a href="#inicio" class="flex items-center gap-2 group">
-        <div class="w-10 h-10 rounded-xl bg-teal-600 flex items-center justify-center text-white font-bold text-xl shadow-md group-hover:bg-teal-700 transition">
+        <div class="w-10 h-10 rounded-xl brand-logo flex items-center justify-center text-white font-bold text-xl shadow-md transition">
           S
         </div>
-        <span class="text-2xl font-black tracking-tight text-slate-900">
-          Senior<span class="text-teal-600">Link</span>
+        <span class="text-2xl font-black tracking-tight text-main">
+          Senior<span class="brand-text">Link</span>
         </span>
       </a>
 
@@ -28,7 +28,7 @@ const navLinks = [
         {navLinks.map((link) => (
           <a
             href={link.href}
-            class="text-sm font-semibold text-slate-600 hover:text-teal-600 transition-colors py-1 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-teal-600 hover:after:w-full after:transition-all"
+            class="nav-link text-sm font-semibold py-1 relative transition-colors"
           >
             {link.name}
           </a>
@@ -39,13 +39,13 @@ const navLinks = [
       <div class="hidden lg:flex items-center gap-3">
         <a
           href="/login"
-          class="px-4 py-2 text-sm font-semibold text-slate-700 hover:text-teal-700 transition"
+          class="nav-link-login px-4 py-2 text-sm font-semibold transition"
         >
           Iniciar Sesión
         </a>
         <a
           href="/registro"
-          class="px-5 py-2.5 text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-xl shadow-sm hover:shadow transition transform active:scale-95"
+          class="brand-btn px-5 py-2.5 text-sm font-semibold text-white rounded-xl shadow-sm hover:shadow transition transform active:scale-95"
         >
           Registrarse
         </a>
@@ -57,7 +57,7 @@ const navLinks = [
           id="mobile-menu-btn"
           type="button"
           aria-label="Abrir menú"
-          class="p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition"
+          class="p-2 rounded-lg text-muted hover:bg-slate-100 transition"
         >
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
@@ -69,31 +69,136 @@ const navLinks = [
   </div>
 
   <!-- Mobile Dropdown -->
-  <div id="mobile-menu" class="hidden lg:hidden bg-white border-b border-slate-200 px-4 pt-3 pb-6 space-y-3">
+  <div id="mobile-menu" class="mobile-dropdown hidden lg:hidden px-4 pt-3 pb-6 space-y-3">
     {navLinks.map((link) => (
       <a
         href={link.href}
-        class="block px-3 py-2 rounded-lg text-base font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700 mobile-nav-link"
+        class="mobile-nav-link block px-3 py-2 rounded-lg text-base font-medium transition"
       >
         {link.name}
       </a>
     ))}
-    <div class="pt-4 border-t border-slate-100 flex flex-col gap-2">
-      <a
-        href="/login"
-        class="w-full text-center py-2.5 text-sm font-semibold text-slate-700 border border-slate-200 rounded-lg"
-      >
-        Iniciar Sesión
-      </a>
-      <a
-        href="/registro"
-        class="w-full text-center py-2.5 text-sm font-semibold text-white bg-teal-600 rounded-lg shadow-sm"
-      >
-        Registrarse
-      </a>
-    </div>
+<!-- Escritorio -->
+<div class="hidden lg:flex items-center gap-3">
+  <a
+    href="/login"
+    class="nav-link-login px-4 py-2 text-sm font-semibold transition"
+  >
+    Iniciar Sesión
+  </a>
+  <a
+    href="/registro"
+    class="brand-btn px-5 py-2.5 text-sm font-semibold text-white rounded-xl shadow-sm hover:shadow transition transform active:scale-95"
+  >
+    Registrarse
+  </a>
+</div>
+
+<!-- Móvil -->
+<div class="mobile-divider pt-4 flex flex-col gap-2">
+  <a
+    href="/login"
+    class="mobile-btn-login w-full text-center py-2.5 text-sm font-semibold border rounded-lg transition"
+  >
+    Iniciar Sesión
+  </a>
+  <a
+    href="/registro"
+    class="brand-btn w-full text-center py-2.5 text-sm font-semibold text-white rounded-lg shadow-sm transition"
+  >
+    Registrarse
+  </a>
+</div>
   </div>
 </header>
+
+<style>
+  /* Header y bordes usando variables globales */
+  .custom-header {
+    background-color: rgba(255, 255, 255, 0.95);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  /* Logotipo */
+  .brand-logo {
+    background-color: var(--color-primary);
+  }
+  .brand-logo:hover {
+    background-color: var(--color-primary-hover);
+  }
+
+  .text-main {
+    color: var(--color-text-main);
+  }
+
+  .brand-text {
+    color: var(--color-primary);
+  }
+
+  /* Enlaces de navegación de escritorio */
+  .nav-link {
+    color: var(--color-text-muted);
+    position: relative;
+  }
+  .nav-link:hover {
+    color: var(--color-primary);
+  }
+  .nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background-color: var(--color-primary);
+    transition: width 0.2s ease-in-out;
+  }
+  .nav-link:hover::after {
+    width: 100%;
+  }
+
+  /* Botón de Iniciar Sesión (Escritorio) */
+  .nav-link-login {
+    color: var(--color-text-muted);
+  }
+  .nav-link-login:hover {
+    color: var(--color-primary-hover);
+  }
+
+  /* Botones principales de acción (Registrarse) */
+  .brand-btn {
+    background-color: var(--color-primary);
+  }
+  .brand-btn:hover {
+    background-color: var(--color-primary-hover);
+  }
+
+  /* Menú desplegable móvil */
+  .mobile-dropdown {
+    background-color: var(--color-bg-surface);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .mobile-nav-link {
+    color: var(--color-text-muted);
+  }
+  .mobile-nav-link:hover {
+    background-color: var(--color-primary-light);
+    color: var(--color-primary-hover);
+  }
+
+  .mobile-divider {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .mobile-btn-login {
+    color: var(--color-text-muted);
+    border-color: var(--color-border);
+  }
+  .mobile-btn-login:hover {
+    background-color: var(--color-primary-light);
+  }
+</style>
 
 <script>
   const btn = document.getElementById('mobile-menu-btn');
@@ -104,7 +209,6 @@ const navLinks = [
     menu?.classList.toggle('hidden');
   });
 
-  // Cerrar menú al hacer click en un ancla
   links.forEach(link => {
     link.addEventListener('click', () => {
       menu?.classList.add('hidden');

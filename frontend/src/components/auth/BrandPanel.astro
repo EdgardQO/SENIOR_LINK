@@ -1,0 +1,69 @@
+---
+// src/components/auth/BrandPanel.astro
+interface Props {
+  logoSrc?: string;
+}
+
+const { logoSrc = "" } = Astro.props;
+---
+
+<aside class="brand">
+  <div class="brand-inner">
+    <div class="logo-card">
+      <img src={logoSrc} alt="SeniorLink: acompañamiento que conecta generaciones" width="520" height="401" />
+    </div>
+    <h1>Acompañamiento de confianza, a un clic</h1>
+    <p>Reserva, paga y haz seguimiento desde un solo lugar.</p>
+    <ul>
+      <li>
+        <span class="check">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12.5l4.5 4.5L19 7.5"></path>
+          </svg>
+        </span>
+        Acompañantes con documentos verificados
+      </li>
+      <li>
+        <span class="check">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12.5l4.5 4.5L19 7.5"></path>
+          </svg>
+        </span>
+        Reservas por horas con importe claro
+      </li>
+      <li>
+        <span class="check">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12.5l4.5 4.5L19 7.5"></path>
+          </svg>
+        </span>
+        Historial para volver a elegir a tu favorito
+      </li>
+    </ul>
+    <p class="note">Servicio de acompañamiento no clínico en Lima Metropolitana.</p>
+  </div>
+</aside>
+
+<style>
+.brand{position:relative;overflow:hidden;color:#fff;display:flex;align-items:center;padding:48px 8%;
+  background:linear-gradient(180deg,#1479ab 0%,#0f6495 45%,#0a4f7c 100%)}
+.brand::after{content:"";position:absolute;right:-90px;bottom:-110px;width:300px;height:300px;border-radius:50%;background:rgba(255,255,255,.12)}
+.brand-inner{position:relative;max-width:560px;z-index:1}
+.logo-card{background:#fff;border-radius:22px;padding:18px 26px;width:min(300px,100%);margin-bottom:32px;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+.logo-card img{display:block;width:100%;height:auto}
+.brand h1{font-size:clamp(2rem,3.4vw,3rem);line-height:1.2;margin:0 0 28px;font-weight:600}
+.brand p{margin:0 0 22px;font-size:1rem;opacity:.95}
+.brand ul{list-style:none;margin:0 0 26px;padding:0;display:grid;gap:16px}
+.brand li{display:flex;align-items:center;gap:14px;font-size:1rem}
+.check{flex:none;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.22);display:grid;place-items:center}
+.check svg{width:14px;height:14px}
+.note{font-size:0.9rem;opacity:0.85;margin:0}
+
+@media (max-width:860px){
+  .brand{padding:32px 24px}
+  .brand ul,.brand .note,.brand p{display:none}
+  .brand h1{font-size:1.6rem;margin:0}
+  .logo-card{width:170px;padding:10px 16px;margin-bottom:14px;border-radius:16px}
+  .brand::after{display:none}
+}
+</style>

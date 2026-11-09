@@ -1,1 +1,15 @@
 @import "tailwindcss";
+
+:root {
+  /* Colores principales de la marca SeniorLink */
+  --color-primary: #0d9488;      /* Teal 600 */
+  --color-primary-hover: #0f766e;/* Teal 700 */
+  --color-primary-light: #f0fdfa;/* Teal 50 */
+  
+  /* Textos y fondos generales */
+  --color-text-main: #0f172a;    /* Slate 900 */
+  --color-text-muted: #475569;   /* Slate 600 */
+  --color-bg-body: #f8fafc;      /* Slate 50 */
+  --color-bg-card: #ffffff;      /* Blanco */
+  --color-border: #e2e8f0;       /* Slate 200 */
+}
