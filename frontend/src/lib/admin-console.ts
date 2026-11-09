@@ -277,9 +277,12 @@ async function usersModule(root: HTMLElement) {
       }
       td(tr,u.estaActivo?'Activo':'Inactivo');
       const actions=document.createElement('td');
-      actions.append(action('Ver perfil',()=>void viewUser(u.dni)));
-      actions.append(action('Editar',()=>void editUser(u.dni),'admin-secondary'));
-      actions.append(action(u.estaActivo?'Desactivar':'Activar',()=>void toggleUser(u),'admin-danger'));
+      actions.className='admin-actions-cell';
+      const buttons=node('div','','admin-actions-group');
+      buttons.append(action('Ver perfil',()=>void viewUser(u.dni)));
+      buttons.append(action('Editar',()=>void editUser(u.dni),'admin-secondary'));
+      buttons.append(action(u.estaActivo?'Desactivar':'Activar',()=>void toggleUser(u),'admin-danger'));
+      actions.appendChild(buttons);
       tr.appendChild(actions);
     });
     if (!list.length) {
