@@ -1,13 +1,16 @@
 ---
-const institutions = [
-  { name: 'Pontificia Universidad Católica del Perú', image: '/Universidades/LOGO_CATOLICA.jpg' },
-  { name: 'Universidad Peruana Cayetano Heredia', image: '/Universidades/LOGO_CAYETANO.png' },
-  { name: 'Universidad Nacional Mayor de San Marcos', image: '/Universidades/LOGO_UNMSM.png' },
-  { name: 'Universidad Peruana Unión', image: '/Universidades/LOGO_UPEU.png' },
-  { name: 'Universidad Ricardo Palma', image: '/Universidades/LOGO_URP.jpeg' },
-  { name: 'Universidad Norbert Wiener', image: '/Universidades/LOGO_WIENER.png' },
-  { name: 'Universidad Nacional Federico Villarreal', image: '/Universidades/logo_unfv.jpg' },
-];
+import { readdirSync } from 'node:fs';
+import { join } from 'node:path';
+
+// Lee los archivos reales de public/Universidades en lugar de depender de nombres fijos.
+const directory = join(process.cwd(), 'public', 'Universidades');
+const institutions = readdirSync(directory)
+  .filter((file) => /\.(png|jpe?g|webp|gif|avif|svg)$/i.test(file))
+  .sort((a, b) => a.localeCompare(b, 'es'))
+  .map((file) => ({
+    name: file.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' '),
+    image: `/Universidades/${encodeURIComponent(file)}`,
+  }));
 const logos = [...institutions, ...institutions, ...institutions, ...institutions];
 ---
 
