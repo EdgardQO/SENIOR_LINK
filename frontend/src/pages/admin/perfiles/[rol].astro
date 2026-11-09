@@ -39,6 +39,14 @@ const labels: Record<string,string> = {ADMINISTRADOR:'Administradores',ACOMPANAN
 .admin-table{width:100%;border-collapse:collapse;text-align:left}
 .admin-table th{padding:12px;font-size:11px;color:#738b83;border-bottom:1px solid #e2ece8}
 .admin-table td{padding:12px;border-bottom:1px solid #e8f1ed;font-size:12px}
+/* Filas alternadas estilo Excel: contraste suave y lectura clara. */
+.admin-table tbody tr:nth-child(odd){background-color:#ffffff}
+.admin-table tbody tr:nth-child(even){background-color:#eef8f4}
+.admin-table tbody tr{transition:background-color .16s ease}
+.admin-table tbody tr:hover{background-color:#ddf1e9}
+.admin-table tbody tr:focus-within{background-color:#e3f4ed}
+.admin-table tbody td{background-color:transparent}
+
 .admin-btn{border:0;border-radius:10px;background:#0d9488;color:white;padding:11px 16px;cursor:pointer;font:600 12px Lexend}
 .admin-btn:disabled{opacity:.6}
 .admin-secondary{background:#edf8f4;color:#087a70}
