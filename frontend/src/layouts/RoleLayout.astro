@@ -35,14 +35,30 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
   <div id="session-loading" class="session-loading">Verificando tu sesión...</div>
   <div id="app-shell" hidden>
     <header class="panel-header">
-      <div class="panel-brand"><a href="/" class="panel-logo" aria-label="SeniorLink — ir al inicio"><img src="/LOGO/LOGO.png" alt="SeniorLink — acompañamiento de confianza" class="panel-brand-image" loading="eager" decoding="async" /></a></div>
-      <div class="panel-header-actions"><span class="panel-role">{label}</span><button id="logout" type="button" class="panel-logout">Cerrar sesión</button></div>
+      <div class="panel-brand">
+        <a href={role === 'ADMINISTRADOR' ? '/admin' : '/'} class="panel-logo" aria-label="SeniorLink — inicio">
+          <img src="/LOGO/LOGO.png" alt="" class="panel-brand-image" loading="eager" decoding="async" />
+          <span class="panel-brand-name">SeniorLink</span>
+        </a>
+      </div>
+      <div class="panel-header-actions">
+        <button id="panel-search-toggle" type="button" class="panel-icon-button" aria-label="Buscar secciones" title="Buscar secciones" aria-haspopup="dialog">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="7"/><path d="m16 16 5 5"/></svg>
+        </button>
+        <button id="menu-toggle" type="button" class="panel-icon-button" aria-label="Ocultar barra lateral" title="Ocultar barra lateral" aria-controls="panel-sidebar" aria-expanded="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>
+        </button>
+        <span class="panel-role">{label}</span>
+        <button id="logout" type="button" class="panel-logout">Cerrar sesión</button>
+      </div>
     </header>
-    <div class="panel-toolbar" role="toolbar" aria-label="Opciones de visualización">
-      <button id="menu-toggle" type="button" class="panel-menu-toggle" aria-label="Ocultar barra lateral" aria-controls="panel-sidebar" aria-expanded="true">
-        <span class="panel-toggle-glyph" aria-hidden="true"><span></span><span></span><span></span></span>
-        <span class="menu-toggle-text">Ocultar barra lateral</span>
-      </button>
+    <div id="panel-search-overlay" class="panel-search-overlay" hidden>
+      <section class="panel-search-dialog" role="dialog" aria-modal="true" aria-labelledby="panel-search-title">
+        <div class="panel-search-head"><h2 id="panel-search-title">Buscar en SeniorLink</h2><button id="panel-search-close" type="button" class="panel-icon-button" aria-label="Cerrar búsqueda">×</button></div>
+        <label class="panel-search-label" for="panel-search-input">Buscar sección</label>
+        <input id="panel-search-input" class="panel-search-input" type="search" placeholder="Usuarios, reservas, familiares..." autocomplete="off" />
+        <nav id="panel-search-results" class="panel-search-results" aria-label="Resultados de búsqueda"></nav>
+      </section>
     </div>
     <div class="panel-layout">
       <aside class="panel-sidebar" id="panel-sidebar">
@@ -101,8 +117,7 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
         : !layout?.classList.contains('is-collapsed');
       menuToggle?.setAttribute('aria-expanded', String(expanded));
       menuToggle?.setAttribute('aria-label', expanded ? 'Ocultar barra lateral' : 'Mostrar barra lateral');
-      const toggleText = menuToggle?.querySelector<HTMLElement>('.menu-toggle-text');
-      if (toggleText) toggleText.textContent = expanded ? 'Ocultar barra lateral' : 'Mostrar barra lateral';
+      menuToggle?.setAttribute('title', expanded ? 'Ocultar barra lateral' : 'Mostrar barra lateral');
     };
     if (!mobileQuery.matches && localStorage.getItem(desktopStorageKey) === 'true') {
       layout?.classList.add('is-collapsed');
@@ -144,6 +159,51 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
       }
     });
 
+    const searchOverlay=document.querySelector<HTMLElement>('#panel-search-overlay');
+    const searchInput=document.querySelector<HTMLInputElement>('#panel-search-input');
+    const searchResults=document.querySelector<HTMLElement>('#panel-search-results');
+    const searchToggle=document.querySelector<HTMLButtonElement>('#panel-search-toggle');
+    const searchClose=document.querySelector<HTMLButtonElement>('#panel-search-close');
+    let searchPreviousFocus: HTMLElement|null=null;
+    const searchableLinks=Array.from(sidebar?.querySelectorAll<HTMLAnchorElement>('a.sidebar-link[href^="/"]')||[]);
+    function updateSearch(){
+      if(!searchResults)return;
+      const term=(searchInput?.value||'').trim().toLocaleLowerCase('es');
+      searchResults.replaceChildren();
+      const matches=searchableLinks.filter(link=>(link.textContent||'').toLocaleLowerCase('es').includes(term));
+      if(!matches.length){const empty=document.createElement('p');empty.textContent='No se encontraron secciones.';empty.className='panel-search-empty';searchResults.appendChild(empty);return;}
+      for(const link of matches){
+        const result=document.createElement('a');result.href=link.href;result.className='panel-search-result';
+        result.textContent=(link.textContent||'').trim();searchResults.appendChild(result);
+      }
+    }
+    function closeSearch(){
+      if(!searchOverlay||searchOverlay.hidden)return;
+      searchOverlay.hidden=true;searchPreviousFocus?.focus();
+    }
+    function openSearch(){
+      if(!searchOverlay)return;
+      searchPreviousFocus=document.activeElement instanceof HTMLElement?document.activeElement:null;
+      searchOverlay.hidden=false;if(searchInput)searchInput.value='';
+      updateSearch();searchInput?.focus();
+    }
+    searchToggle?.addEventListener('click',openSearch);
+    searchClose?.addEventListener('click',closeSearch);
+    searchOverlay?.addEventListener('click',event=>{if(event.target===searchOverlay)closeSearch();});
+    searchInput?.addEventListener('input',updateSearch);
+    searchInput?.addEventListener('keydown',event=>{
+      if(event.key==='Enter'){const first=searchResults?.querySelector<HTMLAnchorElement>('a');if(first){event.preventDefault();window.location.assign(first.href);}}
+    });
+    document.addEventListener('keydown',event=>{
+      if(event.key==='Escape')closeSearch();
+      if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){event.preventDefault();if(searchOverlay?.hidden)openSearch();else closeSearch();}
+      if(event.key==='Tab'&&searchOverlay&&!searchOverlay.hidden){
+        const focusable=Array.from(searchOverlay.querySelectorAll<HTMLElement>('button,a,input')).filter(el=>!el.hasAttribute('disabled'));
+        const first=focusable[0],last=focusable[focusable.length-1];
+        if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+        else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+      }
+    });
     document.querySelector<HTMLButtonElement>('#logout')?.addEventListener('click', () => {
       clearSession();
       window.location.replace('/login');
@@ -209,7 +269,7 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
   .panel-role {color:#087a70;background:#e7f7f2;border-radius:999px;font-size:12px;font-weight:600;padding:9px 13px}
   .panel-logout {background:white;color:#087a70;border:1px solid #cee5dd;border-radius:11px;padding:11px 15px;cursor:pointer;font:600 12px Lexend}
   .panel-logout:hover {background:#effbf7}
-  .panel-layout {display:grid;grid-template-columns:230px minmax(0,1fr);min-height:calc(100vh - 124px);transition:grid-template-columns .2s}
+  .panel-layout {display:grid;grid-template-columns:230px minmax(0,1fr);min-height:calc(100vh - 76px);transition:grid-template-columns .2s}
   .panel-layout.is-collapsed {grid-template-columns:0 minmax(0,1fr)}
   .panel-layout.is-collapsed .panel-sidebar {visibility:hidden;padding-left:0;padding-right:0;overflow:hidden;border:0}
   .panel-sidebar.is-open {visibility:visible}
@@ -261,7 +321,7 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
   @media(max-width:1000px){.dashboard-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.panel-layout{grid-template-columns:180px 1fr}}
   @media(max-width:700px){
     .panel-layout,.panel-layout.is-collapsed{display:block}
-    .panel-sidebar,.panel-layout.is-collapsed .panel-sidebar{position:fixed;z-index:40;top:116px;left:0;bottom:0;width:min(300px,86vw);overflow-y:auto;box-shadow:12px 0 30px #183a3022;transform:translateX(-105%);transition:transform .2s ease;padding:20px 15px;visibility:hidden}
+    .panel-sidebar,.panel-layout.is-collapsed .panel-sidebar{position:fixed;z-index:40;top:68px;left:0;bottom:0;width:min(300px,86vw);overflow-y:auto;box-shadow:12px 0 30px #183a3022;transform:translateX(-105%);transition:transform .2s ease;padding:20px 15px;visibility:hidden}
     .panel-sidebar.is-open,.panel-layout.is-collapsed .panel-sidebar.is-open{visibility:visible;transform:translateX(0);display:flex;flex-direction:column}
     .panel-layout.is-collapsed .panel-sidebar:not(.is-open){visibility:hidden}
     .sidebar-caption,.sidebar-foot{display:block}
@@ -279,4 +339,21 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
   .panel-logo{display:inline-flex;align-items:center;flex-shrink:0;min-width:0;text-decoration:none}
   .panel-brand-image{display:block;width:auto;height:64px;max-width:min(280px,50vw);object-fit:contain;object-position:left center}
   @media(max-width:600px){.panel-brand-image{height:48px;max-width:48vw}}
+  .panel-brand-name{font-size:20px;font-weight:700;color:#123c36;letter-spacing:-.6px}
+  .panel-header-actions{gap:8px}
+  .panel-icon-button{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;flex:none;border:0;border-radius:9px;background:transparent;color:#365c53;cursor:pointer;font:24px Lexend}
+  .panel-icon-button:hover{background:#eaf7f2;color:#087a70}
+  .panel-icon-button:focus-visible{outline:2px solid #0d9488;outline-offset:2px}
+  .panel-icon-button svg{display:block!important;width:21px!important;height:21px!important;max-width:21px;max-height:21px;flex:none}
+  .panel-search-overlay{position:fixed;inset:0;z-index:1000;display:flex;align-items:flex-start;justify-content:center;padding:clamp(65px,12vh,120px) 15px 20px;background:rgba(12,35,32,.48);backdrop-filter:blur(3px)}
+  .panel-search-dialog{width:min(520px,100%);max-height:75vh;overflow:auto;background:white;border:1px solid #dbeae4;border-radius:17px;box-shadow:0 24px 70px #092e2755;padding:20px}
+  .panel-search-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:15px}
+  .panel-search-head h2{margin:0;font-size:17px}
+  .panel-search-label{display:block;color:#56766d;font-size:12px;margin-bottom:7px}
+  .panel-search-input{display:block;width:100%;border:1px solid #cfe5db;border-radius:10px;padding:12px;font:inherit;outline-color:#0d9488}
+  .panel-search-results{display:grid;gap:5px;margin-top:14px}
+  .panel-search-result{display:block;padding:12px 13px;border-radius:9px;text-decoration:none;color:#23483f;font-size:13px}
+  .panel-search-result:hover,.panel-search-result:focus-visible{background:#e7f7f2;color:#087a70}
+  .panel-search-empty{font-size:12px;color:#738b83;padding:10px}
+  @media(max-width:700px){.panel-brand-name{font-size:17px}.panel-header-actions{gap:3px}.panel-icon-button{width:34px;height:34px}.panel-brand-image{height:42px;max-width:68px}.panel-role{display:none}}
 </style>
