@@ -40,14 +40,16 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
           <img src="/LOGO/LOGO.png" alt="" class="panel-brand-image" loading="eager" decoding="async" />
           <span class="panel-brand-name">SeniorLink</span>
         </a>
-      </div>
-      <div class="panel-header-actions">
+        <div class="panel-brand-controls" aria-label="Búsqueda y barra lateral">
         <button id="panel-search-toggle" type="button" class="panel-icon-button" aria-label="Buscar secciones" title="Buscar secciones" aria-haspopup="dialog">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="7"/><path d="m16 16 5 5"/></svg>
         </button>
         <button id="menu-toggle" type="button" class="panel-icon-button" aria-label="Ocultar barra lateral" title="Ocultar barra lateral" aria-controls="panel-sidebar" aria-expanded="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>
         </button>
+        </div>
+      </div>
+      <div class="panel-header-actions">
         <span class="panel-role">{label}</span>
         <button id="logout" type="button" class="panel-logout">Cerrar sesión</button>
       </div>
@@ -356,4 +358,8 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
   .panel-search-result:hover,.panel-search-result:focus-visible{background:#e7f7f2;color:#087a70}
   .panel-search-empty{font-size:12px;color:#738b83;padding:10px}
   @media(max-width:700px){.panel-brand-name{font-size:17px}.panel-header-actions{gap:3px}.panel-icon-button{width:34px;height:34px}.panel-brand-image{height:42px;max-width:68px}.panel-role{display:none}}
+  .panel-brand-controls{display:flex;align-items:center;gap:5px;flex:none;margin-left:14px;padding-left:14px;border-left:1px solid #e3eeeb}
+  .panel-brand{gap:0}
+  .panel-header-actions{margin-left:auto}
+  @media(max-width:700px){.panel-header{padding-left:12px;padding-right:12px}.panel-brand-controls{margin-left:8px;padding-left:8px;gap:0}.panel-brand-name{display:none}.panel-header-actions{gap:4px}.panel-logout{padding:9px;font-size:11px}}
 </style>
