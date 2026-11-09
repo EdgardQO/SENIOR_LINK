@@ -1,0 +1,63 @@
+---
+import RoleLayout from '../../layouts/RoleLayout.astro';
+---
+<RoleLayout role="ADMINISTRADOR" label="Administración" description="Consulta la información de tu cuenta administrativa.">
+  <section class="profile-box" aria-labelledby="own-profile-title">
+    <h2 id="own-profile-title">Mi perfil de administrador</h2>
+    <p class="profile-note">Información de tu cuenta y de tu perfil administrativo.</p>
+    <div class="profile-grid" id="own-profile-fields"></div>
+    <p id="own-profile-status" class="profile-note" role="status">Cargando tu información...</p>
+  </section>
+</RoleLayout>
+<script>
+  type Profile = Record<string, unknown>;
+  const labels: Record<string,string> = {
+    dni:'DNI', nombres:'Nombres', apellidos:'Apellidos',
+    correoElectronico:'Correo electrónico', telefono:'Teléfono',
+    rolNombre:'Rol', estaActivo:'Estado de la cuenta',
+    creadoEn:'Fecha de registro', actualizadoEn:'Última actualización',
+    areaODepartamento:'Área o departamento', nivelAcceso:'Nivel de acceso'
+  };
+  const format = (value: unknown, key: string): string => {
+    if (value === null || value === undefined || value === '') return 'No registrado';
+    if (key === 'estaActivo') return value ? 'Activo' : 'Inactivo';
+    if (key === 'creadoEn' || key === 'actualizadoEn') {
+      const date = new Date(String(value));
+      return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString('es-PE');
+    }
+    return String(value);
+  };
+  function renderProfile(event: Event) {
+    const detail = (event as CustomEvent).detail as {usuario?:Profile;admin?:Profile};
+    const grid = document.querySelector<HTMLElement>('#own-profile-fields');
+    const status = document.querySelector<HTMLElement>('#own-profile-status');
+    if (!grid || !status || !detail?.usuario) return;
+    grid.replaceChildren();
+    for (const [heading,values] of [
+      ['Datos del usuario',detail.usuario],
+      ['Perfil administrativo',detail.admin || {}]
+    ] as Array<[string,Profile]>) {
+      const title = document.createElement('h3');
+      title.textContent = heading;
+      title.style.gridColumn = '1 / -1';
+      grid.appendChild(title);
+      for (const [key,value] of Object.entries(values)) {
+        const item = document.createElement('div');
+        const label = document.createElement('div');
+        label.className = 'profile-key';
+        label.textContent = labels[key] || key;
+        const text = document.createElement('div');
+        text.className = 'profile-value';
+        text.textContent = format(value,key);
+        item.append(label,text);
+        grid.appendChild(item);
+      }
+    }
+    status.textContent = detail.admin ? '' : 'No se encontraron datos adicionales del perfil administrativo.';
+  }
+  document.addEventListener('seniorlink:profile',renderProfile);
+  document.addEventListener('seniorlink:profile-error',()=>{
+    const status = document.querySelector<HTMLElement>('#own-profile-status');
+    if (status) status.textContent='No se pudo cargar el perfil.';
+  });
+</script>
