@@ -6,6 +6,7 @@ import com.seniorlink.api.dto.UsuarioDetalleDTO;
 import com.seniorlink.api.dto.ActualizarUsuarioDTO;
 import com.seniorlink.api.service.UsuarioService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -33,6 +34,7 @@ public class UsuarioController {
     /**
      * Devuelve los datos generales y el perfil específico del usuario.
      */
+    @PreAuthorize("hasRole('ADMINISTRADOR') or #dni == authentication.name")
     @GetMapping("/{dni}")
     public ResponseEntity<UsuarioDetalleDTO> obtenerDetalle(@PathVariable String dni) {
         return ResponseEntity.ok(usuarioService.obtenerDetalle(dni));
@@ -42,6 +44,7 @@ public class UsuarioController {
      * Actualiza los campos enviados. Los campos omitidos o null se mantienen sin cambios.
      * El DNI es inmutable y la contraseña se gestiona por un flujo separado.
      */
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
     @PutMapping("/{dni}")
     public ResponseEntity<UsuarioDetalleDTO> actualizar(
             @PathVariable String dni,
