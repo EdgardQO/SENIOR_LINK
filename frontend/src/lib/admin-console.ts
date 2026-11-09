@@ -108,7 +108,7 @@ function topButton(root:HTMLElement,label:string,callback:()=>void) {
 }
 const PROFILE_COLUMNS: Record<string, Array<[string,string]>> = {
   ACOMPANANTE:[['carrera','Carrera'],['ciclo','Ciclo'],['tarifaActualPorHora','Tarifa/hora'],['promedioCalificacion','Calificación']],
-  ADULTO_MAYOR:[['fechaNacimiento','Nacimiento'],['direccionResidencia','Dirección'],['contactoEmergencia','Contacto de emergencia']],
+  ADULTO_MAYOR:[['fechaNacimiento','Nacimiento'],['direccionResidencia','Dirección'],['contactoEmergencia','Contacto de emergencia'],['telefonoEmergencia','Teléfono emergencia'],['observacionesMedicas','Observaciones médicas']],
   FAMILIAR:[['parentescoPrincipalNombre','Parentesco'],['telefonoAlternativo','Teléfono alternativo']],
   SOPORTE:[['turno','Turno'],['extensionTelefonica','Extensión'],['casosAtendidos','Casos atendidos']],
   ADMINISTRADOR:[['areaODepartamento','Área'],['nivelAcceso','Nivel de acceso']]
@@ -205,12 +205,12 @@ function detailPanel(root: HTMLElement, data: AnyRecord, relatives: AnyRecord[] 
     const notice=node('p','El backend no devolvió información específica para este perfil.','admin-note');
     panel.appendChild(notice);
   }
-  if (role === 'ADULTO_MAYOR') {
+  if (role === 'ADULTO_MAYOR' || role === 'FAMILIAR') {
     const linked = relatives.filter(v => v.estado === 'ACEPTADO');
     const pending = relatives.filter(v => v.estado !== 'ACEPTADO');
     const familyBlock = node('section','','admin-profile-section');
-    familyBlock.appendChild(node('h4','Familiares vinculados y responsables'));
-    if (!linked.length) familyBlock.appendChild(node('p','No hay familiares con vinculación aceptada.','admin-note'));
+    familyBlock.appendChild(node('h4',role === 'ADULTO_MAYOR' ? 'Familiares vinculados' : 'Adultos mayores vinculados'));
+    if (!linked.length) familyBlock.appendChild(node('p','No hay vinculaciones aceptadas registradas.','admin-note'));
     for (const familiar of linked) {
       const family = node('div','','admin-profile-family');
       const name = [familiar.nombres,familiar.apellidos].filter(Boolean).join(' ');
@@ -256,17 +256,25 @@ async function usersModule(root: HTMLElement) {
   const filters=node('div','','admin-links');if(!filter)filters.appendChild(roleSelect);filters.appendChild(search);content.appendChild(filters);
   let all:AnyRecord[]=[];
   let profiles:Record<string,AnyRecord>={};
+  let relations:Record<string,AnyRecord[]>={};
   const render=()=>{
     const q=search.value.trim().toLowerCase();
     const list=all.filter(u=>(!roleSelect.value||u.rolNombre===roleSelect.value)&&
       [u.dni,u.nombres,u.apellidos,u.correoElectronico].some(x=>String(x||'').toLowerCase().includes(q)));
     const specialized = Boolean(filter);
     const columns = specialized ? PROFILE_COLUMNS[filter] ?? [] : [];
-    table(root,['DNI','Nombre','Correo','Teléfono',...(!specialized?['Rol']:[]),...columns.map(([,label])=>label),'Estado','Acciones'],list,(u,tr)=>{
+    const hasRelations = filter === 'ADULTO_MAYOR' || filter === 'FAMILIAR';
+    table(root,['DNI','Nombre','Correo','Teléfono',...(!specialized?['Rol']:[]),...columns.map(([,label])=>label),...(hasRelations? [filter === 'ADULTO_MAYOR' ? 'Familiares vinculados' : 'Adultos mayores vinculados']:[]),'Estado','Acciones'],list,(u,tr)=>{
       td(tr,u.dni);td(tr,[u.nombres,u.apellidos].join(' '));td(tr,u.correoElectronico);td(tr,u.telefono);
       if(!specialized) td(tr,LABELS[u.rolNombre] || u.rolNombre);
       const profile=profiles[u.dni]?.[PROFILE_KEY[u.rolNombre]];
       for (const [key] of columns) td(tr,profile ? displayProfileValue(profile,key) : 'No disponible');
+      if (hasRelations) {
+        const matches=relations[u.dni];
+        td(tr,!matches ? 'No disponible' : matches.filter(v=>v.estado==='ACEPTADO')
+          .map(v=>[v.nombres,v.apellidos].filter(Boolean).join(' ')+' ('+(v.parentesco||'Sin parentesco')+')')
+          .join('; ') || 'Sin vinculaciones aceptadas');
+      }
       td(tr,u.estaActivo?'Activo':'Inactivo');
       const actions=document.createElement('td');
       actions.append(action('Ver perfil',()=>void viewUser(u.dni)));
@@ -287,6 +295,15 @@ async function usersModule(root: HTMLElement) {
       const results=await Promise.allSettled(all.map(u=>adminRequest<AnyRecord>('/usuarios/'+encodeURIComponent(u.dni))));
       profiles={};
       results.forEach((result,i)=>{if(result.status==='fulfilled')profiles[all[i].dni]=result.value;});
+      if (filter === 'ADULTO_MAYOR' || filter === 'FAMILIAR') {
+        const suffix=filter === 'ADULTO_MAYOR' ? '/familiares' : '/adultos-mayores';
+        const linked=await Promise.allSettled(all.map(u=>
+          adminRequest<AnyRecord[]>('/usuarios/'+encodeURIComponent(u.dni)+suffix)));
+        relations={};
+        linked.forEach((result,i)=>{if(result.status==='fulfilled')relations[all[i].dni]=result.value;});
+        if(linked.some(result=>result.status==='rejected'))
+          status(root,'Algunas vinculaciones no pudieron cargarse. Verifica que el backend esté actualizado.',true);
+      }
       const failed=results.filter(result=>result.status==='rejected').length;
       if(failed) status(root,failed+' perfil(es) no pudieron consultarse. Se muestran los usuarios disponibles.',true);
     }
@@ -296,11 +313,11 @@ async function usersModule(root: HTMLElement) {
     try {
       const d=profiles[dni] ?? await adminRequest<AnyRecord>('/usuarios/'+encodeURIComponent(dni));
       let relatives: AnyRecord[] = [];
-      if (d.usuario?.rolNombre === 'ADULTO_MAYOR') {
+      if (d.usuario?.rolNombre === 'ADULTO_MAYOR' || d.usuario?.rolNombre === 'FAMILIAR') {
         try {
-          relatives = await adminRequest<AnyRecord[]>('/usuarios/'+encodeURIComponent(dni)+'/familiares');
+          relatives = await adminRequest<AnyRecord[]>('/usuarios/'+encodeURIComponent(dni)+(d.usuario.rolNombre === 'ADULTO_MAYOR' ? '/familiares' : '/adultos-mayores'));
         } catch (error) {
-          status(root,'No se pudieron consultar los familiares vinculados: '+String(error),true);
+          status(root,'No se pudieron consultar las vinculaciones: '+String(error),true);
         }
       }
       detailPanel(root,d,relatives);
