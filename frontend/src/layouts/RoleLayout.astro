@@ -75,7 +75,7 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
         <div id="sidebar-search-box" class="sidebar-search-box" hidden>
           <label for="sidebar-search-input" class="sidebar-search-label">Buscar sección</label>
           <div class="sidebar-search-input-wrap">
-            <input id="sidebar-search-input" type="search" placeholder="Filtrar opciones..." autocomplete="off" />
+            <input id="sidebar-search-input" type="text" placeholder="Filtrar opciones..." autocomplete="off" />
             <button id="sidebar-search-clear" type="button" aria-label="Limpiar búsqueda">×</button>
           </div>
           <p id="sidebar-search-empty" class="sidebar-search-empty" hidden>No se encontraron secciones.</p>
@@ -270,7 +270,7 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
   *,*::before,*::after { box-sizing:border-box; }
   .role-app { margin:0; background:#f7faf9; font:14px Lexend,system-ui,sans-serif; color:#15302e; }
   .role-app [hidden] {display:none!important}
-  .panel-header {display:flex;align-items:center;justify-content:space-between;height:76px;background:#fff;border-bottom:1px solid #e3eeeb;padding:0 32px;}
+  .panel-header {position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;height:76px;background:#fff;border-bottom:1px solid #e3eeeb;padding:0 32px;}
   .panel-logo {display:flex;align-items:center;text-decoration:none;color:#182f2d;font-size:23px;font-weight:700;letter-spacing:-.8px;}
   .panel-logo span:last-child {color:#0d9488;}
   .panel-logo-mark {display:inline-flex;align-items:center;justify-content:center;margin-right:10px;width:42px;height:42px;background:#0d9488;border-radius:13px;color:white!important;letter-spacing:0}
@@ -380,6 +380,7 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
   .sidebar-search-input-wrap{display:flex;align-items:center;border:1px solid #cfe4dd;background:#f8fcfa;border-radius:11px;overflow:hidden}
   .sidebar-search-input-wrap:focus-within{outline:2px solid #9dd8c8}
   .sidebar-search-input-wrap input{width:100%;min-width:0;border:0;outline:0;background:transparent;padding:11px;font:12px Lexend,system-ui,sans-serif;color:#15302e}
+  .sidebar-search-input-wrap button[hidden]{display:none!important}
   .sidebar-search-input-wrap button{border:0;background:transparent;color:#66877c;font-size:20px;padding:6px 10px;cursor:pointer}
   .sidebar-search-empty{font-size:11px;color:#79918a;margin:12px 4px}
   .panel-sidebar .sidebar-link[hidden]{display:none!important}
@@ -392,7 +393,7 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
   .sidebar-backdrop[hidden]{display:none!important}
   .sidebar-backdrop{display:none}
   @media(max-width:700px){
-    .panel-header{position:relative;z-index:55}
+    .panel-header{position:sticky;top:0;z-index:100}
     .sidebar-mobile-actions{display:flex;position:fixed;top:80px;left:10px;z-index:52;background:white;border:1px solid #dceae5;border-radius:11px;box-shadow:0 3px 12px #123c3615}
     .sidebar-mobile-actions .panel-icon-button{width:38px;height:38px}
     .sidebar-mobile-open{overflow:hidden}
