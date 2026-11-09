@@ -42,7 +42,7 @@ const companions = [
       <h2 id="featured-title">ACOMPAÑANTES DESTACADOS</h2>
     </header>
 
-    <div class="featured-grid">
+    <div class="featured-grid" id="featured-carousel" aria-label="Perfiles de acompañantes destacados">
       {companions.map((c) => (
         <article class="featured-card">
           <div class="featured-photo-wrap">
@@ -81,8 +81,56 @@ const companions = [
         </article>
       ))}
     </div>
+    <div class="featured-carousel-controls" aria-label="Controles del carrusel">
+      <button class="featured-carousel-arrow" type="button" data-carousel-prev aria-label="Ver acompañante anterior" disabled>←</button>
+      <div class="featured-carousel-dots" aria-label="Posición en el carrusel">
+        {companions.map((c, i) => (
+          <button type="button" class="featured-carousel-dot" data-carousel-dot={i} aria-label={`Ver perfil de ${c.name}`} aria-current={i === 0 ? 'true' : undefined}></button>
+        ))}
+      </div>
+      <button class="featured-carousel-arrow" type="button" data-carousel-next aria-label="Ver acompañante siguiente">→</button>
+    </div>
   </div>
 </section>
+
+<script>
+  const carousel = document.querySelector<HTMLElement>('#featured-carousel');
+  if (carousel) {
+    const cards = Array.from(carousel.querySelectorAll<HTMLElement>('.featured-card'));
+    const prev = document.querySelector<HTMLButtonElement>('[data-carousel-prev]');
+    const next = document.querySelector<HTMLButtonElement>('[data-carousel-next]');
+    const dots = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-carousel-dot]'));
+    const currentIndex = () => {
+      const center = carousel.scrollLeft + carousel.clientWidth / 2;
+      return cards.reduce((best, card, index) => {
+        const distance = Math.abs(card.offsetLeft - carousel.offsetLeft + card.offsetWidth / 2 - center);
+        const bestCard = cards[best];
+        const bestDistance = Math.abs(bestCard.offsetLeft - carousel.offsetLeft + bestCard.offsetWidth / 2 - center);
+        return distance < bestDistance ? index : best;
+      }, 0);
+    };
+    const updateControls = () => {
+      const index = currentIndex();
+      if (prev) prev.disabled = index === 0;
+      if (next) next.disabled = index === cards.length - 1;
+      dots.forEach((dot, i) => {
+        if (i === index) dot.setAttribute('aria-current', 'true');
+        else dot.removeAttribute('aria-current');
+      });
+    };
+    const goTo = (index: number) => {
+      const card = cards[Math.max(0, Math.min(index, cards.length - 1))];
+      if (!card) return;
+      carousel.scrollTo({ left: card.offsetLeft - carousel.offsetLeft, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+    };
+    prev?.addEventListener('click', () => goTo(currentIndex() - 1));
+    next?.addEventListener('click', () => goTo(currentIndex() + 1));
+    dots.forEach((dot, i) => dot.addEventListener('click', () => goTo(i)));
+    carousel.addEventListener('scroll', updateControls, { passive: true });
+    window.addEventListener('resize', updateControls);
+    updateControls();
+  }
+</script>
 
 <style>
   .featured-section{padding:88px 0 100px;background:#fff;border-top:1px solid #e9f0ed;scroll-margin-top:85px}
@@ -115,7 +163,8 @@ const companions = [
   .featured-rate-label{display:block;color:#8a9b94;font-size:11px;font-weight:650}
   .featured-rate{margin:4px 0 0;color:#11796d;font-size:24px;font-weight:850;letter-spacing:-.035em}
   .featured-rate span{font-size:12px;color:#84978f;font-weight:550;letter-spacing:0}
+  .featured-carousel-controls{display:none}
   @media(max-width:980px){.featured-grid{gap:16px}.featured-body{padding:19px}.featured-name-row{flex-wrap:wrap}.featured-photo-wrap{height:230px}}
-  @media(max-width:760px){.featured-section{padding:65px 0}.featured-container{padding:0 18px}.featured-grid{grid-template-columns:1fr;max-width:440px;margin:0 auto;gap:20px}.featured-photo-wrap{height:255px}.featured-body{min-height:0}.featured-heading{margin-bottom:30px}}
+  @media(max-width:760px){.featured-section{padding:65px 0}.featured-container{padding:0 18px}.featured-grid{display:flex;grid-template-columns:none;max-width:none;margin:0 -18px;padding:4px 18px 18px;gap:16px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch}.featured-grid::-webkit-scrollbar{display:none}.featured-card{flex:0 0 calc(100% - 8px);scroll-snap-align:start;scroll-snap-stop:always}.featured-card:hover{transform:none}.featured-carousel-controls{display:flex;align-items:center;justify-content:center;gap:20px;margin-top:10px}.featured-carousel-arrow{display:grid;place-items:center;width:42px;height:42px;border:1px solid #bcdcd0;border-radius:50%;background:#edf7f2;color:#147a6c;font-size:21px;font-weight:700;cursor:pointer}.featured-carousel-arrow:disabled{opacity:.35;cursor:default}.featured-carousel-arrow:not(:disabled):active{background:#d7eee4}.featured-carousel-dots{display:flex;align-items:center;gap:9px}.featured-carousel-dot{width:9px;height:9px;padding:0;border:0;border-radius:50%;background:#cadbd4;cursor:pointer}.featured-carousel-dot[aria-current="true"]{width:23px;border-radius:10px;background:#148577}.featured-carousel-arrow:focus-visible,.featured-carousel-dot:focus-visible{outline:3px solid #0d9488;outline-offset:3px}.featured-photo-wrap{height:255px}.featured-body{min-height:0}.featured-heading{margin-bottom:30px}}
   @media(prefers-reduced-motion:reduce){.featured-card,.featured-photo{transition:none}.featured-card:hover,.featured-card:hover .featured-photo{transform:none}}
 </style>
