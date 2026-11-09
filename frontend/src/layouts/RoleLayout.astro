@@ -48,39 +48,57 @@ const { role, label, description } = Astro.props;
   </div>
   <script>
     import { getSession, clearSession, homeForRole, fetchProfile } from '../lib/auth.js';
+
     const role = document.documentElement.dataset.expectedRole;
-    const current = getSession();
-    const loading = document.getElementById('session-loading');
-    const shell = document.getElementById('app-shell');
-    document.getElementById('logout')?.addEventListener('click', () => {
+    const loading = document.querySelector<HTMLDivElement>('#session-loading');
+    const shell = document.querySelector<HTMLDivElement>('#app-shell');
+    const welcomeName = document.querySelector<HTMLSpanElement>('#welcome-name');
+
+    document.querySelector<HTMLButtonElement>('#logout')?.addEventListener('click', () => {
       clearSession();
       window.location.replace('/login');
     });
+
     async function initialize() {
-      if (!current) { window.location.replace('/login'); return; }
-      if (current.rolNombre !== role) { window.location.replace(homeForRole(current.rolNombre)); return; }
+      const current = getSession();
+      if (!current) {
+        window.location.replace('/login');
+        return;
+      }
+      if (current.rolNombre !== role) {
+        window.location.replace(homeForRole(current.rolNombre));
+        return;
+      }
+
+      if (!loading || !shell || !welcomeName) return;
+
       try {
         const data = await fetchProfile(current);
         if (data?.usuario?.dni !== current.dni || data?.usuario?.rolNombre !== role) {
-          const err = new Error('No tienes autorización para este perfil.');
-          err.status = 403;
-          throw err;
+          throw Object.assign(new Error('No tienes autorización para este perfil.'), { status: 403 });
         }
-        document.getElementById('welcome-name').textContent = data.usuario.nombres?.split(' ')[0] || 'usuario';
+
+        welcomeName.textContent = data.usuario.nombres?.split(' ')[0] || 'usuario';
         shell.hidden = false;
         loading.hidden = true;
         document.dispatchEvent(new CustomEvent('seniorlink:profile', { detail: data }));
-      } catch (err) {
-        if (err.status === 401 || err.status === 403) {
+      } catch (error: unknown) {
+        const status = error instanceof Error && 'status' in error
+          ? (error as Error & { status: number }).status
+          : undefined;
+
+        if (status === 401 || status === 403) {
           clearSession();
           window.location.replace('/login');
           return;
         }
+
         loading.textContent = 'No se pudo comprobar tu sesión. Revisa la conexión con el backend y vuelve a cargar la página.';
-        document.dispatchEvent(new CustomEvent('seniorlink:profile-error', { detail: err }));
+        document.dispatchEvent(new CustomEvent('seniorlink:profile-error', { detail: error }));
       }
     }
-    initialize();
+
+    void initialize();
   </script>
 </body>
 </html>
