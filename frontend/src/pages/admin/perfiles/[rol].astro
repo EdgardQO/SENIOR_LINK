@@ -25,7 +25,17 @@ const labels: Record<string,string> = {ADMINISTRADOR:'Administradores',ACOMPANAN
 .admin-form input,.admin-form select,.admin-form textarea,.admin-filter{width:100%;display:block;border:1px solid #d7e9e2;border-radius:10px;padding:11px;margin-top:7px;font:inherit;background:#fff}
 .admin-form input:focus,.admin-form select:focus,.admin-filter:focus{outline:2px solid #a9ded0}
 .admin-form [hidden]{display:none!important}
-.admin-table-wrap{overflow-x:auto}
+.admin-table-wrap{width:100%;overflow-x:auto;overscroll-behavior-x:contain;padding-bottom:8px}
+.admin-table{min-width:1050px}
+.admin-table th,.admin-table td{vertical-align:middle}
+.admin-table th:last-child,.admin-table td:last-child{min-width:156px}
+.admin-actions-cell{width:156px;min-width:156px}
+.admin-actions-group{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:stretch}
+.admin-actions-group .admin-btn{margin:0!important;white-space:nowrap;width:100%;padding:10px 9px;min-height:36px;text-align:center;font-size:11px}
+.admin-actions-group .admin-btn:first-child{grid-column:1/-1}
+.admin-actions-group .admin-btn:last-child{grid-column:2}
+.admin-actions-group .admin-btn:nth-child(2){grid-column:1}
+.admin-actions-group .admin-btn:focus-visible{outline:2px solid #087a70;outline-offset:2px}
 .admin-table{width:100%;border-collapse:collapse;text-align:left}
 .admin-table th{padding:12px;font-size:11px;color:#738b83;border-bottom:1px solid #e2ece8}
 .admin-table td{padding:12px;border-bottom:1px solid #e8f1ed;font-size:12px}
