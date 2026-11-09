@@ -22,20 +22,20 @@ public class AcompananteInstitucionController {
         return ResponseEntity.ok(service.listarInstituciones());
     }
 
-    @GetMapping("/acompanantes/{dni}/instituciones")
-    public ResponseEntity<List<InstitucionAliadaDTO>> listarPorAcompanante(@PathVariable String dni) {
-        return ResponseEntity.ok(service.listarPorAcompanante(dni));
+    @GetMapping("/acompanantes/{dni}/institucion")
+    public ResponseEntity<InstitucionAliadaDTO> obtenerInstitucion(@PathVariable String dni) {
+        return ResponseEntity.ok(service.obtenerPorAcompanante(dni));
     }
 
-    @PostMapping("/acompanantes/{dni}/instituciones/{ruc}")
-    public ResponseEntity<Void> vincular(@PathVariable String dni, @PathVariable String ruc) {
-        service.vincular(dni, ruc);
+    @PutMapping("/acompanantes/{dni}/institucion/{ruc}")
+    public ResponseEntity<Void> asignarInstitucion(@PathVariable String dni, @PathVariable String ruc) {
+        service.asignarInstitucion(dni, ruc);
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/acompanantes/{dni}/instituciones/{ruc}")
-    public ResponseEntity<Void> desvincular(@PathVariable String dni, @PathVariable String ruc) {
-        service.desvincular(dni, ruc);
+    @DeleteMapping("/acompanantes/{dni}/institucion")
+    public ResponseEntity<Void> quitarInstitucion(@PathVariable String dni) {
+        service.quitarInstitucion(dni);
         return ResponseEntity.noContent().build();
     }
 }
