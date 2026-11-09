@@ -4,7 +4,7 @@
 
 <section id="register" class="auth-section">
   <h2>Crea tu cuenta</h2>
-  <p class="sub">Solo toma un minuto.</p>
+  <p class="sub">Elige el tipo de cuenta y completa los datos que aparecen para tu perfil.</p>
 
   <form id="registerForm" novalidate>
     <fieldset class="roles" id="rRoles">
@@ -16,7 +16,8 @@
       </div>
     </fieldset>
 
-    <p class="hint">La foto de perfil se podrá agregar más adelante.</p>
+    <div class="role-help" id="rRoleHelp" aria-live="polite">Selecciona Acompañante, Adulto mayor o Familiar para ver los datos adicionales.</div>
+    <h3 class="form-heading">Datos de tu cuenta</h3>
 
     <div class="row">
       <div class="field"><label for="rNombres">Nombres</label><input id="rNombres" type="text" placeholder="Ej. María" autocomplete="given-name" /></div>
@@ -33,7 +34,7 @@
 
     <!-- Acompañante -->
     <div class="extra" data-role="acompanante" hidden>
-      <h3>Tu perfil de acompañante</h3>
+      <h3>Datos del perfil de acompañante</h3><p class="hint section-hint">Estos datos se guardarán junto con tu cuenta en el perfil de acompañante.</p>
       <div class="row">
         <div class="field"><label for="aCiclo">Ciclo académico (1 a 20)</label><input id="aCiclo" type="number" min="1" max="20" step="1" /></div>
         <div class="field"><label for="aCarrera">Carrera</label><input id="aCarrera" type="text" maxlength="150" placeholder="Ej. Enfermería" /></div>
@@ -41,8 +42,8 @@
       <div class="field"><label for="aRuc">RUC de institución aliada <span class="opt">(opcional)</span></label><input id="aRuc" type="text" inputmode="numeric" maxlength="11" placeholder="11 dígitos" /><p class="hint">La institución debe estar registrada previamente.</p></div>
       <div class="field">
         <label for="aTarifa">Tarifa por hora (S/)</label>
-        <input id="aTarifa" type="number" min="1" step="0.5" placeholder="Ej. 25" />
-        <p class="hint">Es tu tarifa base. Según las valoraciones que recibas, la tarifa que ven los clientes puede subir o bajar un poco.</p>
+        <input id="aTarifa" type="number" min="0" step="0.01" placeholder="Ej. 25" />
+        <p class="hint">Indica tu tarifa base en soles, con máximo dos decimales.</p>
       </div>
       <div class="field">
         <label for="aBio">Cuéntanos sobre ti <span class="opt">(opcional)</span></label>
@@ -52,7 +53,7 @@
 
     <!-- Adulto mayor -->
     <div class="extra" data-role="adulto_mayor" hidden>
-      <h3>Tus datos personales</h3>
+      <h3>Datos del perfil de adulto mayor</h3><p class="hint section-hint">Estos datos se guardarán junto con tu cuenta en el perfil de adulto mayor.</p>
       <div class="field">
         <label for="mNacimiento">Fecha de nacimiento</label>
         <input id="mNacimiento" type="date" />
@@ -74,7 +75,7 @@
 
     <!-- Familiar -->
     <div class="extra" data-role="familiar" hidden>
-      <h3>Sobre tu familiar</h3>
+      <h3>Datos del perfil familiar</h3><p class="hint section-hint">Estos datos se guardarán junto con tu cuenta en el perfil familiar.</p>
       <div class="field">
         <label for="fParentesco">¿Qué parentesco tienes con el adulto mayor? <span class="opt">(opcional)</span></label>
         <select id="fParentesco">
@@ -105,8 +106,16 @@
       <p class="hint">Usa 8 o más caracteres con letras y números.</p>
     </div>
 
+    <div class="field">
+      <label for="rPassConfirm">Confirmar contraseña</label>
+      <div class="pw">
+        <input id="rPassConfirm" type="password" placeholder="Repite tu contraseña" autocomplete="new-password" required />
+        <button type="button" class="toggle" data-target="rPassConfirm" aria-label="Mostrar confirmación de contraseña">Mostrar</button>
+      </div>
+    </div>
+
     <label class="check-row"><input type="checkbox" id="rTerms" /> <span>Acepto los términos del servicio y la política de privacidad.</span></label>
-    <p class="msg" id="rMsg" role="alert"></p>
+    <p class="msg" id="rMsg" role="alert" aria-live="polite"></p>
     <button class="btn" type="submit">Crear cuenta</button>
   </form>
 
@@ -251,6 +260,9 @@ input.invalid {
   padding-top: 22px;
   margin-bottom: 4px;
 }
+.form-heading { font-size: 1.05rem; font-weight: 600; margin: 22px 0 16px; color: var(--color-text-main); }
+.role-help { padding: 12px 14px; background: var(--color-primary-light); border: 1px solid var(--color-border); border-radius: 12px; color: var(--color-text-main); font-size: 0.88rem; line-height: 1.5; }
+.section-hint { margin: -8px 0 18px; }
 .extra h3 {
   margin: 0 0 18px;
   font-size: 1.05rem;
@@ -514,6 +526,13 @@ g('rPass')?.addEventListener('input', e => {
 });
 function syncRole() {
   const role = currentRole();
+  const descriptions = {
+    acompanante: 'Acompañante: completa tus datos personales y académicos, además de tu tarifa por hora.',
+    adulto_mayor: 'Adulto mayor: completa tus datos personales y un contacto de emergencia.',
+    familiar: 'Familiar: completa tus datos personales y, si lo deseas, indica tu parentesco.'
+  };
+  g('rRoleHelp').textContent = descriptions[role] || 'Selecciona Acompañante, Adulto mayor o Familiar para ver los datos adicionales.';
+  g('rRoles').classList.remove('invalid');
   document.querySelectorAll('#registerForm .extra').forEach(section => {
     const active = section.dataset.role === role;
     section.hidden = !active;
@@ -539,12 +558,13 @@ g('registerForm')?.addEventListener('submit', async event => {
   const button = event.currentTarget.querySelector('button[type="submit"]');
   const fail = (message, id) => { msg.textContent = message; if (id) g(id)?.focus(); };
   msg.textContent = '';
-  if (!role) return fail('Selecciona un tipo de cuenta.');
+  if (!role) { g('rRoles').classList.add('invalid'); return fail('Selecciona un tipo de cuenta.'); }
   if (val('rNombres').length < 2 || val('rApellidos').length < 2) return fail('Completa tus nombres y apellidos.', 'rNombres');
   if (!/^\d{8}$/.test(val('rDni'))) return fail('El DNI debe tener 8 dígitos.', 'rDni');
   if (digits(val('rPhone')).length < 9) return fail('Ingresa un celular válido.', 'rPhone');
   if (!emailOk(val('rEmail'))) return fail('Ingresa un correo válido.', 'rEmail');
   if (val('rPass').length < 8 || val('rPass').length > 72 || !/[a-z]/i.test(val('rPass')) || !/\d/.test(val('rPass'))) return fail('La contraseña debe tener entre 8 y 72 caracteres, letras y números.', 'rPass');
+  if (val('rPassConfirm') !== val('rPass')) return fail('Las contraseñas no coinciden.', 'rPassConfirm');
   if (!g('rTerms').checked) return fail('Debes aceptar los términos para continuar.', 'rTerms');
   const payload = {
     dni: val('rDni'), nombres: val('rNombres'), apellidos: val('rApellidos'),
@@ -562,10 +582,12 @@ g('registerForm')?.addEventListener('submit', async event => {
   if (role === 'adulto_mayor') {
     const age = ageFrom(val('mNacimiento'));
     if (age === null || age < 60 || age > 110) return fail('La fecha de nacimiento debe corresponder a una persona de 60 años o más.', 'mNacimiento');
-    if (!val('mContacto') || !val('mTelEmerg')) return fail('Completa los datos de contacto de emergencia.', 'mContacto');
+    if (val('mContacto').length < 3 || val('mContacto').length > 100) return fail('Ingresa el nombre del contacto de emergencia.', 'mContacto');
+    if (digits(val('mTelEmerg')).length < 9 || val('mTelEmerg').length > 20) return fail('Ingresa un teléfono de emergencia válido.', 'mTelEmerg');
     payload.adultoMayor = { fechaNacimiento: val('mNacimiento'), direccionResidencia: val('mDireccion') || null, contactoEmergencia: val('mContacto'), telefonoEmergencia: val('mTelEmerg'), observacionesMedicas: val('mObs') || null };
   }
   if (role === 'familiar') {
+    if (val('fTelAlt') && (digits(val('fTelAlt')).length < 9 || val('fTelAlt').length > 20)) return fail('Ingresa un teléfono alternativo válido.', 'fTelAlt');
     payload.familiar = { parentescoPrincipalId: val('fParentesco') ? Number(val('fParentesco')) : null, telefonoAlternativo: val('fTelAlt') || null };
   }
   button.disabled = true;
@@ -575,7 +597,11 @@ g('registerForm')?.addEventListener('submit', async event => {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
     });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.detail || data.message || data.error || 'No se pudo completar el registro.');
+    if (!response.ok) {
+      const detail = data.detail || data.message || data.error || '';
+      const message = response.status === 409 ? 'El DNI o el correo electrónico ya están registrados.' : (typeof detail === 'string' && detail ? detail : 'No se pudo completar el registro.');
+      throw new Error(message);
+    }
     window.location.assign('/login?registro=ok');
   } catch (error) {
     fail(error instanceof TypeError ? 'No se pudo conectar con la API. Verifica que esté encendida.' : error.message);
