@@ -27,9 +27,10 @@ import RoleLayout from '../layouts/RoleLayout.astro';
 </style>
 <script>
   import { adminRequest } from '../lib/admin-api';
-  document.addEventListener('seniorlink:profile', async () => {
+  async function loadDashboard() {
     const message = document.getElementById('dashboard-status');
     try {
+      if (message) message.textContent = 'Consultando métricas del servidor...';
       const data = await adminRequest<Record<string, number>>('/dashboard');
       for (const [id, field] of Object.entries({
         'm-users':'usuarios','m-active':'usuariosActivos','m-reservations':'reservas',
@@ -59,7 +60,13 @@ import RoleLayout from '../layouts/RoleLayout.astro';
       }
       if (message) message.textContent='Indicadores actualizados.';
     } catch(error) {
-      if (message) message.textContent=error instanceof Error?error.message:'No se pudieron cargar las métricas.';
+      if (message) message.textContent='No se pudieron cargar las métricas: '+(error instanceof Error?error.message:'Error desconocido.');
     }
-  }, { once:true });
+  }
+  // Ejecutar al recibir el perfil o inmediatamente si el layout ya lo verificó.
+  if (document.documentElement.dataset.profileReady === 'true') {
+    void loadDashboard();
+  } else {
+    document.addEventListener('seniorlink:profile', () => void loadDashboard(), { once: true });
+  }
 </script>

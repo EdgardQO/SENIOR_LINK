@@ -42,8 +42,10 @@ const labels: Record<string,string> = {ADMINISTRADOR:'Administradores',ACOMPANAN
 </style>
 <script>
   import { initAdminModule } from '../../../lib/admin-console';
-  document.addEventListener('seniorlink:profile', () => {
+  const initializeModule = () => {
     const root = document.querySelector<HTMLElement>('[data-admin-module]');
     if (root) void initAdminModule(root);
-  }, { once:true });
+  };
+  if (document.documentElement.dataset.profileReady === 'true') initializeModule();
+  else document.addEventListener('seniorlink:profile', initializeModule, { once: true });
 </script>

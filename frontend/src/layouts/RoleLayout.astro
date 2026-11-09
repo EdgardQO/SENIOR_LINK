@@ -22,13 +22,13 @@ const { role, label, description } = Astro.props;
   <div id="app-shell" hidden>
     <header class="panel-header">
       <a href="/" class="panel-logo"><span class="panel-logo-mark">S</span>Senior<span>Link</span></a>
-      <div class="panel-header-actions"><span class="panel-role">{label}</span><button id="logout" type="button" class="panel-logout">Cerrar sesión</button></div>
+      <div class="panel-header-actions"><button id="menu-toggle" type="button" class="panel-menu-toggle" aria-label="Abrir menú" aria-controls="panel-sidebar" aria-expanded="false"><span aria-hidden="true">☰</span><span class="menu-toggle-text">Menú</span></button><span class="panel-role">{label}</span><button id="logout" type="button" class="panel-logout">Cerrar sesión</button></div>
     </header>
     <div class="panel-layout">
-      <aside class="panel-sidebar">
+      <aside class="panel-sidebar" id="panel-sidebar">
         <div class="sidebar-caption">MI ESPACIO</div>
-        <a class="sidebar-link selected" href="#inicio">⌂ &nbsp; Inicio</a>
-        <a class="sidebar-link" href="#mi-perfil">◯ &nbsp; Mi perfil</a>
+        <a class="sidebar-link" href={role === "ADMINISTRADOR" ? "/admin" : "#inicio"}>⌂ &nbsp; Inicio</a>
+        <a class="sidebar-link" href={role === "ADMINISTRADOR" ? "/admin/usuarios" : "#mi-perfil"}>◯ &nbsp; Mi perfil</a>
         {role === 'ADMINISTRADOR' ? (
           <>
             <a class="sidebar-link" href="/admin">▦ &nbsp; Dashboard</a>
@@ -68,6 +68,28 @@ const { role, label, description } = Astro.props;
     const loading = document.querySelector<HTMLDivElement>('#session-loading');
     const shell = document.querySelector<HTMLDivElement>('#app-shell');
     const welcomeName = document.querySelector<HTMLSpanElement>('#welcome-name');
+    const menuToggle = document.querySelector<HTMLButtonElement>('#menu-toggle');
+    const sidebar = document.querySelector<HTMLElement>('#panel-sidebar');
+    const closeMenu = () => {
+      sidebar?.classList.remove('is-open');
+      menuToggle?.setAttribute('aria-expanded', 'false');
+      menuToggle?.setAttribute('aria-label', 'Abrir menú');
+    };
+    menuToggle?.addEventListener('click', () => {
+      const open = sidebar?.classList.toggle('is-open') ?? false;
+      menuToggle.setAttribute('aria-expanded', String(open));
+      menuToggle.setAttribute('aria-label', open ? 'Cerrar menú' : 'Abrir menú');
+    });
+    sidebar?.querySelectorAll<HTMLAnchorElement>('a.sidebar-link').forEach(link => {
+      if (link.getAttribute('href') === window.location.pathname) {
+        link.classList.add('selected');
+        link.setAttribute('aria-current', 'page');
+      }
+      link.addEventListener('click', closeMenu);
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape') closeMenu();
+    });
 
     document.querySelector<HTMLButtonElement>('#logout')?.addEventListener('click', () => {
       clearSession();
@@ -97,6 +119,7 @@ const { role, label, description } = Astro.props;
         shell.hidden = false;
         loading.hidden = true;
         document.dispatchEvent(new CustomEvent('seniorlink:profile', { detail: data }));
+        document.documentElement.dataset.profileReady = 'true';
       } catch (error: unknown) {
         const status = error instanceof Error && 'status' in error
           ? (error as Error & { status: number }).status
@@ -126,16 +149,22 @@ const { role, label, description } = Astro.props;
   .panel-logo span:last-child {color:#0d9488;}
   .panel-logo-mark {display:inline-flex;align-items:center;justify-content:center;margin-right:10px;width:42px;height:42px;background:#0d9488;border-radius:13px;color:white!important;letter-spacing:0}
   .panel-header-actions {display:flex;align-items:center;gap:16px}
+  .panel-menu-toggle {display:inline-flex;align-items:center;gap:8px;border:1px solid #cee5dd;background:#eaf8f3;color:#087a70;border-radius:11px;padding:10px 13px;cursor:pointer;font:600 12px Lexend}
+  .panel-menu-toggle span:first-child {font-size:19px;line-height:1}
+  .panel-menu-toggle:focus-visible {outline:3px solid #85d8c6;outline-offset:2px}
   .panel-role {color:#087a70;background:#e7f7f2;border-radius:999px;font-size:12px;font-weight:600;padding:9px 13px}
   .panel-logout {background:white;color:#087a70;border:1px solid #cee5dd;border-radius:11px;padding:11px 15px;cursor:pointer;font:600 12px Lexend}
   .panel-logout:hover {background:#effbf7}
-  .panel-layout {display:grid;grid-template-columns:230px minmax(0,1fr);min-height:calc(100vh - 76px)}
+  .panel-layout {display:grid;grid-template-columns:230px minmax(0,1fr);min-height:calc(100vh - 76px);transition:grid-template-columns .2s}
+  .panel-layout:has(.panel-sidebar:not(.is-open)) {grid-template-columns:0 minmax(0,1fr)}
+  .panel-layout:has(.panel-sidebar:not(.is-open)) .panel-sidebar {visibility:hidden;padding-left:0;padding-right:0;overflow:hidden;border:0}
+  .panel-sidebar.is-open {visibility:visible}
   .panel-sidebar {display:flex;flex-direction:column;gap:6px;background:#fff;border-right:1px solid #e3eeeb;padding:32px 15px}
   .sidebar-caption {font-size:11px;color:#9aada9;letter-spacing:2px;font-weight:700;margin:0 15px 12px}
   .sidebar-link {text-decoration:none;color:#607773;padding:14px;border-radius:11px;font-weight:500}
   .sidebar-link:hover,.sidebar-link.selected {color:#087a70;background:#e7f7f2}
   .sidebar-foot {font-size:11px;color:#91a6a1;margin-top:auto;padding:18px 10px}
-  .panel-content {max-width:1450px;width:100%;padding:36px clamp(20px,4vw,60px);margin:0 auto}
+  .panel-content {max-width:1450px;min-width:0;width:100%;padding:36px clamp(20px,4vw,60px);margin:0 auto}
   .panel-intro {display:flex;justify-content:space-between;align-items:center;gap:16px}
   .panel-eyebrow {color:#0d9488;font-size:11px;font-weight:700;letter-spacing:1px;margin-bottom:9px}
   .panel-intro h1 {font-size:clamp(25px,3vw,33px);letter-spacing:-1px;margin:0}
@@ -171,5 +200,21 @@ const { role, label, description } = Astro.props;
   .staff-message {margin:14px 0 0;font-size:12px;color:#087a70}
   .staff-message.error {color:#b33939}
   @media(max-width:1000px){.dashboard-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.panel-layout{grid-template-columns:180px 1fr}}
-  @media(max-width:700px){.panel-layout{display:block}.panel-sidebar{display:flex;flex-direction:row;overflow:auto;padding:10px;border-right:0;border-bottom:1px solid #e3eeeb}.sidebar-caption,.sidebar-foot{display:none}.sidebar-link{white-space:nowrap;padding:10px}.panel-header{padding:0 15px;height:68px}.panel-logo{font-size:19px}.panel-logo-mark{width:36px;height:36px}.panel-role{display:none}.panel-content{padding:23px 15px}.panel-banner>span,.panel-intro-icon{display:none}.panel-banner{padding:24px}.panel-banner h2{font-size:20px}.dashboard-grid,.profile-grid,.staff-grid{grid-template-columns:1fr}}
+  @media(max-width:700px){
+    .panel-layout,.panel-layout:has(.panel-sidebar:not(.is-open)){display:block}
+    .panel-sidebar{position:fixed;z-index:40;top:68px;left:0;bottom:0;width:min(300px,86vw);overflow-y:auto;box-shadow:12px 0 30px #183a3022;transform:translateX(-105%);transition:transform .2s ease;padding:20px 15px;visibility:hidden}
+    .panel-sidebar.is-open{visibility:visible;transform:translateX(0);display:flex;flex-direction:column}
+    .panel-layout:has(.panel-sidebar:not(.is-open)) .panel-sidebar{visibility:hidden}
+    .sidebar-caption,.sidebar-foot{display:block}
+    .sidebar-link{white-space:normal}
+    .panel-header{padding:0 15px;height:68px}
+    .panel-logo{font-size:19px}
+    .panel-logo-mark{width:36px;height:36px}
+    .panel-role,.menu-toggle-text{display:none}
+    .panel-content{padding:23px 15px}
+    .panel-banner>span,.panel-intro-icon{display:none}
+    .panel-banner{padding:24px}
+    .panel-banner h2{font-size:20px}
+    .dashboard-grid,.profile-grid,.staff-grid{grid-template-columns:1fr}
+  }
 </style>
