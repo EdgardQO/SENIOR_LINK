@@ -119,38 +119,91 @@ function displayProfileValue(profile: AnyRecord, key: string): string {
 }
 function detailPanel(root: HTMLElement, data: AnyRecord): void {
   const content = $<HTMLElement>(root,'#module-content');
-  if (!content) return;
+  if (!content || !data?.usuario) return;
   $<HTMLElement>(content,'#user-detail')?.remove();
-  const user = data.usuario;
-  const role = user.rolNombre;
-  const profile = data[PROFILE_KEY[role]];
-  const panel = node('section','','admin-shell');
+  const user = data.usuario as AnyRecord;
+  const role = String(user.rolNombre || '');
+  const profile = data[PROFILE_KEY[role]] as AnyRecord | null | undefined;
+  const panel = node('section','','admin-profile-detail');
   panel.id = 'user-detail';
-  panel.appendChild(node('h3','Usuario y perfil · '+user.nombres+' '+user.apellidos));
-  const info = node('div','','admin-form');
-  const items: Array<[string,unknown]> = [
-    ['DNI',user.dni],['Nombres',user.nombres],['Apellidos',user.apellidos],
-    ['Correo electrónico',user.correoElectronico],['Teléfono',user.telefono],
-    ['Rol',LABELS[role]],['Estado',user.estaActivo?'Activo':'Inactivo'],
-    ['Registrado',user.creadoEn ? new Date(user.creadoEn).toLocaleString('es-PE') : null]
-  ];
-  for (const [key,label] of PROFILE_FIELDS[role] ?? []) items.push([label,profile?.[key]]);
-  if (role === 'ACOMPANANTE') {
-    items.push(['Institución aliada',profile?.institucionAliada?.nombre],
-      ['RUC institución',profile?.institucionAliada?.ruc],
-      ['Calificación promedio',profile?.promedioCalificacion],
-      ['Total calificaciones',profile?.totalCalificaciones]);
+  const header = node('div','','admin-profile-header');
+  const identity = node('div');
+  identity.append(
+    node('div',LABELS[role] || role,'admin-profile-eyebrow'),
+    node('h3',[user.nombres,user.apellidos].filter(Boolean).join(' ') || 'Usuario sin nombre'),
+    node('p','DNI: '+(user.dni || 'No registrado'),'admin-note')
+  );
+  const close = action('Cerrar ficha',()=>panel.remove(),'admin-secondary');
+  header.append(identity,close);
+  panel.appendChild(header);
+
+  const format = (value: unknown, key: string): string => {
+    if (value === null || value === undefined || value === '') return 'No registrado';
+    if (typeof value === 'boolean') return value ? 'Sí' : 'No';
+    if (key === 'creadoEn' || key === 'actualizadoEn') {
+      const date = new Date(String(value));
+      return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString('es-PE');
+    }
+    if (key === 'fechaNacimiento') {
+      const parts = String(value).split('-');
+      return parts.length === 3 ? parts.reverse().join('/') : String(value);
+    }
+    return String(value);
+  };
+  const section = (title: string, entries: Array<[string,string,unknown]>) => {
+    const block = node('section','','admin-profile-section');
+    block.appendChild(node('h4',title));
+    const grid = node('div','','admin-profile-grid');
+    for (const [key,label,value] of entries) {
+      const item = node('div','','admin-profile-field');
+      item.append(node('span',label,'admin-profile-label'),node('strong',format(value,key)));
+      grid.appendChild(item);
+    }
+    block.appendChild(grid);
+    panel.appendChild(block);
+  };
+  const userLabels: Record<string,string> = {
+    dni:'DNI',rolId:'ID del rol',rolNombre:'Rol',correoElectronico:'Correo electrónico',
+    nombres:'Nombres',apellidos:'Apellidos',telefono:'Teléfono',
+    estaActivo:'Cuenta activa',creadoEn:'Fecha de registro',actualizadoEn:'Última actualización'
+  };
+  section('Información general del usuario',
+    Object.entries(user).map(([key,value])=>[key,userLabels[key] || key,value] as [string,string,unknown]));
+
+  const profileLabels: Record<string,string> = {
+    areaODepartamento:'Área o departamento',nivelAcceso:'Nivel de acceso',
+    carrera:'Carrera',ciclo:'Ciclo',tarifaBasePorHora:'Tarifa base por hora (S/)',
+    tarifaActualPorHora:'Tarifa actual por hora (S/)',biografia:'Biografía',
+    promedioCalificacion:'Calificación promedio',totalCalificaciones:'Total de calificaciones',
+    fechaNacimiento:'Fecha de nacimiento',direccionResidencia:'Dirección de residencia',
+    contactoEmergencia:'Contacto de emergencia',telefonoEmergencia:'Teléfono de emergencia',
+    observacionesMedicas:'Observaciones médicas',parentescoPrincipalId:'ID de parentesco',
+    parentescoPrincipalNombre:'Parentesco',telefonoAlternativo:'Teléfono alternativo',
+    turno:'Turno',extensionTelefonica:'Extensión telefónica',casosAtendidos:'Casos atendidos'
+  };
+  if (profile) {
+    section('Información específica del perfil · '+(LABELS[role] || role),
+      Object.entries(profile).filter(([key])=>key!=='institucionAliada')
+        .map(([key,value])=>[key,profileLabels[key] || key,value] as [string,string,unknown]));
+    if (role === 'ACOMPANANTE') {
+      const institution = profile.institucionAliada;
+      if (institution && typeof institution === 'object') {
+        const labels: Record<string,string> = {
+          ruc:'RUC',nombre:'Institución',detallesConvenio:'Detalles del convenio'
+        };
+        section('Institución aliada',
+          Object.entries(institution).map(([key,value])=>[key,labels[key] || key,value] as [string,string,unknown]));
+      } else {
+        section('Institución aliada',[['institucion','Institución vinculada',null]]);
+      }
+    }
+  } else {
+    const notice=node('p','El backend no devolvió información específica para este perfil.','admin-note');
+    panel.appendChild(notice);
   }
-  if (role === 'FAMILIAR') items.push(['Parentesco',profile?.parentescoPrincipalNombre]);
-  if (role === 'SOPORTE') items.push(['Casos atendidos',profile?.casosAtendidos]);
-  for (const [label,value] of items) {
-    const box = node('div');
-    box.append(node('div',label,'admin-note'),node('strong',value == null || value === '' ? 'No registrado' : String(value)));
-    info.appendChild(box);
-  }
-  panel.append(info,action('Cerrar detalle',()=>panel.remove(),'admin-secondary'));
+  panel.appendChild(node('p','La información se obtiene de los registros del backend. Los campos sin valor se indican como «No registrado».','admin-note'));
   content.prepend(panel);
-  panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+  panel.scrollIntoView({behavior:'smooth',block:'start'});
 }
 async function usersModule(root: HTMLElement) {
   const filter=root.dataset.roleFilter || '';
