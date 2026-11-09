@@ -35,9 +35,15 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
   <div id="session-loading" class="session-loading">Verificando tu sesión...</div>
   <div id="app-shell" hidden>
     <header class="panel-header">
-      <div class="panel-brand"><button id="menu-toggle" type="button" class="panel-menu-toggle" aria-label="Ocultar menú" aria-controls="panel-sidebar" aria-expanded="true"><span aria-hidden="true">☰</span><span class="menu-toggle-text">Menú</span></button><a href="/" class="panel-logo" aria-label="SeniorLink — ir al inicio"><img src="/LOGO/LOGO.png" alt="SeniorLink — acompañamiento de confianza" class="panel-brand-image" loading="eager" decoding="async" /></a></div>
+      <div class="panel-brand"><a href="/" class="panel-logo" aria-label="SeniorLink — ir al inicio"><img src="/LOGO/LOGO.png" alt="SeniorLink — acompañamiento de confianza" class="panel-brand-image" loading="eager" decoding="async" /></a></div>
       <div class="panel-header-actions"><span class="panel-role">{label}</span><button id="logout" type="button" class="panel-logout">Cerrar sesión</button></div>
     </header>
+    <div class="panel-toolbar" role="toolbar" aria-label="Opciones de visualización">
+      <button id="menu-toggle" type="button" class="panel-menu-toggle" aria-label="Ocultar barra lateral" aria-controls="panel-sidebar" aria-expanded="true">
+        <svg class="panel-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>
+        <span class="menu-toggle-text">Ocultar barra lateral</span>
+      </button>
+    </div>
     <div class="panel-layout">
       <aside class="panel-sidebar" id="panel-sidebar">
         <div class="sidebar-caption">MI ESPACIO</div>
@@ -94,7 +100,9 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
         ? sidebar?.classList.contains('is-open') === true
         : !layout?.classList.contains('is-collapsed');
       menuToggle?.setAttribute('aria-expanded', String(expanded));
-      menuToggle?.setAttribute('aria-label', expanded ? 'Ocultar menú' : 'Mostrar menú');
+      menuToggle?.setAttribute('aria-label', expanded ? 'Ocultar barra lateral' : 'Mostrar barra lateral');
+      const toggleText = menuToggle?.querySelector<HTMLElement>('.menu-toggle-text');
+      if (toggleText) toggleText.textContent = expanded ? 'Ocultar barra lateral' : 'Mostrar barra lateral';
     };
     if (!mobileQuery.matches && localStorage.getItem(desktopStorageKey) === 'true') {
       layout?.classList.add('is-collapsed');
@@ -195,13 +203,13 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
   .panel-logo-mark {display:inline-flex;align-items:center;justify-content:center;margin-right:10px;width:42px;height:42px;background:#0d9488;border-radius:13px;color:white!important;letter-spacing:0}
   .panel-brand {display:flex;align-items:center;gap:16px;min-width:0}
   .panel-header-actions {display:flex;align-items:center;gap:16px}
-  .panel-menu-toggle {display:inline-flex;align-items:center;gap:8px;border:1px solid #cee5dd;background:#eaf8f3;color:#087a70;border-radius:11px;padding:10px 13px;cursor:pointer;font:600 12px Lexend}
-  .panel-menu-toggle span:first-child {font-size:19px;line-height:1}
+  .panel-toolbar{height:48px;display:flex;align-items:center;padding:0 32px;background:#fbfdfc;border-bottom:1px solid #e3eeeb}\n  .panel-menu-toggle{display:inline-flex;align-items:center;gap:9px;border:0;background:transparent;color:#4e7067;border-radius:8px;padding:8px 10px;cursor:pointer;font:600 12px Lexend;transition:background .15s,color .15s}\n  .panel-menu-toggle:hover{background:#e7f7f2;color:#087a70}\n  .panel-toggle-icon{width:18px;height:18px;flex:none}
+
   .panel-menu-toggle:focus-visible {outline:3px solid #85d8c6;outline-offset:2px}
   .panel-role {color:#087a70;background:#e7f7f2;border-radius:999px;font-size:12px;font-weight:600;padding:9px 13px}
   .panel-logout {background:white;color:#087a70;border:1px solid #cee5dd;border-radius:11px;padding:11px 15px;cursor:pointer;font:600 12px Lexend}
   .panel-logout:hover {background:#effbf7}
-  .panel-layout {display:grid;grid-template-columns:230px minmax(0,1fr);min-height:calc(100vh - 76px);transition:grid-template-columns .2s}
+  .panel-layout {display:grid;grid-template-columns:230px minmax(0,1fr);min-height:calc(100vh - 124px);transition:grid-template-columns .2s}
   .panel-layout.is-collapsed {grid-template-columns:0 minmax(0,1fr)}
   .panel-layout.is-collapsed .panel-sidebar {visibility:hidden;padding-left:0;padding-right:0;overflow:hidden;border:0}
   .panel-sidebar.is-open {visibility:visible}
@@ -253,7 +261,7 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
   @media(max-width:1000px){.dashboard-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.panel-layout{grid-template-columns:180px 1fr}}
   @media(max-width:700px){
     .panel-layout,.panel-layout.is-collapsed{display:block}
-    .panel-sidebar,.panel-layout.is-collapsed .panel-sidebar{position:fixed;z-index:40;top:68px;left:0;bottom:0;width:min(300px,86vw);overflow-y:auto;box-shadow:12px 0 30px #183a3022;transform:translateX(-105%);transition:transform .2s ease;padding:20px 15px;visibility:hidden}
+    .panel-sidebar,.panel-layout.is-collapsed .panel-sidebar{position:fixed;z-index:40;top:116px;left:0;bottom:0;width:min(300px,86vw);overflow-y:auto;box-shadow:12px 0 30px #183a3022;transform:translateX(-105%);transition:transform .2s ease;padding:20px 15px;visibility:hidden}
     .panel-sidebar.is-open,.panel-layout.is-collapsed .panel-sidebar.is-open{visibility:visible;transform:translateX(0);display:flex;flex-direction:column}
     .panel-layout.is-collapsed .panel-sidebar:not(.is-open){visibility:hidden}
     .sidebar-caption,.sidebar-foot{display:block}
@@ -261,7 +269,7 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
     .panel-header{padding:0 15px;height:68px}
     .panel-logo{font-size:19px}
     .panel-logo-mark{width:36px;height:36px}
-    .panel-role,.menu-toggle-text{display:none}
+    .panel-role{display:none}\n    .panel-toolbar{height:48px;padding:0 15px}\n    .panel-menu-toggle{font-size:11px}
     .panel-content{padding:23px 15px}
     .panel-banner>span,.panel-intro-icon{display:none}
     .panel-banner{padding:24px}
