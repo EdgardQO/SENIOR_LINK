@@ -170,8 +170,9 @@ async function usersModule(root: HTMLElement) {
       [u.dni,u.nombres,u.apellidos,u.correoElectronico].some(x=>String(x||'').toLowerCase().includes(q)));
     const specialized = Boolean(filter);
     const columns = specialized ? PROFILE_COLUMNS[filter] ?? [] : [];
-    table(root,['DNI','Nombre','Correo','Teléfono',...columns.map(([,label])=>label),'Estado','Acciones'],list,(u,tr)=>{
+    table(root,['DNI','Nombre','Correo','Teléfono',...(!specialized?['Rol']:[]),...columns.map(([,label])=>label),'Estado','Acciones'],list,(u,tr)=>{
       td(tr,u.dni);td(tr,[u.nombres,u.apellidos].join(' '));td(tr,u.correoElectronico);td(tr,u.telefono);
+      if(!specialized) td(tr,LABELS[u.rolNombre] || u.rolNombre);
       const profile=profiles[u.dni]?.[PROFILE_KEY[u.rolNombre]];
       for (const [key] of columns) td(tr,profile ? displayProfileValue(profile,key) : 'No disponible');
       td(tr,u.estaActivo?'Activo':'Inactivo');
