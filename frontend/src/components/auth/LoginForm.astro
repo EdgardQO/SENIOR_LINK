@@ -22,9 +22,9 @@
     </div>
 
     <label class="check-row">
-      <input type="checkbox" checked /> Mantener sesión iniciada
+      <input type="checkbox" id="lRemember" /> Mantener sesión iniciada
     </label>
-    <a class="forgot" href="#">¿Olvidaste tu contraseña?</a>
+    <p class="sub">Si olvidaste tu contraseña, contacta con soporte.</p>
     <button class="btn" type="submit">Ingresar</button>
   </form>
 
@@ -182,33 +182,60 @@ input.invalid {
 }
 </style>
 
-<script is:inline>
+<script is:inline define:vars={{ apiUrl: import.meta.env.PUBLIC_API_URL || 'http://localhost:8080' }}>
 const emailOk = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-const mark = (el, bad) => el && el.classList.toggle('invalid', bad);
-
-document.querySelectorAll('.toggle').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const input = document.getElementById(btn.dataset.target);
-    if (!input) return;
-    const hidden = input.type === 'password';
-    input.type = hidden ? 'text' : 'password';
-    btn.textContent = hidden ? 'Ocultar' : 'Mostrar';
-    btn.setAttribute('aria-label', hidden ? 'Ocultar contraseña' : 'Mostrar contraseña');
-  });
-});
-
-document.getElementById('loginForm')?.addEventListener('submit', e => {
+document.querySelectorAll('.toggle').forEach(btn => btn.addEventListener('click', () => {
+  const input = document.getElementById(btn.dataset.target);
+  if (!input) return;
+  const visible = input.type === 'password';
+  input.type = visible ? 'text' : 'password';
+  btn.textContent = visible ? 'Ocultar' : 'Mostrar';
+}));
+document.getElementById('loginForm')?.addEventListener('submit', async e => {
   e.preventDefault();
   const email = document.getElementById('lEmail');
   const pass = document.getElementById('lPass');
-  const lMsg = document.getElementById('lMsg');
-  const badE = !emailOk(email.value.trim());
-  const badP = !pass.value;
-  mark(email, badE);
-  mark(pass, badP);
-  if (lMsg) lMsg.textContent = badE ? 'Escribe un correo válido.' : badP ? 'Escribe tu contraseña.' : '';
-  if (badE || badP) return;
-
-  console.log('Login iniciado:', { email: email.value.trim() });
+  const msg = document.getElementById('lMsg');
+  const button = e.currentTarget.querySelector('button[type="submit"]');
+  msg.textContent = '';
+  if (!emailOk(email.value.trim()) || !pass.value) {
+    msg.textContent = 'Ingresa un correo válido y tu contraseña.';
+    return;
+  }
+  button.disabled = true;
+  button.textContent = 'Ingresando...';
+  try {
+    const response = await fetch(apiUrl + '/api/v1/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ correoElectronico: email.value.trim(), contrasena: pass.value })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(response.status === 401 ? 'Correo o contraseña incorrectos.' : (data.error || data.message || 'No se pudo iniciar sesión.'));
+    if (!data.accessToken || !data.rutaInicio) throw new Error('Respuesta de autenticación incompleta.');
+    const storage = document.getElementById('lRemember').checked ? localStorage : sessionStorage;
+    localStorage.removeItem('seniorlink_auth');
+    sessionStorage.removeItem('seniorlink_auth');
+    storage.setItem('seniorlink_auth', JSON.stringify({
+      accessToken: data.accessToken,
+      tokenType: data.tokenType,
+      expiresAt: Date.now() + Number(data.expiresIn || 3600) * 1000,
+      dni: data.dni,
+      rolNombre: data.rolNombre,
+      nombres: data.nombres
+    }));
+    window.location.assign(data.rutaInicio);
+  } catch (error) {
+    msg.textContent = error instanceof TypeError ? 'No se pudo conectar con el servidor. Verifica que la API esté encendida.' : error.message;
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Ingresar';
+  }
 });
+const params = new URLSearchParams(window.location.search);
+if (params.get('registro') === 'ok') {
+  const msg = document.getElementById('lMsg');
+  msg.style.color = '#047857';
+  msg.textContent = 'Cuenta creada correctamente. Ya puedes iniciar sesión.';
+}
 </script>

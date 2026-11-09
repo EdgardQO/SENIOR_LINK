@@ -16,24 +16,7 @@
       </div>
     </fieldset>
 
-    <div class="photo-field">
-      <label id="rPhotoLbl">Tu foto</label>
-      <div class="photo-row">
-        <div class="preview" id="rPreview" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="8.5" r="4"></circle><path d="M4.5 20.5c.6-4 3.6-6 7.5-6s6.9 2 7.5 6"></path>
-          </svg>
-        </div>
-        <div>
-          <div class="photo-actions">
-            <button type="button" class="btn-ghost" id="rPhotoBtn">Subir foto</button>
-            <button type="button" class="btn-ghost" id="rPhotoDel" hidden>Quitar</button>
-          </div>
-          <p class="hint">Una foto de tu rostro, de frente y con buena luz.</p>
-        </div>
-        <input class="sr" type="file" id="rPhoto" accept="image/jpeg,image/png,image/webp" aria-labelledby="rPhotoLbl" tabindex="-1" />
-      </div>
-    </div>
+    <p class="hint">La foto de perfil se podrá agregar más adelante.</p>
 
     <div class="row">
       <div class="field"><label for="rNombres">Nombres</label><input id="rNombres" type="text" placeholder="Ej. María" autocomplete="given-name" /></div>
@@ -51,18 +34,11 @@
     <!-- Acompañante -->
     <div class="extra" data-role="acompanante" hidden>
       <h3>Tu perfil de acompañante</h3>
-      <div class="field">
-        <label for="aNivel">Nivel académico</label>
-        <select id="aNivel">
-          <option value="">Selecciona</option>
-          <option>Secundaria completa</option>
-          <option>Estudiante técnico</option>
-          <option>Técnico titulado</option>
-          <option>Estudiante universitario</option>
-          <option>Bachiller o titulado</option>
-          <option>Otro</option>
-        </select>
+      <div class="row">
+        <div class="field"><label for="aCiclo">Ciclo académico (1 a 20)</label><input id="aCiclo" type="number" min="1" max="20" step="1" /></div>
+        <div class="field"><label for="aCarrera">Carrera</label><input id="aCarrera" type="text" maxlength="150" placeholder="Ej. Enfermería" /></div>
       </div>
+      <div class="field"><label for="aRuc">RUC de institución aliada <span class="opt">(opcional)</span></label><input id="aRuc" type="text" inputmode="numeric" maxlength="11" placeholder="11 dígitos" /><p class="hint">La institución debe estar registrada previamente.</p></div>
       <div class="field">
         <label for="aTarifa">Tarifa por hora (S/)</label>
         <input id="aTarifa" type="number" min="1" step="0.5" placeholder="Ej. 25" />
@@ -100,7 +76,7 @@
     <div class="extra" data-role="familiar" hidden>
       <h3>Sobre tu familiar</h3>
       <div class="field">
-        <label for="fParentesco">¿Qué parentesco tienes con el adulto mayor?</label>
+        <label for="fParentesco">¿Qué parentesco tienes con el adulto mayor? <span class="opt">(opcional)</span></label>
         <select id="fParentesco">
           <option value="">Selecciona</option>
           <option value="1">Padre</option><option value="2">Madre</option>
@@ -112,11 +88,7 @@
           <option value="12">Tutor legal</option><option value="13">Otro familiar</option>
         </select>
       </div>
-      <div class="field">
-        <label for="fDniAdulto">DNI del adulto mayor <span class="opt">(opcional)</span></label>
-        <input id="fDniAdulto" type="text" inputmode="numeric" maxlength="8" placeholder="8 dígitos" autocomplete="off" />
-        <p class="hint">Si ya tiene cuenta, le enviaremos una solicitud para vincularlos.</p>
-      </div>
+      <p class="hint">La vinculación con un adulto mayor estará disponible después del registro.</p>
       <div class="field">
         <label for="fTelAlt">Teléfono alternativo <span class="opt">(opcional)</span></label>
         <input id="fTelAlt" type="tel" placeholder="+51 987 654 321" autocomplete="off" />
@@ -523,231 +495,93 @@ fieldset.roles legend {
 }
 </style>
 
-<script is:inline>
+<script is:inline define:vars={{ apiUrl: import.meta.env.PUBLIC_API_URL || 'http://localhost:8080' }}>
+const g = id => document.getElementById(id);
+const val = id => g(id).value.trim();
+const digits = v => v.replace(/\D/g, '');
 const emailOk = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-const mark = (el, bad) => el && el.classList.toggle('invalid', bad);
-
-document.querySelectorAll('.toggle').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const input = document.getElementById(btn.dataset.target);
-    if (!input) return;
-    const hidden = input.type === 'password';
-    input.type = hidden ? 'text' : 'password';
-    btn.textContent = hidden ? 'Ocultar' : 'Mostrar';
-    btn.setAttribute('aria-label', hidden ? 'Ocultar contraseña' : 'Mostrar contraseña');
-  });
+const currentRole = () => document.querySelector('input[name="rRole"]:checked')?.value;
+document.querySelectorAll('.toggle').forEach(btn => btn.addEventListener('click', () => {
+  const input = g(btn.dataset.target);
+  const visible = input.type === 'password';
+  input.type = visible ? 'text' : 'password';
+  btn.textContent = visible ? 'Ocultar' : 'Mostrar';
+}));
+g('rPass')?.addEventListener('input', e => {
+  const v = e.target.value;
+  const strength = Number(v.length >= 8) + Number(/[a-z]/i.test(v) && /\d/.test(v)) + Number(/[A-Z]/.test(v) && /[a-z]/.test(v)) + Number(/[^A-Za-z0-9]/.test(v) && v.length >= 10);
+  g('meter').dataset.level = v ? Math.max(1, strength) : 0;
 });
-
-const rPass = document.getElementById('rPass');
-if (rPass) {
-  rPass.addEventListener('input', e => {
-    const v = e.target.value;
-    let n = 0;
-    if (v.length >= 8) n++;
-    if (/[a-z]/i.test(v) && /\d/.test(v)) n++;
-    if (/[A-Z]/.test(v) && /[a-z]/.test(v)) n++;
-    if (/[^A-Za-z0-9]/.test(v) && v.length >= 10) n++;
-    const meter = document.getElementById('meter');
-    if (meter) meter.dataset.level = v ? n || 1 : 0;
-  });
-}
-
-const ROLE_ID = { acompanante: 2, adulto_mayor: 3, familiar: 5 };
-const currentRole = () => (document.querySelector('input[name="rRole"]:checked') || {}).value || null;
-
 function syncRole() {
   const role = currentRole();
-  document.querySelectorAll('#registerForm .extra').forEach(sec => {
-    const on = sec.dataset.role === role;
-    sec.hidden = !on;
-    sec.querySelectorAll('input,select,textarea').forEach(el => {
-      el.disabled = !on;
-      el.classList.remove('invalid');
-    });
+  document.querySelectorAll('#registerForm .extra').forEach(section => {
+    const active = section.dataset.role === role;
+    section.hidden = !active;
+    section.querySelectorAll('input,select,textarea').forEach(input => input.disabled = !active);
   });
 }
-
-document.querySelectorAll('input[name="rRole"]').forEach(r => r.addEventListener('change', () => {
-  document.getElementById('rRoles')?.classList.remove('invalid');
-  const rMsg = document.getElementById('rMsg');
-  if (rMsg) rMsg.textContent = '';
-  syncRole();
-}));
-
-const mNac = document.getElementById('mNacimiento');
-if (mNac) mNac.max = new Date().toISOString().slice(0, 10);
+document.querySelectorAll('input[name="rRole"]').forEach(radio => radio.addEventListener('change', syncRole));
 syncRole();
-
-let photoData = '';
-const rPreview = document.getElementById('rPreview');
-const PHOTO_ICON = rPreview ? rPreview.innerHTML : '';
-
-function setPhoto(data) {
-  photoData = data;
-  if (!rPreview) return;
-  rPreview.innerHTML = data ? '<img src="' + data + '" alt="Vista previa de tu foto">' : PHOTO_ICON;
-  rPreview.classList.toggle('has', !!data);
-  rPreview.classList.remove('invalid');
-  const rPhotoBtn = document.getElementById('rPhotoBtn');
-  if (rPhotoBtn) {
-    rPhotoBtn.classList.remove('invalid');
-    rPhotoBtn.textContent = data ? 'Cambiar foto' : 'Subir foto';
-  }
-  const rPhotoDel = document.getElementById('rPhotoDel');
-  if (rPhotoDel) rPhotoDel.hidden = !data;
-}
-
-function resizePhoto(file) {
-  return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file), img = new Image();
-    img.onload = () => {
-      const side = Math.min(img.width, img.height), size = 256;
-      const c = document.createElement('canvas');
-      c.width = c.height = size;
-      c.getContext('2d').drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, size, size);
-      URL.revokeObjectURL(url);
-      resolve(c.toDataURL('image/jpeg', 0.85));
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject();
-    };
-    img.src = url;
-  });
-}
-
-document.getElementById('rPhotoBtn')?.addEventListener('click', () => document.getElementById('rPhoto')?.click());
-document.getElementById('rPhotoDel')?.addEventListener('click', () => {
-  const p = document.getElementById('rPhoto');
-  if (p) p.value = '';
-  setPhoto('');
-  document.getElementById('rPhotoBtn')?.focus();
-});
-
-document.getElementById('rPhoto')?.addEventListener('change', async e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const rMsg = document.getElementById('rMsg');
-  if (!/^image\/(jpeg|png|webp)$/.test(file.type)) {
-    if (rMsg) rMsg.textContent = 'Elige una imagen JPG, PNG o WebP.';
-    return;
-  }
-  if (file.size > 8 * 1024 * 1024) {
-    if (rMsg) rMsg.textContent = 'La foto pesa más de 8 MB. Elige una más ligera.';
-    return;
-  }
-  try {
-    setPhoto(await resizePhoto(file));
-    if (rMsg) rMsg.textContent = '';
-  } catch (err) {
-    if (rMsg) rMsg.textContent = 'No se pudo leer la imagen. Prueba con otra.';
-  }
-});
-
+g('mNacimiento').max = new Date().toISOString().slice(0, 10);
 function ageFrom(iso) {
   if (!iso) return null;
-  const d = new Date(iso + 'T00:00:00');
-  if (isNaN(d)) return null;
-  const n = new Date();
-  let a = n.getFullYear() - d.getFullYear();
-  const m = n.getMonth() - d.getMonth();
-  if (m < 0 || (m === 0 && n.getDate() < d.getDate())) a--;
-  return a;
+  const birth = new Date(iso + 'T00:00:00');
+  if (Number.isNaN(birth.getTime())) return null;
+  const now = new Date();
+  let age = now.getFullYear() - birth.getFullYear();
+  if (now.getMonth() < birth.getMonth() || (now.getMonth() === birth.getMonth() && now.getDate() < birth.getDate())) age--;
+  return age;
 }
-
-document.getElementById('registerForm')?.addEventListener('submit', e => {
-  e.preventDefault();
+g('registerForm')?.addEventListener('submit', async event => {
+  event.preventDefault();
   const role = currentRole();
-  const g = id => document.getElementById(id);
-  const val = id => g(id).value.trim();
-  const digits = v => v.replace(/\D/g, '');
-  const checks = [
-    [document.querySelector('input[name="rRole"]'), !role, 'Elige cómo usarás SeniorLink.'],
-    [g('rPhotoBtn'), !photoData, 'Sube tu foto para continuar.'],
-    [g('rNombres'), val('rNombres').length < 2, 'Escribe tus nombres.'],
-    [g('rApellidos'), val('rApellidos').length < 2, 'Escribe tus apellidos.'],
-    [g('rDni'), !/^\d{8}$/.test(val('rDni')), 'El DNI debe tener 8 dígitos.'],
-    [g('rPhone'), digits(val('rPhone')).length < 9, 'Escribe un celular válido.'],
-    [g('rEmail'), !emailOk(val('rEmail')), 'Escribe un correo válido.']
-  ];
-
+  const msg = g('rMsg');
+  const button = event.currentTarget.querySelector('button[type="submit"]');
+  const fail = (message, id) => { msg.textContent = message; if (id) g(id)?.focus(); };
+  msg.textContent = '';
+  if (!role) return fail('Selecciona un tipo de cuenta.');
+  if (val('rNombres').length < 2 || val('rApellidos').length < 2) return fail('Completa tus nombres y apellidos.', 'rNombres');
+  if (!/^\d{8}$/.test(val('rDni'))) return fail('El DNI debe tener 8 dígitos.', 'rDni');
+  if (digits(val('rPhone')).length < 9) return fail('Ingresa un celular válido.', 'rPhone');
+  if (!emailOk(val('rEmail'))) return fail('Ingresa un correo válido.', 'rEmail');
+  if (val('rPass').length < 8 || val('rPass').length > 72 || !/[a-z]/i.test(val('rPass')) || !/\d/.test(val('rPass'))) return fail('La contraseña debe tener entre 8 y 72 caracteres, letras y números.', 'rPass');
+  if (!g('rTerms').checked) return fail('Debes aceptar los términos para continuar.', 'rTerms');
+  const payload = {
+    dni: val('rDni'), nombres: val('rNombres'), apellidos: val('rApellidos'),
+    telefono: val('rPhone'), correoElectronico: val('rEmail').toLowerCase(),
+    contrasena: val('rPass'), rol: role.toUpperCase()
+  };
   if (role === 'acompanante') {
-    checks.push(
-      [g('aNivel'), !g('aNivel').value, 'Elige tu nivel académico.'],
-      [g('aTarifa'), !(parseFloat(g('aTarifa').value) > 0), 'Escribe tu tarifa por hora.']
-    );
+    const ciclo = Number(val('aCiclo')), tarifa = Number(val('aTarifa'));
+    if (!Number.isInteger(ciclo) || ciclo < 1 || ciclo > 20) return fail('El ciclo debe ser un entero entre 1 y 20.', 'aCiclo');
+    if (!val('aCarrera') || val('aCarrera').length > 150) return fail('Ingresa tu carrera.', 'aCarrera');
+    if (!val('aTarifa') || !Number.isFinite(tarifa) || tarifa < 0 || !/^\d+(\.\d{1,2})?$/.test(val('aTarifa'))) return fail('Ingresa una tarifa válida con máximo dos decimales.', 'aTarifa');
+    if (val('aRuc') && !/^\d{11}$/.test(val('aRuc'))) return fail('El RUC debe tener 11 dígitos.', 'aRuc');
+    payload.acompanante = { ciclo, carrera: val('aCarrera'), biografia: val('aBio') || null, tarifaBasePorHora: tarifa, tarifaActualPorHora: tarifa, institucionRuc: val('aRuc') || null };
   }
   if (role === 'adulto_mayor') {
-    const age = ageFrom(g('mNacimiento').value);
-    const ageMsg = age === null ? 'Escribe tu fecha de nacimiento.'
-      : 'Este perfil es para personas de 60 años o más. Si buscas compañía para un familiar, elige «Familiar».';
-    checks.push(
-      [g('mNacimiento'), age === null || age < 60 || age > 110, ageMsg],
-      [g('mContacto'), val('mContacto').length < 3, 'Escribe el nombre de tu contacto de emergencia.'],
-      [g('mTelEmerg'), digits(val('mTelEmerg')).length < 9, 'Escribe un teléfono de emergencia válido.']
-    );
+    const age = ageFrom(val('mNacimiento'));
+    if (age === null || age < 60 || age > 110) return fail('La fecha de nacimiento debe corresponder a una persona de 60 años o más.', 'mNacimiento');
+    if (!val('mContacto') || !val('mTelEmerg')) return fail('Completa los datos de contacto de emergencia.', 'mContacto');
+    payload.adultoMayor = { fechaNacimiento: val('mNacimiento'), direccionResidencia: val('mDireccion') || null, contactoEmergencia: val('mContacto'), telefonoEmergencia: val('mTelEmerg'), observacionesMedicas: val('mObs') || null };
   }
   if (role === 'familiar') {
-    const dniA = val('fDniAdulto'), telA = val('fTelAlt');
-    checks.push(
-      [g('fParentesco'), !g('fParentesco').value, 'Elige tu parentesco con el adulto mayor.'],
-      [g('fDniAdulto'), dniA !== '' && !/^\d{8}$/.test(dniA), 'El DNI del adulto mayor debe tener 8 dígitos.'],
-      [g('fDniAdulto'), dniA !== '' && dniA === val('rDni'), 'El DNI del adulto mayor no puede ser el tuyo.'],
-      [g('fTelAlt'), telA !== '' && digits(telA).length < 9, 'Escribe un teléfono alternativo válido.']
-    );
+    payload.familiar = { parentescoPrincipalId: val('fParentesco') ? Number(val('fParentesco')) : null, telefonoAlternativo: val('fTelAlt') || null };
   }
-
-  const pass = g('rPass');
-  checks.push(
-    [pass, !(pass.value.length >= 8 && /[a-z]/i.test(pass.value) && /\d/.test(pass.value)), 'La contraseña necesita 8 o más caracteres con letras y números.'],
-    [g('rTerms'), !g('rTerms').checked, 'Acepta los términos para continuar.']
-  );
-
-  checks.forEach(([el, bad]) => mark(el, bad));
-  document.getElementById('rRoles')?.classList.toggle('invalid', !role);
-  document.getElementById('rPreview')?.classList.toggle('invalid', !photoData);
-  const first = checks.find(c => c[1]);
-  const rMsg = document.getElementById('rMsg');
-  if (rMsg) rMsg.textContent = first ? first[2] : '';
-  if (first) {
-    first[0].focus();
-    return;
+  button.disabled = true;
+  button.textContent = 'Creando cuenta...';
+  try {
+    const response = await fetch(apiUrl + '/api/v1/auth/registro', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.detail || data.message || data.error || 'No se pudo completar el registro.');
+    window.location.assign('/login?registro=ok');
+  } catch (error) {
+    fail(error instanceof TypeError ? 'No se pudo conectar con la API. Verifica que esté encendida.' : error.message);
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Crear cuenta';
   }
-
-  const payload = {
-    usuario: {
-      dni: val('rDni'),
-      rol_id: ROLE_ID[role],
-      correo_electronico: val('rEmail').toLowerCase(),
-      nombres: val('rNombres'),
-      apellidos: val('rApellidos'),
-      telefono: val('rPhone'),
-      foto_base64: photoData
-    }
-  };
-  if (role === 'acompanante') payload.perfil = {
-    nivel_academico: g('aNivel').value,
-    tarifa_base_por_hora: parseFloat(g('aTarifa').value),
-    biografia: val('aBio') || null
-  };
-  if (role === 'adulto_mayor') payload.perfil = {
-    fecha_nacimiento: g('mNacimiento').value,
-    direccion_residencia: val('mDireccion') || null,
-    contacto_emergencia: val('mContacto'),
-    telefono_emergencia: val('mTelEmerg'),
-    observaciones_medicas: val('mObs') || null
-  };
-  if (role === 'familiar') {
-    payload.perfil = {
-      parentesco_principal_id: parseInt(g('fParentesco').value, 10),
-      telefono_alternativo: val('fTelAlt') || null
-    };
-    if (val('fDniAdulto')) payload.vinculacion = {
-      adulto_mayor_dni: val('fDniAdulto'),
-      parentesco_id: payload.perfil.parentesco_principal_id
-    };
-  }
-
-  console.log('Registro enviado:', { ...payload, usuario: { ...payload.usuario, foto_base64: photoData.slice(0, 30) + '…' } });
 });
 </script>
