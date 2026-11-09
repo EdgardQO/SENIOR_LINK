@@ -182,7 +182,8 @@ input.invalid {
 }
 </style>
 
-<script is:inline define:vars={{ apiUrl: import.meta.env.PUBLIC_API_URL || 'http://localhost:8080' }}>
+<script>
+import { API_URL, saveSession } from '../../lib/auth.js';
 const emailOk = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 document.querySelectorAll('.toggle').forEach(btn => btn.addEventListener('click', () => {
   const input = document.getElementById(btn.dataset.target);
@@ -205,7 +206,7 @@ document.getElementById('loginForm')?.addEventListener('submit', async e => {
   button.disabled = true;
   button.textContent = 'Ingresando...';
   try {
-    const response = await fetch(apiUrl + '/api/v1/auth/login', {
+    const response = await fetch(API_URL + '/api/v1/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ correoElectronico: email.value.trim(), contrasena: pass.value })
@@ -213,18 +214,8 @@ document.getElementById('loginForm')?.addEventListener('submit', async e => {
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(response.status === 401 ? 'Correo o contraseña incorrectos.' : (data.error || data.message || 'No se pudo iniciar sesión.'));
     if (!data.accessToken || !data.rutaInicio) throw new Error('Respuesta de autenticación incompleta.');
-    const storage = document.getElementById('lRemember').checked ? localStorage : sessionStorage;
-    localStorage.removeItem('seniorlink_auth');
-    sessionStorage.removeItem('seniorlink_auth');
-    storage.setItem('seniorlink_auth', JSON.stringify({
-      accessToken: data.accessToken,
-      tokenType: data.tokenType,
-      expiresAt: Date.now() + Number(data.expiresIn || 3600) * 1000,
-      dni: data.dni,
-      rolNombre: data.rolNombre,
-      nombres: data.nombres
-    }));
-    window.location.assign(data.rutaInicio);
+    const route = saveSession(data, document.getElementById('lRemember').checked);
+    window.location.replace(route);
   } catch (error) {
     msg.textContent = error instanceof TypeError ? 'No se pudo conectar con el servidor. Verifica que la API esté encendida.' : error.message;
   } finally {

@@ -1,0 +1,40 @@
+---
+import RoleLayout from '../layouts/RoleLayout.astro';
+---
+<RoleLayout role="SOPORTE" label="Soporte" description="Accede a tu información de trabajo y al centro de atención.">
+  <section id="herramientas" class="dashboard-grid" aria-label="Herramientas del perfil">
+    <article class="dashboard-card"><span class="card-symbol" aria-hidden="true">◷</span><h3>Mi turno</h3><p>Consulta el turno asignado.</p></article>
+<article class="dashboard-card"><span class="card-symbol" aria-hidden="true">☎</span><h3>Mi extensión</h3><p>Consulta tu extensión telefónica.</p></article>
+<article class="dashboard-card"><span class="card-symbol" aria-hidden="true">▤</span><h3>Incidencias</h3><p>El módulo de tickets estará disponible próximamente.</p></article>
+  </section>
+  <section id="mi-perfil">
+    <div class="section-heading"><h2>Mi información</h2><small>Datos de tu cuenta</small></div>
+    <div class="profile-box">
+      <div class="profile-grid">
+        <div><div class="profile-key">Nombre completo</div><div class="profile-value" data-field="usuario.nombreCompleto">Cargando...</div></div>
+        <div><div class="profile-key">Correo electrónico</div><div class="profile-value" data-field="usuario.correoElectronico">Cargando...</div></div>
+        <div><div class="profile-key">DNI</div><div class="profile-value" data-field="usuario.dni">Cargando...</div></div>
+        <div><div class="profile-key">Teléfono</div><div class="profile-value" data-field="usuario.telefono">Cargando...</div></div>
+        <div><div class="profile-key">Turno</div><div class="profile-value" data-field="soporte.turno">Cargando...</div></div>
+<div><div class="profile-key">Extensión telefónica</div><div class="profile-value" data-field="soporte.extensionTelefonica">Cargando...</div></div>
+<div><div class="profile-key">Casos atendidos</div><div class="profile-value" data-field="soporte.casosAtendidos">Cargando...</div></div>
+      </div>
+      <p class="profile-note">Esta información proviene de tu perfil registrado en SeniorLink.</p>
+    </div>
+  </section>
+  
+</RoleLayout>
+<script>
+  document.addEventListener('seniorlink:profile', event => {
+    const data = event.detail;
+    document.querySelectorAll('[data-field]').forEach(field => {
+      const path = field.dataset.field;
+      let value = path === 'usuario.nombreCompleto'
+        ? [data.usuario?.nombres, data.usuario?.apellidos].filter(Boolean).join(' ')
+        : path.split('.').reduce((current, key) => current?.[key], data);
+      if (path === 'acompanante.tarifaBasePorHora' && value != null) value = 'S/ ' + Number(value).toFixed(2);
+      field.textContent = value == null || String(value).trim() === '' ? 'No registrado' : String(value);
+    });
+  }, { once: true });
+  
+</script>

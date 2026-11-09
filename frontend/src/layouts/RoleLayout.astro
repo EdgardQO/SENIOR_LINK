@@ -1,0 +1,142 @@
+---
+import '../styles/global.css';
+interface Props {
+  role: string;
+  label: string;
+  description: string;
+}
+const { role, label, description } = Astro.props;
+---
+<!doctype html>
+<html lang="es" data-expected-role={role}>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <title>{label} | SeniorLink</title>
+</head>
+<body class="role-app">
+  <div id="session-loading" class="session-loading">Verificando tu sesión...</div>
+  <div id="app-shell" hidden>
+    <header class="panel-header">
+      <a href="/" class="panel-logo"><span class="panel-logo-mark">S</span>Senior<span>Link</span></a>
+      <div class="panel-header-actions"><span class="panel-role">{label}</span><button id="logout" type="button" class="panel-logout">Cerrar sesión</button></div>
+    </header>
+    <div class="panel-layout">
+      <aside class="panel-sidebar">
+        <div class="sidebar-caption">MI ESPACIO</div>
+        <a class="sidebar-link selected" href="#inicio">⌂ &nbsp; Inicio</a>
+        <a class="sidebar-link" href="#mi-perfil">◯ &nbsp; Mi perfil</a>
+        <a class="sidebar-link" href="#herramientas">▦ &nbsp; Herramientas</a>
+        <div class="sidebar-foot">● &nbsp; Cuenta protegida de SeniorLink</div>
+      </aside>
+      <main class="panel-content" id="inicio">
+        <div class="panel-intro">
+          <div><div class="panel-eyebrow">{label.toUpperCase()} / INICIO</div><h1>¡Hola, <span id="welcome-name">usuario</span>!</h1><p>{description}</p></div>
+          <span class="panel-intro-icon" aria-hidden="true">✦</span>
+        </div>
+        <div class="panel-banner">
+          <div><div class="banner-kicker">BIENVENIDO A SENIORLINK</div><h2>Tu espacio de {label.toLowerCase()}</h2><p>Tu información, tus herramientas y tus servicios en un solo lugar.</p></div><span aria-hidden="true">✳</span>
+        </div>
+        <div id="panel-error" class="panel-error" role="alert" hidden></div>
+        <slot />
+        <footer class="panel-footer">SeniorLink · Acompañamiento de confianza</footer>
+      </main>
+    </div>
+  </div>
+  <script>
+    import { getSession, clearSession, homeForRole, fetchProfile } from '../lib/auth.js';
+    const role = document.documentElement.dataset.expectedRole;
+    const current = getSession();
+    const loading = document.getElementById('session-loading');
+    const shell = document.getElementById('app-shell');
+    document.getElementById('logout')?.addEventListener('click', () => {
+      clearSession();
+      window.location.replace('/login');
+    });
+    async function initialize() {
+      if (!current) { window.location.replace('/login'); return; }
+      if (current.rolNombre !== role) { window.location.replace(homeForRole(current.rolNombre)); return; }
+      try {
+        const data = await fetchProfile(current);
+        if (data?.usuario?.dni !== current.dni || data?.usuario?.rolNombre !== role) {
+          const err = new Error('No tienes autorización para este perfil.');
+          err.status = 403;
+          throw err;
+        }
+        document.getElementById('welcome-name').textContent = data.usuario.nombres?.split(' ')[0] || 'usuario';
+        shell.hidden = false;
+        loading.hidden = true;
+        document.dispatchEvent(new CustomEvent('seniorlink:profile', { detail: data }));
+      } catch (err) {
+        if (err.status === 401 || err.status === 403) {
+          clearSession();
+          window.location.replace('/login');
+          return;
+        }
+        loading.textContent = 'No se pudo comprobar tu sesión. Revisa la conexión con el backend y vuelve a cargar la página.';
+        document.dispatchEvent(new CustomEvent('seniorlink:profile-error', { detail: err }));
+      }
+    }
+    initialize();
+  </script>
+</body>
+</html>
+<style is:global>
+  *,*::before,*::after { box-sizing:border-box; }
+  .role-app { margin:0; background:#f7faf9; font:14px Lexend,system-ui,sans-serif; color:#15302e; }
+  .role-app [hidden] {display:none!important}
+  .panel-header {display:flex;align-items:center;justify-content:space-between;height:76px;background:#fff;border-bottom:1px solid #e3eeeb;padding:0 32px;}
+  .panel-logo {display:flex;align-items:center;text-decoration:none;color:#182f2d;font-size:23px;font-weight:700;letter-spacing:-.8px;}
+  .panel-logo span:last-child {color:#0d9488;}
+  .panel-logo-mark {display:inline-flex;align-items:center;justify-content:center;margin-right:10px;width:42px;height:42px;background:#0d9488;border-radius:13px;color:white!important;letter-spacing:0}
+  .panel-header-actions {display:flex;align-items:center;gap:16px}
+  .panel-role {color:#087a70;background:#e7f7f2;border-radius:999px;font-size:12px;font-weight:600;padding:9px 13px}
+  .panel-logout {background:white;color:#087a70;border:1px solid #cee5dd;border-radius:11px;padding:11px 15px;cursor:pointer;font:600 12px Lexend}
+  .panel-logout:hover {background:#effbf7}
+  .panel-layout {display:grid;grid-template-columns:230px minmax(0,1fr);min-height:calc(100vh - 76px)}
+  .panel-sidebar {display:flex;flex-direction:column;gap:6px;background:#fff;border-right:1px solid #e3eeeb;padding:32px 15px}
+  .sidebar-caption {font-size:11px;color:#9aada9;letter-spacing:2px;font-weight:700;margin:0 15px 12px}
+  .sidebar-link {text-decoration:none;color:#607773;padding:14px;border-radius:11px;font-weight:500}
+  .sidebar-link:hover,.sidebar-link.selected {color:#087a70;background:#e7f7f2}
+  .sidebar-foot {font-size:11px;color:#91a6a1;margin-top:auto;padding:18px 10px}
+  .panel-content {max-width:1450px;width:100%;padding:36px clamp(20px,4vw,60px);margin:0 auto}
+  .panel-intro {display:flex;justify-content:space-between;align-items:center;gap:16px}
+  .panel-eyebrow {color:#0d9488;font-size:11px;font-weight:700;letter-spacing:1px;margin-bottom:9px}
+  .panel-intro h1 {font-size:clamp(25px,3vw,33px);letter-spacing:-1px;margin:0}
+  .panel-intro p {font-size:13px;color:#80918d;line-height:1.7;margin:10px 0 23px}
+  .panel-intro-icon {font-size:24px;color:#0d9488;background:#e5f7f0;border-radius:13px;padding:14px}
+  .panel-banner {border-radius:18px;background:linear-gradient(105deg,#0b8177,#0d9488);min-height:164px;color:white;padding:29px 32px;display:flex;justify-content:space-between;align-items:center}
+  .banner-kicker {font-size:10px;opacity:.82;letter-spacing:1.6px;font-weight:700}
+  .panel-banner h2 {font-size:24px;margin:14px 0 8px}
+  .panel-banner p {font-size:12px;opacity:.86;line-height:1.6;margin:0}
+  .panel-banner>span {font-size:95px;line-height:1;opacity:.17}
+  .dashboard-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:17px;margin:24px 0 32px}
+  .dashboard-card,.profile-box,.section-box {border:1px solid #e2ece8;border-radius:17px;background:white;padding:24px;box-shadow:0 5px 18px #145e530a}
+  .dashboard-card {min-height:162px}
+  .card-symbol {display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;color:#0d9488;background:#eaf8f3;font-size:23px;margin-bottom:18px}
+  .dashboard-card h3 {font-size:15px;margin:0 0 8px}
+  .dashboard-card p {font-size:12px;line-height:1.7;color:#819490;margin:0}
+  .section-heading {display:flex;align-items:center;justify-content:space-between;margin:24px 0 16px;gap:10px}
+  .section-heading h2 {font-size:19px;margin:0}
+  .section-heading small {color:#8c9e99;font-size:11px}
+  .profile-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:19px}
+  .profile-key {font-size:12px;color:#859a94;margin-bottom:6px}
+  .profile-value {font-size:14px;font-weight:600;overflow-wrap:anywhere}
+  .profile-note {font-size:12px;line-height:1.6;color:#80948d;margin:20px 0 0}
+  .panel-footer {text-align:center;color:#94a6a1;font-size:11px;padding:30px 0}
+  .panel-error {padding:16px;border-radius:11px;background:#fff4f4;color:#a83535;margin:20px 0}
+  .staff-input {border:1px solid #d6e7df;background:white;border-radius:10px;padding:11px;width:100%;font:inherit}
+  .staff-input:focus {outline:2px solid #b0e5da}
+  .staff-label {display:block;color:#547168;font-size:12px;font-weight:600;margin:0 0 7px}
+  .staff-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+  .staff-btn {font:600 13px Lexend;cursor:pointer;border:0;border-radius:11px;background:#0d9488;color:white;padding:13px 20px}
+  .staff-btn:hover {background:#0f766e}
+  .staff-btn:disabled {opacity:.6;cursor:wait}
+  .staff-message {margin:14px 0 0;font-size:12px;color:#087a70}
+  .staff-message.error {color:#b33939}
+  @media(max-width:1000px){.dashboard-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.panel-layout{grid-template-columns:180px 1fr}}
+  @media(max-width:700px){.panel-layout{display:block}.panel-sidebar{display:flex;flex-direction:row;overflow:auto;padding:10px;border-right:0;border-bottom:1px solid #e3eeeb}.sidebar-caption,.sidebar-foot{display:none}.sidebar-link{white-space:nowrap;padding:10px}.panel-header{padding:0 15px;height:68px}.panel-logo{font-size:19px}.panel-logo-mark{width:36px;height:36px}.panel-role{display:none}.panel-content{padding:23px 15px}.panel-banner>span,.panel-intro-icon{display:none}.panel-banner{padding:24px}.panel-banner h2{font-size:20px}.dashboard-grid,.profile-grid,.staff-grid{grid-template-columns:1fr}}
+</style>

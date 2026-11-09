@@ -1,0 +1,39 @@
+---
+import RoleLayout from '../layouts/RoleLayout.astro';
+---
+<RoleLayout role="FAMILIAR" label="Familiar" description="Consulta tus datos y la información relacionada con tu familia.">
+  <section id="herramientas" class="dashboard-grid" aria-label="Herramientas del perfil">
+    <article class="dashboard-card"><span class="card-symbol" aria-hidden="true">♡</span><h3>Mi parentesco</h3><p>Revisa el parentesco registrado.</p></article>
+<article class="dashboard-card"><span class="card-symbol" aria-hidden="true">☎</span><h3>Contacto alternativo</h3><p>Consulta tu teléfono adicional.</p></article>
+<article class="dashboard-card"><span class="card-symbol" aria-hidden="true">↗</span><h3>Vinculación familiar</h3><p>La vinculación con adultos mayores estará disponible próximamente.</p></article>
+  </section>
+  <section id="mi-perfil">
+    <div class="section-heading"><h2>Mi información</h2><small>Datos de tu cuenta</small></div>
+    <div class="profile-box">
+      <div class="profile-grid">
+        <div><div class="profile-key">Nombre completo</div><div class="profile-value" data-field="usuario.nombreCompleto">Cargando...</div></div>
+        <div><div class="profile-key">Correo electrónico</div><div class="profile-value" data-field="usuario.correoElectronico">Cargando...</div></div>
+        <div><div class="profile-key">DNI</div><div class="profile-value" data-field="usuario.dni">Cargando...</div></div>
+        <div><div class="profile-key">Teléfono</div><div class="profile-value" data-field="usuario.telefono">Cargando...</div></div>
+        <div><div class="profile-key">Parentesco principal</div><div class="profile-value" data-field="familiar.parentescoPrincipalNombre">Cargando...</div></div>
+<div><div class="profile-key">Teléfono alternativo</div><div class="profile-value" data-field="familiar.telefonoAlternativo">Cargando...</div></div>
+      </div>
+      <p class="profile-note">Esta información proviene de tu perfil registrado en SeniorLink.</p>
+    </div>
+  </section>
+  
+</RoleLayout>
+<script>
+  document.addEventListener('seniorlink:profile', event => {
+    const data = event.detail;
+    document.querySelectorAll('[data-field]').forEach(field => {
+      const path = field.dataset.field;
+      let value = path === 'usuario.nombreCompleto'
+        ? [data.usuario?.nombres, data.usuario?.apellidos].filter(Boolean).join(' ')
+        : path.split('.').reduce((current, key) => current?.[key], data);
+      if (path === 'acompanante.tarifaBasePorHora' && value != null) value = 'S/ ' + Number(value).toFixed(2);
+      field.textContent = value == null || String(value).trim() === '' ? 'No registrado' : String(value);
+    });
+  }, { once: true });
+  
+</script>
