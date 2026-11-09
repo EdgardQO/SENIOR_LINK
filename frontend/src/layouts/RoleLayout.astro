@@ -413,4 +413,15 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
     .sidebar-top-controls #panel-search-toggle{width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center}
     .sidebar-mobile-open .sidebar-mobile-actions .panel-icon-button{width:38px;height:38px}
   }
+  /* Controles de búsqueda y cierre en un único contenedor, también en móvil. */
+  .sidebar-top-controls{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-shrink:0}
+  .sidebar-top-controls .panel-icon-button{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;padding:0;flex:0 0 38px}
+  @media(max-width:700px){
+    .sidebar-top-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-right:0;margin:0 4px 12px;min-height:40px}
+    .sidebar-top-row .sidebar-caption{flex:1;min-width:0}
+    .sidebar-top-controls #menu-toggle{display:inline-flex!important}
+    .sidebar-mobile-open .sidebar-mobile-actions{display:none!important}
+    .sidebar-mobile-actions{top:82px;left:12px}
+    .sidebar-top-controls{gap:4px}
+  }
 </style>
