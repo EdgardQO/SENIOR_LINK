@@ -7,8 +7,7 @@ const rol = Astro.params.rol!;
 const labels: Record<string,string> = {ADMINISTRADOR:'Administradores',ACOMPANANTE:'Acompañantes',ADULTO_MAYOR:'Adultos mayores',SOPORTE:'Soporte',FAMILIAR:'Familiares'};
 ---
 <RoleLayout role="ADMINISTRADOR" label="Administración" description="Gestión específica de perfiles y cuentas por rol.">
-  <nav class="admin-links" aria-label="Módulos de administración">
-<a href="/admin">Resumen</a><a href="/admin/usuarios">Usuarios</a><a href="/admin/perfiles/ACOMPANANTE">Acompañantes</a><a href="/admin/perfiles/ADULTO_MAYOR">Adultos mayores</a><a href="/admin/perfiles/FAMILIAR">Familiares</a><a href="/admin/perfiles/SOPORTE">Soporte</a><a href="/admin/perfiles/ADMINISTRADOR">Administradores</a><a href="/admin/reservas">Reservas</a><a href="/admin/instituciones">Instituciones</a><a href="/admin/promociones">Promociones</a></nav>
+  
   <section class="admin-shell" data-admin-module="usuarios" data-role-filter={rol}>
     <h2 style="margin:0 0 10px">Perfiles: {labels[rol]}</h2>
     <p class="admin-note">Visualiza, crea, edita y desactiva usuarios de este perfil.</p>
