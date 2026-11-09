@@ -35,7 +35,7 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
   <div id="session-loading" class="session-loading">Verificando tu sesión...</div>
   <div id="app-shell" hidden>
     <header class="panel-header">
-      <div class="panel-brand"><button id="menu-toggle" type="button" class="panel-menu-toggle" aria-label="Ocultar menú" aria-controls="panel-sidebar" aria-expanded="true"><span aria-hidden="true">☰</span><span class="menu-toggle-text">Menú</span></button><a href="/" class="panel-logo" aria-label="SeniorLink — ir al inicio"><img src="/LOGO/LOGO%20CON%20FRASE.png" alt="SeniorLink — acompañamiento de confianza" class="panel-brand-image" loading="eager" decoding="async" /></a></div>
+      <div class="panel-brand"><button id="menu-toggle" type="button" class="panel-menu-toggle" aria-label="Ocultar menú" aria-controls="panel-sidebar" aria-expanded="true"><span aria-hidden="true">☰</span><span class="menu-toggle-text">Menú</span></button><a href="/" class="panel-logo" aria-label="SeniorLink — ir al inicio"><img src="/LOGO/LOGO.png" alt="SeniorLink — acompañamiento de confianza" class="panel-brand-image" loading="eager" decoding="async" /></a></div>
       <div class="panel-header-actions"><span class="panel-role">{label}</span><button id="logout" type="button" class="panel-logout">Cerrar sesión</button></div>
     </header>
     <div class="panel-layout">
@@ -269,6 +269,6 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
     .dashboard-grid,.profile-grid,.staff-grid{grid-template-columns:1fr}
   }
   .panel-logo{display:inline-flex;align-items:center;flex-shrink:0;min-width:0;text-decoration:none}
-  .panel-brand-image{display:block;width:auto;height:46px;max-width:min(240px,45vw);object-fit:contain;object-position:left center}
-  @media(max-width:600px){.panel-brand-image{height:36px;max-width:42vw}}
+  .panel-brand-image{display:block;width:auto;height:64px;max-width:min(280px,50vw);object-fit:contain;object-position:left center}
+  @media(max-width:600px){.panel-brand-image{height:48px;max-width:48vw}}
 </style>
