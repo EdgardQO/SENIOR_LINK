@@ -183,8 +183,12 @@ function detailPanel(root: HTMLElement, data: AnyRecord, relatives: AnyRecord[] 
   };
   if (profile) {
     section('Información específica del perfil · '+(LABELS[role] || role),
-      Object.entries(profile).filter(([key])=>key!=='institucionAliada')
-        .map(([key,value])=>[key,profileLabels[key] || key,value] as [string,string,unknown]));
+      [
+        ...(PROFILE_FIELDS[role] ?? []).map(([key,label])=>[key,label,profile[key]] as [string,string,unknown]),
+        ...Object.entries(profile).filter(([key])=>key!=='institucionAliada' &&
+          !(PROFILE_FIELDS[role] ?? []).some(([known])=>known===key))
+          .map(([key,value])=>[key,profileLabels[key] || key,value] as [string,string,unknown])
+      ]);
     if (role === 'ACOMPANANTE') {
       const institution = profile.institucionAliada;
       if (institution && typeof institution === 'object') {
