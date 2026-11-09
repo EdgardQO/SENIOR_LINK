@@ -6,6 +6,19 @@ interface Props {
   description: string;
 }
 const { role, label, description } = Astro.props;
+const adminSection = role === 'ADMINISTRADOR' && Astro.url.pathname !== '/admin';
+const sectionNames: Record<string,string> = {
+  '/admin/usuarios':'Usuarios',
+  '/admin/reservas':'Reservas',
+  '/admin/instituciones':'Instituciones',
+  '/admin/promociones':'Promociones',
+  '/admin/perfiles/ACOMPANANTE':'Acompañantes',
+  '/admin/perfiles/ADULTO_MAYOR':'Adultos mayores',
+  '/admin/perfiles/FAMILIAR':'Familiares',
+  '/admin/perfiles/SOPORTE':'Soporte',
+  '/admin/perfiles/ADMINISTRADOR':'Administradores'
+};
+const sectionName = sectionNames[Astro.url.pathname] || label;
 ---
 <!doctype html>
 <html lang="es" data-expected-role={role}>
@@ -49,12 +62,13 @@ const { role, label, description } = Astro.props;
       </aside>
       <main class="panel-content" id="inicio">
         <div class="panel-intro">
-          <div><div class="panel-eyebrow">{label.toUpperCase()} / INICIO</div><h1>¡Hola, <span id="welcome-name">usuario</span>!</h1><p>{description}</p></div>
+          <div><div class="panel-eyebrow">{adminSection ? 'ADMINISTRACIÓN / ' + sectionName.toUpperCase() : label.toUpperCase() + ' / INICIO'}</div><h1>{adminSection ? sectionName : <>¡Hola, <span id="welcome-name">usuario</span>!</>}</h1><p>{description}</p></div>
           <span class="panel-intro-icon" aria-hidden="true">✦</span>
         </div>
-        <div class="panel-banner">
+        {!adminSection && <div class="panel-banner">
           <div><div class="banner-kicker">BIENVENIDO A SENIORLINK</div><h2>Tu espacio de {label.toLowerCase()}</h2><p>Tu información, tus herramientas y tus servicios en un solo lugar.</p></div><span aria-hidden="true">✳</span>
-        </div>
+        </div>}
+        {adminSection && <div class="panel-section-user">Sesión administrativa: <strong id="welcome-name">usuario</strong></div>}
         <div id="panel-error" class="panel-error" role="alert" hidden></div>
         <slot />
         <footer class="panel-footer">SeniorLink · Acompañamiento de confianza</footer>
@@ -191,6 +205,7 @@ const { role, label, description } = Astro.props;
   .sidebar-link {text-decoration:none;color:#607773;padding:14px;border-radius:11px;font-weight:500}
   .sidebar-link:hover,.sidebar-link.selected {color:#087a70;background:#e7f7f2}
   .sidebar-foot {font-size:11px;color:#91a6a1;margin-top:auto;padding:18px 10px}
+  .panel-section-user {font-size:12px;color:#63867a;margin:12px 0 20px}
   .panel-content {max-width:1450px;min-width:0;width:100%;padding:36px clamp(20px,4vw,60px);margin:0 auto}
   .panel-intro {display:flex;justify-content:space-between;align-items:center;gap:16px}
   .panel-eyebrow {color:#0d9488;font-size:11px;font-weight:700;letter-spacing:1px;margin-bottom:9px}
