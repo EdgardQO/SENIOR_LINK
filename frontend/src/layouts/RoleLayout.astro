@@ -47,15 +47,20 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
         <button id="logout" type="button" class="panel-logout">Cerrar sesión</button>
       </div>
     </header>
-    <div id="panel-search-overlay" class="panel-search-overlay" hidden>
-      <section class="panel-search-dialog" role="dialog" aria-modal="true" aria-labelledby="panel-search-title">
-        <div class="panel-search-head"><h2 id="panel-search-title">Buscar en SeniorLink</h2><button id="panel-search-close" type="button" class="panel-icon-button" aria-label="Cerrar búsqueda">×</button></div>
-        <label class="panel-search-label" for="panel-search-input">Buscar sección</label>
-        <input id="panel-search-input" class="panel-search-input" type="search" placeholder="Usuarios, reservas, familiares..." autocomplete="off" />
-        <nav id="panel-search-results" class="panel-search-results" aria-label="Resultados de búsqueda"></nav>
-      </section>
+    <div class="sidebar-mobile-actions">
+      <button id="mobile-menu-toggle" type="button" class="panel-icon-button" aria-label="Abrir menú lateral" aria-controls="panel-sidebar" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>
+      </button>
     </div>
-    <button id="sidebar-restore" class="sidebar-restore panel-icon-button" type="button" aria-label="Mostrar barra lateral" title="Mostrar barra lateral" aria-controls="panel-sidebar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg></button>
+    <div id="sidebar-backdrop" class="sidebar-backdrop" hidden></div>
+    <div id="sidebar-compact" class="sidebar-compact" hidden>
+      <button id="sidebar-restore" class="panel-icon-button" type="button" aria-label="Mostrar barra lateral" title="Mostrar barra lateral" aria-controls="panel-sidebar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>
+      </button>
+      <button id="sidebar-compact-search" class="panel-icon-button" type="button" aria-label="Mostrar menú y buscar" title="Mostrar menú y buscar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="7"/><path d="m16 16 5 5"/></svg>
+      </button>
+    </div>
     <div class="panel-layout">
       <aside class="panel-sidebar" id="panel-sidebar">
         <div class="sidebar-top-row"><div class="sidebar-caption">MI ESPACIO</div>        <div class="sidebar-top-controls" aria-label="Búsqueda y barra lateral">
@@ -65,6 +70,14 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
         <button id="menu-toggle" type="button" class="panel-icon-button" aria-label="Ocultar barra lateral" title="Ocultar barra lateral" aria-controls="panel-sidebar" aria-expanded="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>
         </button>
+        </div>
+        <div id="sidebar-search-box" class="sidebar-search-box" hidden>
+          <label for="sidebar-search-input" class="sidebar-search-label">Buscar sección</label>
+          <div class="sidebar-search-input-wrap">
+            <input id="sidebar-search-input" type="search" placeholder="Filtrar opciones..." autocomplete="off" />
+            <button id="sidebar-search-clear" type="button" aria-label="Limpiar búsqueda">×</button>
+          </div>
+          <p id="sidebar-search-empty" class="sidebar-search-empty" hidden>No se encontraron secciones.</p>
         </div></div>
         {role !== "ADMINISTRADOR" && <a class="sidebar-link" href="#inicio"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M9 21v-8h6v8"/></svg><span>Inicio</span></a>}
         <a class="sidebar-link" href={role === "ADMINISTRADOR" ? "/admin/mi-perfil" : "#mi-perfil"}><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Mi perfil</span></a>
@@ -109,109 +122,98 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
     const shell = document.querySelector<HTMLDivElement>('#app-shell');
     const welcomeName = document.querySelector<HTMLSpanElement>('#welcome-name');
     const menuToggle = document.querySelector<HTMLButtonElement>('#menu-toggle');
+    const mobileMenuToggle = document.querySelector<HTMLButtonElement>('#mobile-menu-toggle');
     const sidebar = document.querySelector<HTMLElement>('#panel-sidebar');
+    const compact = document.querySelector<HTMLElement>('#sidebar-compact');
     const restoreButton = document.querySelector<HTMLButtonElement>('#sidebar-restore');
+    const compactSearch = document.querySelector<HTMLButtonElement>('#sidebar-compact-search');
+    const backdrop = document.querySelector<HTMLElement>('#sidebar-backdrop');
     const layout = document.querySelector<HTMLElement>('.panel-layout');
     const mobileQuery = window.matchMedia('(max-width:700px)');
     const desktopStorageKey = 'seniorlink_sidebar_collapsed';
-    const syncMenu = () => {
-      const mobile = mobileQuery.matches;
-      const expanded = mobile
-        ? sidebar?.classList.contains('is-open') === true
-        : !layout?.classList.contains('is-collapsed');
-      menuToggle?.setAttribute('aria-expanded', String(expanded));
-      if (restoreButton) restoreButton.hidden = expanded;
-      menuToggle?.setAttribute('aria-label', expanded ? 'Ocultar barra lateral' : 'Mostrar barra lateral');
-      menuToggle?.setAttribute('title', expanded ? 'Ocultar barra lateral' : 'Mostrar barra lateral');
-    };
-    if (!mobileQuery.matches && localStorage.getItem(desktopStorageKey) === 'true') {
-      layout?.classList.add('is-collapsed');
-    }
-    syncMenu();
-    menuToggle?.addEventListener('click', () => {
-      if (mobileQuery.matches) {
-        sidebar?.classList.toggle('is-open');
-      } else {
-        const collapsed = layout?.classList.toggle('is-collapsed') ?? false;
-        localStorage.setItem(desktopStorageKey, String(collapsed));
-      }
-      syncMenu();
-    });
-    restoreButton?.addEventListener('click', () => {
-      if (mobileQuery.matches) sidebar?.classList.add('is-open');
-      else {layout?.classList.remove('is-collapsed');localStorage.setItem(desktopStorageKey, 'false');}
-      syncMenu();
-    });
-    mobileQuery.addEventListener('change', () => {
-      sidebar?.classList.remove('is-open');
-      syncMenu();
-    });
-    const currentPath = window.location.pathname.replace(/\/$/, '') || '/';
-    sidebar?.querySelectorAll<HTMLAnchorElement>('a.sidebar-link').forEach(link => {
-      const href = link.getAttribute('href');
-      link.classList.remove('selected');
-      link.removeAttribute('aria-current');
-      if (href && href.startsWith('/') && href === currentPath) {
-        link.classList.add('selected');
-        link.setAttribute('aria-current', 'page');
-      }
-      link.addEventListener('click', () => {
-        if (mobileQuery.matches) {
-          sidebar?.classList.remove('is-open');
-          syncMenu();
-        }
+    const searchToggle = document.querySelector<HTMLButtonElement>('#panel-search-toggle');
+    const searchBox = document.querySelector<HTMLElement>('#sidebar-search-box');
+    const searchInput = document.querySelector<HTMLInputElement>('#sidebar-search-input');
+    const searchClear = document.querySelector<HTMLButtonElement>('#sidebar-search-clear');
+    const searchEmpty = document.querySelector<HTMLElement>('#sidebar-search-empty');
+    const sidebarLinks = Array.from(sidebar?.querySelectorAll<HTMLAnchorElement>('a.sidebar-link') || []);
+    const normalize = (value:string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('es');
+    function filterSidebar(){
+      const term = normalize((searchInput?.value || '').trim());
+      let count = 0;
+      sidebarLinks.forEach(link => {
+        const match = normalize(link.textContent || '').includes(term);
+        link.hidden = !match;
+        if(match) count++;
       });
-    });
-    document.addEventListener('keydown', event => {
-      if (event.key === 'Escape' && mobileQuery.matches) {
-        sidebar?.classList.remove('is-open');
-        syncMenu();
+      if(searchEmpty) searchEmpty.hidden = count > 0;
+      if(searchClear) searchClear.hidden = !term;
+    }
+    function showSearch(){
+      if(!searchBox) return;
+      searchBox.hidden = false;
+      searchToggle?.setAttribute('aria-expanded','true');
+      searchInput?.focus();
+      filterSidebar();
+    }
+    function hideSearch(){
+      if(!searchBox) return;
+      searchBox.hidden = true;
+      if(searchInput) searchInput.value = '';
+      searchToggle?.setAttribute('aria-expanded','false');
+      filterSidebar();
+      searchToggle?.focus();
+    }
+    searchToggle?.setAttribute('aria-expanded','false');
+    searchToggle?.setAttribute('aria-controls','sidebar-search-box');
+    searchToggle?.addEventListener('click', () => searchBox?.hidden ? showSearch() : hideSearch());
+    searchInput?.addEventListener('input',filterSidebar);
+    searchClear?.addEventListener('click', () => {if(searchInput) searchInput.value='';filterSidebar();searchInput?.focus();});
+    function syncMenu(){
+      const mobile = mobileQuery.matches;
+      const expanded = mobile ? sidebar?.classList.contains('is-open') === true : !layout?.classList.contains('is-collapsed');
+      menuToggle?.setAttribute('aria-expanded',String(expanded));
+      menuToggle?.setAttribute('aria-label',expanded ? 'Ocultar barra lateral' : 'Mostrar barra lateral');
+      menuToggle?.setAttribute('title',expanded ? 'Ocultar barra lateral' : 'Mostrar barra lateral');
+      mobileMenuToggle?.setAttribute('aria-expanded',String(expanded));
+      mobileMenuToggle?.setAttribute('aria-label',expanded ? 'Cerrar menú lateral' : 'Abrir menú lateral');
+      if(compact) compact.hidden = mobile || expanded;
+      if(backdrop) backdrop.hidden = !mobile || !expanded;
+      document.body.classList.toggle('sidebar-mobile-open',mobile && expanded);
+    }
+    function toggleSidebar(){
+      if(mobileQuery.matches) sidebar?.classList.toggle('is-open');
+      else {
+        const collapsed=layout?.classList.toggle('is-collapsed') ?? false;
+        localStorage.setItem(desktopStorageKey,String(collapsed));
       }
-    });
-
-    const searchOverlay=document.querySelector<HTMLElement>('#panel-search-overlay');
-    const searchInput=document.querySelector<HTMLInputElement>('#panel-search-input');
-    const searchResults=document.querySelector<HTMLElement>('#panel-search-results');
-    const searchToggle=document.querySelector<HTMLButtonElement>('#panel-search-toggle');
-    const searchClose=document.querySelector<HTMLButtonElement>('#panel-search-close');
-    let searchPreviousFocus: HTMLElement|null=null;
-    const searchableLinks=Array.from(sidebar?.querySelectorAll<HTMLAnchorElement>('a.sidebar-link[href^="/"]')||[]);
-    function updateSearch(){
-      if(!searchResults)return;
-      const term=(searchInput?.value||'').trim().toLocaleLowerCase('es');
-      searchResults.replaceChildren();
-      const matches=searchableLinks.filter(link=>(link.textContent||'').toLocaleLowerCase('es').includes(term));
-      if(!matches.length){const empty=document.createElement('p');empty.textContent='No se encontraron secciones.';empty.className='panel-search-empty';searchResults.appendChild(empty);return;}
-      for(const link of matches){
-        const result=document.createElement('a');result.href=link.href;result.className='panel-search-result';
-        result.textContent=(link.textContent||'').trim();searchResults.appendChild(result);
-      }
+      syncMenu();
     }
-    function closeSearch(){
-      if(!searchOverlay||searchOverlay.hidden)return;
-      searchOverlay.hidden=true;searchPreviousFocus?.focus();
-    }
-    function openSearch(){
-      if(!searchOverlay)return;
-      searchPreviousFocus=document.activeElement instanceof HTMLElement?document.activeElement:null;
-      searchOverlay.hidden=false;if(searchInput)searchInput.value='';
-      updateSearch();searchInput?.focus();
-    }
-    searchToggle?.addEventListener('click',openSearch);
-    searchClose?.addEventListener('click',closeSearch);
-    searchOverlay?.addEventListener('click',event=>{if(event.target===searchOverlay)closeSearch();});
-    searchInput?.addEventListener('input',updateSearch);
-    searchInput?.addEventListener('keydown',event=>{
-      if(event.key==='Enter'){const first=searchResults?.querySelector<HTMLAnchorElement>('a');if(first){event.preventDefault();window.location.assign(first.href);}}
+    if(!mobileQuery.matches && localStorage.getItem(desktopStorageKey)==='true') layout?.classList.add('is-collapsed');
+    syncMenu();
+    menuToggle?.addEventListener('click',toggleSidebar);
+    mobileMenuToggle?.addEventListener('click',toggleSidebar);
+    backdrop?.addEventListener('click',()=>{sidebar?.classList.remove('is-open');syncMenu();});
+    restoreButton?.addEventListener('click',()=>{layout?.classList.remove('is-collapsed');localStorage.setItem(desktopStorageKey,'false');syncMenu();});
+    compactSearch?.addEventListener('click',()=>{layout?.classList.remove('is-collapsed');localStorage.setItem(desktopStorageKey,'false');syncMenu();showSearch();});
+    mobileQuery.addEventListener('change',()=>{sidebar?.classList.remove('is-open');syncMenu();});
+    const currentPath=window.location.pathname.replace(/\/$/,'') || '/';
+    sidebarLinks.forEach(link=>{
+      const href=link.getAttribute('href');
+      link.classList.remove('selected');link.removeAttribute('aria-current');
+      if(href && href.startsWith('/') && href===currentPath){link.classList.add('selected');link.setAttribute('aria-current','page');}
+      link.addEventListener('click',()=>{if(mobileQuery.matches){sidebar?.classList.remove('is-open');syncMenu();}});
     });
     document.addEventListener('keydown',event=>{
-      if(event.key==='Escape')closeSearch();
-      if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){event.preventDefault();if(searchOverlay?.hidden)openSearch();else closeSearch();}
-      if(event.key==='Tab'&&searchOverlay&&!searchOverlay.hidden){
-        const focusable=Array.from(searchOverlay.querySelectorAll<HTMLElement>('button,a,input')).filter(el=>!el.hasAttribute('disabled'));
-        const first=focusable[0],last=focusable[focusable.length-1];
-        if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
-        else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+      if(event.key==='Escape'){
+        if(searchBox && !searchBox.hidden && document.activeElement===searchInput)hideSearch();
+        else if(mobileQuery.matches){sidebar?.classList.remove('is-open');syncMenu();}
+      }
+      if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){
+        event.preventDefault();
+        if(!mobileQuery.matches && layout?.classList.contains('is-collapsed')){layout.classList.remove('is-collapsed');localStorage.setItem(desktopStorageKey,'false');}
+        if(mobileQuery.matches)sidebar?.classList.add('is-open');
+        syncMenu();showSearch();
       }
     });
     document.querySelector<HTMLButtonElement>('#logout')?.addEventListener('click', () => {
@@ -355,17 +357,6 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
   .panel-icon-button:hover{background:#eaf7f2;color:#087a70}
   .panel-icon-button:focus-visible{outline:2px solid #0d9488;outline-offset:2px}
   .panel-icon-button svg{display:block!important;width:21px!important;height:21px!important;max-width:21px;max-height:21px;flex:none}
-  .panel-search-overlay{position:fixed;inset:0;z-index:1000;display:flex;align-items:flex-start;justify-content:center;padding:clamp(65px,12vh,120px) 15px 20px;background:rgba(12,35,32,.48);backdrop-filter:blur(3px)}
-  .panel-search-dialog{width:min(520px,100%);max-height:75vh;overflow:auto;background:white;border:1px solid #dbeae4;border-radius:17px;box-shadow:0 24px 70px #092e2755;padding:20px}
-  .panel-search-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:15px}
-  .panel-search-head h2{margin:0;font-size:17px}
-  .panel-search-label{display:block;color:#56766d;font-size:12px;margin-bottom:7px}
-  .panel-search-input{display:block;width:100%;border:1px solid #cfe5db;border-radius:10px;padding:12px;font:inherit;outline-color:#0d9488}
-  .panel-search-results{display:grid;gap:5px;margin-top:14px}
-  .panel-search-result{display:block;padding:12px 13px;border-radius:9px;text-decoration:none;color:#23483f;font-size:13px}
-  .panel-search-result:hover,.panel-search-result:focus-visible{background:#e7f7f2;color:#087a70}
-  .panel-search-empty{font-size:12px;color:#738b83;padding:10px}
-  @media(max-width:700px){.panel-brand-name{font-size:17px}.panel-header-actions{gap:3px}.panel-icon-button{width:34px;height:34px}.panel-brand-image{height:42px;max-width:68px}.panel-role{display:none}}
   .panel-brand-controls{display:flex;align-items:center;gap:5px;flex:none;margin-left:14px;padding-left:14px;border-left:1px solid #e3eeeb}
   .panel-brand{gap:0}
   .panel-header-actions{margin-left:auto}
@@ -379,4 +370,40 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
   .sidebar-restore[hidden]{display:none!important}
   .panel-layout.is-collapsed .panel-content{padding-left:clamp(60px,5vw,80px)}
   @media(max-width:700px){.sidebar-restore{top:85px;left:9px}.panel-layout.is-collapsed .panel-content{padding-left:20px}}
+
+  /* Navegación responsiva y búsqueda integrada */
+  .sidebar-top-row{margin:0 0 8px;gap:4px}
+  .sidebar-top-row .sidebar-caption{margin-left:6px;letter-spacing:1.2px}
+  .sidebar-search-box{margin:0 4px 12px}
+  .sidebar-search-label{display:block;font-size:11px;color:#708b81;margin:0 0 7px 4px}
+  .sidebar-search-input-wrap{display:flex;align-items:center;border:1px solid #cfe4dd;background:#f8fcfa;border-radius:11px;overflow:hidden}
+  .sidebar-search-input-wrap:focus-within{outline:2px solid #9dd8c8}
+  .sidebar-search-input-wrap input{width:100%;min-width:0;border:0;outline:0;background:transparent;padding:11px;font:12px Lexend,system-ui,sans-serif;color:#15302e}
+  .sidebar-search-input-wrap button{border:0;background:transparent;color:#66877c;font-size:20px;padding:6px 10px;cursor:pointer}
+  .sidebar-search-empty{font-size:11px;color:#79918a;margin:12px 4px}
+  .panel-sidebar .sidebar-link[hidden]{display:none!important}
+  .sidebar-compact{position:fixed;top:88px;left:8px;z-index:35;width:46px;padding:6px 4px;display:flex;flex-direction:column;align-items:center;gap:8px;background:white;border:1px solid #dceae5;border-radius:13px;box-shadow:0 4px 18px #123c3615}
+  .sidebar-compact[hidden]{display:none!important}
+  .sidebar-compact .panel-icon-button{width:34px;height:34px}
+  .panel-layout.is-collapsed{grid-template-columns:0 minmax(0,1fr)}
+  .panel-layout.is-collapsed .panel-content{padding-left:clamp(72px,6vw,100px)}
+  .sidebar-mobile-actions{display:none}
+  .sidebar-backdrop[hidden]{display:none!important}
+  .sidebar-backdrop{display:none}
+  @media(max-width:700px){
+    .panel-header{position:relative;z-index:55}
+    .sidebar-mobile-actions{display:flex;position:fixed;top:80px;left:10px;z-index:52;background:white;border:1px solid #dceae5;border-radius:11px;box-shadow:0 3px 12px #123c3615}
+    .sidebar-mobile-actions .panel-icon-button{width:38px;height:38px}
+    .sidebar-mobile-open{overflow:hidden}
+    .sidebar-backdrop{display:block;position:fixed;inset:68px 0 0;z-index:48;background:rgba(9,34,29,.45)}
+    .panel-sidebar,.panel-layout.is-collapsed .panel-sidebar{position:fixed;top:68px;left:0;bottom:0;z-index:50;width:min(310px,88vw);max-width:100vw;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;box-shadow:10px 0 35px #092b2733;transform:translateX(-105%);visibility:hidden;padding:22px 12px 22px;transition:transform .22s ease}
+    .panel-sidebar.is-open,.panel-layout.is-collapsed .panel-sidebar.is-open{transform:translateX(0);visibility:visible;padding:22px 12px}
+    .panel-layout,.panel-layout.is-collapsed{display:block}
+    .panel-layout .panel-content,.panel-layout.is-collapsed .panel-content{width:100%;max-width:100%;min-width:0;padding:72px 16px 24px}
+    .panel-layout .panel-content>*{max-width:100%}
+    .sidebar-compact{display:none!important}
+    .sidebar-mobile-open .sidebar-mobile-actions{left:min(260px,calc(88vw - 48px));top:80px;z-index:54;box-shadow:none;border:0;background:transparent}
+    .sidebar-mobile-open .sidebar-mobile-actions .panel-icon-button{background:#e7f7f2}
+    .sidebar-top-row{padding-right:40px}
+  }
 </style>
