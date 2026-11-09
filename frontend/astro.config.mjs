@@ -8,7 +8,7 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
     server: {
-      allowedHosts: ['embedded-levy-arrived-passport.trycloudflare.com']
+      allowedHosts: ['competing-generations-persian-hunter.trycloudflare.com']
     }
   }
 });
