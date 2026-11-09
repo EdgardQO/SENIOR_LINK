@@ -8,7 +8,7 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
     server: {
-      allowedHosts: ['competing-generations-persian-hunter.trycloudflare.com']
+      allowedHosts: ['parameters-notified-comes-miniature.trycloudflare.com']
     }
   }
 });
