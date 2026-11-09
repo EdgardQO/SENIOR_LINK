@@ -62,11 +62,11 @@ const companions = [
             </div>
 
             <div class="featured-study">
-              <span class="featured-study-icon" aria-hidden="true">✦</span>
-              <div>
-                <span class="featured-study-label">Carrera y ciclo</span>
-                <p>{c.career} <span>· {c.cycle}</span></p>
+              <div class="featured-study-details">
+                <span class="featured-study-label">FORMACIÓN ACADÉMICA</span>
+                <p class="featured-career">{c.career}</p>
               </div>
+              <span class="featured-cycle">{c.cycle}</span>
             </div>
 
             <p class="featured-bio">{c.bio}</p>
@@ -105,11 +105,11 @@ const companions = [
   .featured-stars{color:#e5a72d;font-size:14px;letter-spacing:1px;white-space:nowrap}
   .featured-rating strong{color:#26473f;font-size:14px}
   .featured-review-count{color:#899a94;font-size:11px}
-  .featured-study{display:flex;align-items:center;gap:11px;margin-top:21px;padding:13px 14px;background:#edf7f2;border-radius:11px}
-  .featured-study-icon{display:grid;place-items:center;width:31px;height:31px;flex-shrink:0;border-radius:9px;background:#d5ede3;color:#117c6d;font-size:20px}
-  .featured-study-label{display:block;color:#7b958b;font-size:10px;font-weight:700}
-  .featured-study p{margin:3px 0 0;color:#26574b;font-size:12px;font-weight:750;line-height:1.4}
-  .featured-study p span{font-weight:550;color:#668b7d}
+  .featured-study{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:21px;padding:15px 16px;background:#edf7f2;border:1px solid #dceee5;border-radius:12px}
+  .featured-study-details{min-width:0}
+  .featured-study-label{display:block;color:#6e9385;font-size:10px;font-weight:800;letter-spacing:.08em}
+  .featured-career{margin:6px 0 0;color:#205749;font-size:13px;font-weight:800;line-height:1.45}
+  .featured-cycle{flex-shrink:0;white-space:nowrap;border:1px solid #c9e5d8;background:#fff;border-radius:7px;padding:7px 9px;color:#157b6c;font-size:11px;font-weight:750}
   .featured-bio{margin:17px 0 23px;color:#6c8179;font-size:13px;line-height:1.75}
   .featured-footer{display:flex;justify-content:space-between;align-items:end;gap:10px;margin-top:auto;padding-top:18px;border-top:1px solid #e7efeb}
   .featured-rate-label{display:block;color:#8a9b94;font-size:11px;font-weight:650}
