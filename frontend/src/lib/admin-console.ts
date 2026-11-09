@@ -106,6 +106,52 @@ function topButton(root:HTMLElement,label:string,callback:()=>void) {
   if(!actions){actions=node('div','','admin-links');actions.id='module-actions';content.prepend(actions);}
   actions.appendChild(action(label,callback));
 }
+const PROFILE_COLUMNS: Record<string, Array<[string,string]>> = {
+  ACOMPANANTE:[['carrera','Carrera'],['ciclo','Ciclo'],['tarifaActualPorHora','Tarifa/hora'],['promedioCalificacion','Calificación']],
+  ADULTO_MAYOR:[['fechaNacimiento','Nacimiento'],['direccionResidencia','Dirección'],['contactoEmergencia','Contacto de emergencia']],
+  FAMILIAR:[['parentescoPrincipalNombre','Parentesco'],['telefonoAlternativo','Teléfono alternativo']],
+  SOPORTE:[['turno','Turno'],['extensionTelefonica','Extensión'],['casosAtendidos','Casos atendidos']],
+  ADMINISTRADOR:[['areaODepartamento','Área'],['nivelAcceso','Nivel de acceso']]
+};
+function displayProfileValue(profile: AnyRecord, key: string): string {
+  const value = profile?.[key];
+  return value === null || value === undefined || value === '' ? 'No registrado' : String(value);
+}
+function detailPanel(root: HTMLElement, data: AnyRecord): void {
+  const content = $<HTMLElement>(root,'#module-content');
+  if (!content) return;
+  $<HTMLElement>(content,'#user-detail')?.remove();
+  const user = data.usuario;
+  const role = user.rolNombre;
+  const profile = data[PROFILE_KEY[role]];
+  const panel = node('section','','admin-shell');
+  panel.id = 'user-detail';
+  panel.appendChild(node('h3','Usuario y perfil · '+user.nombres+' '+user.apellidos));
+  const info = node('div','','admin-form');
+  const items: Array<[string,unknown]> = [
+    ['DNI',user.dni],['Nombres',user.nombres],['Apellidos',user.apellidos],
+    ['Correo electrónico',user.correoElectronico],['Teléfono',user.telefono],
+    ['Rol',LABELS[role]],['Estado',user.estaActivo?'Activo':'Inactivo'],
+    ['Registrado',user.creadoEn ? new Date(user.creadoEn).toLocaleString('es-PE') : null]
+  ];
+  for (const [key,label] of PROFILE_FIELDS[role] ?? []) items.push([label,profile?.[key]]);
+  if (role === 'ACOMPANANTE') {
+    items.push(['Institución aliada',profile?.institucionAliada?.nombre],
+      ['RUC institución',profile?.institucionAliada?.ruc],
+      ['Calificación promedio',profile?.promedioCalificacion],
+      ['Total calificaciones',profile?.totalCalificaciones]);
+  }
+  if (role === 'FAMILIAR') items.push(['Parentesco',profile?.parentescoPrincipalNombre]);
+  if (role === 'SOPORTE') items.push(['Casos atendidos',profile?.casosAtendidos]);
+  for (const [label,value] of items) {
+    const box = node('div');
+    box.append(node('div',label,'admin-note'),node('strong',value == null || value === '' ? 'No registrado' : String(value)));
+    info.appendChild(box);
+  }
+  panel.append(info,action('Cerrar detalle',()=>panel.remove(),'admin-secondary'));
+  content.prepend(panel);
+  panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
 async function usersModule(root: HTMLElement) {
   const filter=root.dataset.roleFilter || '';
   const content=$<HTMLElement>(root,'#module-content');
@@ -115,37 +161,48 @@ async function usersModule(root: HTMLElement) {
   for(const r of ['',...ROLES]){const o=document.createElement('option');o.value=r;o.textContent=r?LABELS[r]:'Todos los roles';roleSelect.appendChild(o);}
   roleSelect.value=filter;roleSelect.disabled=Boolean(filter);
   const search=document.createElement('input');search.className='admin-filter';search.placeholder='Buscar por DNI, nombre o correo';search.style.maxWidth='360px';
-  const filters=node('div','','admin-links');filters.append(roleSelect,search);content.appendChild(filters);
+  const filters=node('div','','admin-links');if(!filter)filters.appendChild(roleSelect);filters.appendChild(search);content.appendChild(filters);
   let all:AnyRecord[]=[];
+  let profiles:Record<string,AnyRecord>={};
   const render=()=>{
     const q=search.value.trim().toLowerCase();
     const list=all.filter(u=>(!roleSelect.value||u.rolNombre===roleSelect.value)&&
       [u.dni,u.nombres,u.apellidos,u.correoElectronico].some(x=>String(x||'').toLowerCase().includes(q)));
-    table(root,['DNI','Nombre','Correo','Rol','Estado','Acciones'],list,(u,tr)=>{
-      td(tr,u.dni);td(tr,[u.nombres,u.apellidos].join(' '));td(tr,u.correoElectronico);
-      td(tr,LABELS[u.rolNombre]||u.rolNombre);td(tr,u.estaActivo?'Activo':'Inactivo');
+    const specialized = Boolean(filter);
+    const columns = specialized ? PROFILE_COLUMNS[filter] ?? [] : [];
+    table(root,['DNI','Nombre','Correo','Teléfono',...columns.map(([,label])=>label),'Estado','Acciones'],list,(u,tr)=>{
+      td(tr,u.dni);td(tr,[u.nombres,u.apellidos].join(' '));td(tr,u.correoElectronico);td(tr,u.telefono);
+      const profile=profiles[u.dni]?.[PROFILE_KEY[u.rolNombre]];
+      for (const [key] of columns) td(tr,profile ? displayProfileValue(profile,key) : 'No disponible');
+      td(tr,u.estaActivo?'Activo':'Inactivo');
       const actions=document.createElement('td');
-      actions.append(action('Ver',()=>void viewUser(u.dni)));
+      actions.append(action('Ver perfil',()=>void viewUser(u.dni)));
       actions.append(action('Editar',()=>void editUser(u.dni),'admin-secondary'));
       actions.append(action(u.estaActivo?'Desactivar':'Activar',()=>void toggleUser(u),'admin-danger'));
       tr.appendChild(actions);
     });
-    status(root,list.length+' usuario(s) encontrados.');
+    if (!list.length) {
+      const listing=$<HTMLElement>(root,'#listing');
+      listing?.appendChild(node('p',q?'No hay usuarios que coincidan con la búsqueda.':'No hay usuarios registrados en este perfil.','admin-note'));
+    }
+    if (!filter || Object.keys(profiles).length === all.length) status(root,list.length+' usuario(s) encontrados.');
   };
-  const refresh=async()=>{all=await adminRequest<AnyRecord[]>('/usuarios');render();};
+  const refresh=async()=>{
+    status(root,'Cargando usuarios desde el backend...');
+    all=await adminRequest<AnyRecord[]>(filter ? '/usuarios?rol='+encodeURIComponent(filter) : '/usuarios');
+    if(filter) {
+      const results=await Promise.allSettled(all.map(u=>adminRequest<AnyRecord>('/usuarios/'+encodeURIComponent(u.dni))));
+      profiles={};
+      results.forEach((result,i)=>{if(result.status==='fulfilled')profiles[all[i].dni]=result.value;});
+      const failed=results.filter(result=>result.status==='rejected').length;
+      if(failed) status(root,failed+' perfil(es) no pudieron consultarse. Se muestran los usuarios disponibles.',true);
+    }
+    render();
+  };
   const viewUser=async(dni:string)=>{
     try {
-      const d=await adminRequest<AnyRecord>('/usuarios/'+encodeURIComponent(dni));
-      const profile=d[PROFILE_KEY[d.usuario.rolNombre]];
-      const details={...d.usuario,...(profile||{})};
-      const existing=$<HTMLElement>(root,'#user-detail');existing?.remove();
-      const panel=node('section','','admin-shell');panel.id='user-detail';
-      panel.appendChild(node('h3','Detalle del usuario · '+dni));
-      for(const [k,v] of Object.entries(details)){
-        if(v!==null && typeof v!=='object')panel.appendChild(node('p',k+': '+String(v),'admin-note'));
-      }
-      panel.appendChild(action('Cerrar',()=>panel.remove(),'admin-secondary'));
-      content.prepend(panel);
+      const d=profiles[dni] ?? await adminRequest<AnyRecord>('/usuarios/'+encodeURIComponent(dni));
+      detailPanel(root,d);
     }catch(e){status(root,e instanceof Error?e.message:'No se pudo consultar.',true);}
   };
   const editUser=async(dni:string)=>{
