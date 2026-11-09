@@ -108,7 +108,21 @@ public class UsuarioService {
                     .orElseThrow(() -> perfilNoExiste("acompañante"));
             var d = solicitud.acompanante();
             if (d.biografia() != null) p.setBiografia(d.biografia());
-            if (d.nivelAcademico() != null) p.setNivelAcademico(d.nivelAcademico());
+            if (d.ciclo() != null) {
+                if (d.ciclo() < 1 || d.ciclo() > 20) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "El ciclo debe ser un número entre 1 y 20");
+                }
+                p.setCiclo(d.ciclo());
+            }
+            if (d.carrera() != null) {
+                String carrera = d.carrera().trim();
+                if (carrera.isEmpty() || carrera.length() > 150) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "La carrera debe tener entre 1 y 150 caracteres");
+                }
+                p.setCarrera(carrera);
+            }
             if (d.tarifaBasePorHora() != null) p.setTarifaBasePorHora(d.tarifaBasePorHora());
             if (d.tarifaActualPorHora() != null) p.setTarifaActualPorHora(d.tarifaActualPorHora());
             // promedioCalificacion y totalCalificaciones son métricas del sistema: no editables aquí.
@@ -161,7 +175,7 @@ public class UsuarioService {
                         p.getTelefonoAlternativo())).orElse(null);
         var acompanante = acompananteRepository.findById(dni).map(p ->
                 new UsuarioDetalleDTO.Acompanante(
-                        p.getBiografia(), p.getNivelAcademico(), p.getTarifaBasePorHora(),
+                        p.getBiografia(), p.getCiclo(), p.getCarrera(), p.getTarifaBasePorHora(),
                         p.getTarifaActualPorHora(), p.getPromedioCalificacion(),
                         p.getTotalCalificaciones(),
                         p.getInstitucionAliada() == null ? null : InstitucionAliadaDTO.desdeEntidad(p.getInstitucionAliada()))).orElse(null);

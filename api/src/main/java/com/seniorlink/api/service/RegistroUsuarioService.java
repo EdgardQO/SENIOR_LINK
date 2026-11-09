@@ -164,10 +164,15 @@ public class RegistroUsuarioService {
         PerfilAcompanante perfil = new PerfilAcompanante();
         perfil.setUsuario(usuario);
         perfil.setBiografia(opcional(datos.biografia()));
-        perfil.setNivelAcademico(opcional(datos.nivelAcademico()));
-        if (perfil.getNivelAcademico() != null && perfil.getNivelAcademico().length() > 100) {
-            throw badRequest("El nivel académico es demasiado largo");
+        if (datos.ciclo() == null || datos.ciclo() < 1 || datos.ciclo() > 20) {
+            throw badRequest("El ciclo debe ser un número entre 1 y 20");
         }
+        String carrera = requerido(datos.carrera(), "carrera");
+        if (carrera.length() > 150) {
+            throw badRequest("La carrera debe tener como máximo 150 caracteres");
+        }
+        perfil.setCiclo(datos.ciclo());
+        perfil.setCarrera(carrera);
         perfil.setTarifaBasePorHora(tarifaBase);
         perfil.setTarifaActualPorHora(tarifaActual);
         String ruc = opcional(datos.institucionRuc());

@@ -30,7 +30,8 @@ public record RegistroUsuarioDTO(
 
     public record Acompanante(
             String biografia,
-            String nivelAcademico,
+            Integer ciclo,
+            String carrera,
             BigDecimal tarifaBasePorHora,
             BigDecimal tarifaActualPorHora,
             String institucionRuc

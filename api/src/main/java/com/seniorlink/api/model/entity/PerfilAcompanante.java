@@ -24,8 +24,11 @@ public class PerfilAcompanante {
     @Column(name = "biografia", columnDefinition = "TEXT")
     private String biografia;
 
-    @Column(name = "nivel_academico", length = 100)
-    private String nivelAcademico;
+    @Column(name = "ciclo")
+    private Integer ciclo;
+
+    @Column(name = "carrera", length = 150)
+    private String carrera;
 
     @Column(name = "tarifa_base_por_hora", nullable = false, precision = 10, scale = 2)
     private BigDecimal tarifaBasePorHora;
@@ -48,8 +51,10 @@ public class PerfilAcompanante {
     public void setUsuario(Usuario usuario) { this.usuario = usuario; }
     public String getBiografia() { return biografia; }
     public void setBiografia(String biografia) { this.biografia = biografia; }
-    public String getNivelAcademico() { return nivelAcademico; }
-    public void setNivelAcademico(String nivelAcademico) { this.nivelAcademico = nivelAcademico; }
+    public Integer getCiclo() { return ciclo; }
+    public void setCiclo(Integer ciclo) { this.ciclo = ciclo; }
+    public String getCarrera() { return carrera; }
+    public void setCarrera(String carrera) { this.carrera = carrera; }
     public BigDecimal getTarifaBasePorHora() { return tarifaBasePorHora; }
     public void setTarifaBasePorHora(BigDecimal tarifaBasePorHora) { this.tarifaBasePorHora = tarifaBasePorHora; }
     public BigDecimal getTarifaActualPorHora() { return tarifaActualPorHora; }

@@ -31,7 +31,8 @@ public record ActualizarUsuarioDTO(
 
     public record Acompanante(
             String biografia,
-            String nivelAcademico,
+            Integer ciclo,
+            String carrera,
             BigDecimal tarifaBasePorHora,
             BigDecimal tarifaActualPorHora
     ) {}
