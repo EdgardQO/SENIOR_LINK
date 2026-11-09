@@ -2,6 +2,8 @@ package com.seniorlink.api.model.enums;
 
 public enum RolUsuario {
     ADMINISTRADOR,
-    FAMILIAR,
-    ACOMPANANTE
+    ACOMPANANTE,
+    ADULTO_MAYOR,
+    SOPORTE,
+    FAMILIAR
 }
