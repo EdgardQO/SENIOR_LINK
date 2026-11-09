@@ -56,83 +56,108 @@ import RoleLayout from '../layouts/RoleLayout.astro';
 </section>
 </RoleLayout>
 <script>
-  document.addEventListener('seniorlink:profile', event => {
-    const data = event.detail;
-    document.querySelectorAll('[data-field]').forEach(field => {
-      const path = field.dataset.field;
-      let value = path === 'usuario.nombreCompleto'
-        ? [data.usuario?.nombres, data.usuario?.apellidos].filter(Boolean).join(' ')
-        : path.split('.').reduce((current, key) => current?.[key], data);
-      if (path === 'acompanante.tarifaBasePorHora' && value != null) value = 'S/ ' + Number(value).toFixed(2);
-      field.textContent = value == null || String(value).trim() === '' ? 'No registrado' : String(value);
-    });
-  }, { once: true });
-  
   import { getSession, clearSession, API_URL } from '../lib/auth.js';
-  const session = getSession();
-  const el = id => document.getElementById(id);
-  const val = id => el(id).value.trim();
-  const roleSelector = el('staff-role');
-  const sync = () => {
-    const support = roleSelector.value === 'SOPORTE';
-    el('support-fields').hidden = !support;
-    el('admin-fields').hidden = support;
-    el('staff-shift').required = support;
-    el('staff-area').required = !support;
+  import { renderProfileFields } from '../lib/profile-fields';
+
+  type ApiError = Error & { status?: number };
+  type StaffPayload = {
+    dni: string; nombres: string; apellidos: string;
+    correoElectronico: string; contrasena: string; telefono: string | null;
+    rol: string; turno?: string; extensionTelefonica?: string | null;
+    areaODepartamento?: string; nivelAcceso?: number;
   };
-  roleSelector.addEventListener('change', sync);
+  const el = <T extends HTMLElement>(id: string): T | null => document.getElementById(id) as T | null;
+  const input = (id: string): HTMLInputElement | null => el<HTMLInputElement>(id);
+  const val = (id: string): string => input(id)?.value.trim() ?? '';
+  const roleSelector = el<HTMLSelectElement>('staff-role');
+  const staffForm = el<HTMLFormElement>('staff-form');
+  const supportFields = el<HTMLDivElement>('support-fields');
+  const adminFields = el<HTMLDivElement>('admin-fields');
+  const shift = el<HTMLSelectElement>('staff-shift');
+  const area = input('staff-area');
+  const button = el<HTMLButtonElement>('staff-submit');
+  const msg = el<HTMLParagraphElement>('staff-message');
+
+  const sync = () => {
+    if (!roleSelector || !supportFields || !adminFields || !shift || !area) return;
+    const support = roleSelector.value === 'SOPORTE';
+    supportFields.hidden = !support;
+    adminFields.hidden = support;
+    shift.required = support;
+    area.required = !support;
+  };
+  roleSelector?.addEventListener('change', sync);
   sync();
-  async function loadUsers() {
-    if (!session || session.rolNombre !== 'ADMINISTRADOR') return;
-    const status = el('users-summary');
+
+  async function loadUsers(): Promise<void> {
+    const session = getSession();
+    const status = el<HTMLParagraphElement>('users-summary');
+    const body = el<HTMLTableSectionElement>('users-body');
+    const table = el<HTMLTableElement>('users-table');
+    if (!session || session.rolNombre !== 'ADMINISTRADOR' || !status || !body || !table) return;
     try {
-      const res = await fetch(API_URL + '/api/v1/usuarios', { headers: { Authorization: 'Bearer ' + session.accessToken } });
-      if (res.status === 401 || res.status === 403) throw Object.assign(new Error('No autorizado'), { status: res.status });
+      const res = await fetch(API_URL + '/api/v1/usuarios', {
+        headers: { Authorization: 'Bearer ' + session.accessToken }
+      });
+      if (res.status === 401 || res.status === 403) {
+        throw Object.assign(new Error('No autorizado'), { status: res.status });
+      }
       if (!res.ok) throw new Error('No se pudieron consultar los usuarios.');
-      const users = await res.json();
+      const users: unknown = await res.json();
       if (!Array.isArray(users)) throw new Error('Respuesta inválida.');
-      el('users-body').replaceChildren();
+      body.replaceChildren();
       for (const user of users) {
         const tr = document.createElement('tr');
-        for (const value of [user.nombres + ' ' + user.apellidos, user.correoElectronico, user.rolNombre, user.estaActivo ? 'Activo' : 'Inactivo']) {
+        for (const value of [
+          [user.nombres, user.apellidos].filter(Boolean).join(' '),
+          user.correoElectronico, user.rolNombre, user.estaActivo ? 'Activo' : 'Inactivo'
+        ]) {
           const td = document.createElement('td');
-          td.textContent = value || '—';
+          td.textContent = String(value || '—');
           td.style.padding = '10px';
           td.style.borderTop = '1px solid #e2ece8';
           tr.appendChild(td);
         }
-        el('users-body').appendChild(tr);
+        body.appendChild(tr);
       }
-      el('users-table').hidden = false;
+      table.hidden = false;
       status.textContent = users.length + ' usuario(s) registrados.';
-    } catch (error) {
-      status.textContent = error.message || 'Error de conexión.';
-      if (error.status === 401 || error.status === 403) { clearSession(); location.replace('/login'); }
+    } catch (error: unknown) {
+      status.textContent = error instanceof Error ? error.message : 'Error de conexión.';
+      const code = error instanceof Error && 'status' in error ? (error as ApiError).status : undefined;
+      if (code === 401 || code === 403) {
+        clearSession();
+        window.location.replace('/login');
+      }
     }
   }
-  document.addEventListener('seniorlink:profile', loadUsers, { once: true });
-  el('staff-form').addEventListener('submit', async event => {
+
+  document.addEventListener('seniorlink:profile', (event: Event) => {
+    renderProfileFields((event as CustomEvent).detail);
+    void loadUsers();
+  }, { once: true });
+
+  staffForm?.addEventListener('submit', async (event: SubmitEvent) => {
     event.preventDefault();
     const current = getSession();
-    if (!current || current.rolNombre !== 'ADMINISTRADOR') return;
-    const body = {
+    if (!current || current.rolNombre !== 'ADMINISTRADOR' || !roleSelector || !button || !msg) return;
+
+    const payload: StaffPayload = {
       dni: val('staff-dni'),
       nombres: val('staff-name'),
       apellidos: val('staff-surname'),
       correoElectronico: val('staff-email'),
-      contrasena: el('staff-pass').value,
+      contrasena: input('staff-pass')?.value ?? '',
       telefono: val('staff-phone') || null,
       rol: roleSelector.value
     };
-    if (body.rol === 'SOPORTE') {
-      body.turno = val('staff-shift');
-      body.extensionTelefonica = val('staff-ext') || null;
+    if (payload.rol === 'SOPORTE') {
+      payload.turno = shift?.value ?? '';
+      payload.extensionTelefonica = val('staff-ext') || null;
     } else {
-      body.areaODepartamento = val('staff-area');
-      body.nivelAcceso = Number(val('staff-access'));
+      payload.areaODepartamento = val('staff-area');
+      payload.nivelAcceso = Number(val('staff-access'));
     }
-    const button = el('staff-submit');
-    const msg = el('staff-message');
     msg.textContent = '';
     msg.classList.remove('error');
     button.disabled = true;
@@ -141,20 +166,27 @@ import RoleLayout from '../layouts/RoleLayout.astro';
       const res = await fetch(API_URL + '/api/v1/admin/personal', {
         method: 'POST',
         headers: { Authorization: 'Bearer ' + current.accessToken, 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
+        body: JSON.stringify(payload)
       });
       const result = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw Object.assign(new Error(res.status === 409 ? 'El DNI o correo ya existen.' : result.detail || result.error || result.message || 'No se pudo crear la cuenta.'), { status: res.status });
+        throw Object.assign(new Error(
+          res.status === 409 ? 'El DNI o correo ya existen.'
+            : result.detail || result.error || result.message || 'No se pudo crear la cuenta.'
+        ), { status: res.status });
       }
       msg.textContent = 'Cuenta creada correctamente.';
-      event.currentTarget.reset();
+      staffForm.reset();
       sync();
-      loadUsers();
-    } catch (error) {
-      msg.textContent = error.message || 'Error de conexión.';
+      await loadUsers();
+    } catch (error: unknown) {
+      msg.textContent = error instanceof Error ? error.message : 'Error de conexión.';
       msg.classList.add('error');
-      if (error.status === 401 || error.status === 403) { clearSession(); location.replace('/login'); }
+      const code = error instanceof Error && 'status' in error ? (error as ApiError).status : undefined;
+      if (code === 401 || code === 403) {
+        clearSession();
+        window.location.replace('/login');
+      }
     } finally {
       button.disabled = false;
       button.textContent = 'Crear cuenta';

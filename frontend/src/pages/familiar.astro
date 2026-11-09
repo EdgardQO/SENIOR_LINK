@@ -24,16 +24,8 @@ import RoleLayout from '../layouts/RoleLayout.astro';
   
 </RoleLayout>
 <script>
-  document.addEventListener('seniorlink:profile', event => {
-    const data = event.detail;
-    document.querySelectorAll('[data-field]').forEach(field => {
-      const path = field.dataset.field;
-      let value = path === 'usuario.nombreCompleto'
-        ? [data.usuario?.nombres, data.usuario?.apellidos].filter(Boolean).join(' ')
-        : path.split('.').reduce((current, key) => current?.[key], data);
-      if (path === 'acompanante.tarifaBasePorHora' && value != null) value = 'S/ ' + Number(value).toFixed(2);
-      field.textContent = value == null || String(value).trim() === '' ? 'No registrado' : String(value);
-    });
+  import { renderProfileFields } from '../lib/profile-fields';
+  document.addEventListener('seniorlink:profile', (event: Event) => {
+    renderProfileFields((event as CustomEvent).detail);
   }, { once: true });
-  
 </script>
