@@ -1,35 +1,103 @@
 ---
+const whatsappNumber = '51934004275';
+const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent('Hola, quisiera recibir información sobre SeniorLink.')}`;
+const contactEmail = 'dabertquijano@gmail.com';
+const locationName = 'UNFV · Facultad de Ingeniería Electrónica e Informática, Anexo 8';
+const mapsUrl = 'https://www.google.com/maps/place/UNFV+Facultad+De+Ingenier%C3%ADa+Electr%C3%B3nica+e+Inform%C3%A1tica+-+Anexo+8/data=!4m2!3m1!1s0x0:0x97427793910d7b1a';
+const mapsEmbed = 'https://www.google.com/maps?q=' + encodeURIComponent('UNFV Facultad de Ingeniería Electrónica e Informática Anexo 8, Lima, Perú') + '&output=embed';
 ---
-<section id="contacto" class="py-24 bg-white border-t border-slate-100">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="text-center max-w-3xl mx-auto mb-16">
-      <span class="text-teal-600 font-bold text-sm uppercase tracking-wider">Estamos para ayudarte</span>
-      <h2 class="text-3xl sm:text-4xl font-black text-slate-900 mt-2">
-        Contáctanos
-      </h2>
-      <p class="text-slate-600 mt-4 text-base">
-        ¿Tienes dudas sobre cómo registrar a tu familiar o cómo reservar? Nuestro equipo de soporte te responderá a la brevedad.
-      </p>
-    </div>
 
-    <div class="grid lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
-      <div class="p-8 rounded-2xl bg-slate-50 border border-slate-200 text-center">
-        <div class="text-3xl mb-3">📍</div>
-        <h4 class="font-bold text-slate-900">Ubicación</h4>
-        <p class="text-sm text-slate-600 mt-2">Lima, Perú</p>
+<section id="contacto" class="contact-section" aria-labelledby="contact-title">
+  <div class="contact-container">
+    <header class="contact-heading">
+      <span class="contact-eyebrow">ESTAMOS PARA AYUDARTE</span>
+      <h2 id="contact-title">CONTÁCTANOS</h2>
+      <p>¿Tienes consultas sobre SeniorLink, nuestros servicios o el proceso de registro? Estamos aquí para orientarte.</p>
+    </header>
+
+    <div class="contact-layout">
+      <div class="contact-information">
+        <div class="contact-intro">
+          <span class="contact-intro-label">HABLEMOS</span>
+          <h3>Estamos a un mensaje de distancia.</h3>
+          <p>Elige el canal que prefieras y ponte en contacto con nosotros.</p>
+        </div>
+
+        <div class="contact-methods">
+          <a class="contact-method" href={whatsappUrl} target="_blank" rel="noopener noreferrer" aria-label="Escribir a SeniorLink por WhatsApp">
+            <span class="contact-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.5 9 9 0 0 1-4-.9L3 21l1.9-5.5a9 9 0 0 1-.9-4A8.4 8.4 0 0 1 12.5 3 8.4 8.4 0 0 1 21 11.5Z"/><path d="M9 9.5c.7 2.4 2.1 3.8 4.5 4.5l1.5-1 2 1.1c-.2 1.6-1.4 2.3-3 2.1-3.7-.5-6.7-3.5-7.2-7.2-.2-1.6.5-2.8 2.1-3l1.1 2-1 1.5Z"/></svg>
+            </span>
+            <span class="contact-method-copy"><strong>WhatsApp</strong><span>+51 934 004 275</span><small>Escríbenos por WhatsApp</small></span>
+            <span class="contact-chevron" aria-hidden="true">→</span>
+          </a>
+
+          <a class="contact-method" href={`mailto:${contactEmail}`} aria-label="Enviar correo electrónico a SeniorLink">
+            <span class="contact-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+            </span>
+            <span class="contact-method-copy"><strong>Correo electrónico</strong><span class="contact-email">{contactEmail}</span><small>Envíanos tu consulta</small></span>
+            <span class="contact-chevron" aria-hidden="true">→</span>
+          </a>
+
+          <a class="contact-method" href={mapsUrl} target="_blank" rel="noopener noreferrer" aria-label="Ver ubicación en Google Maps">
+            <span class="contact-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+            </span>
+            <span class="contact-method-copy"><strong>Ubicación de referencia</strong><span>UNFV · Anexo 8</span><small>Facultad de Ingeniería Electrónica e Informática</small></span>
+            <span class="contact-chevron" aria-hidden="true">→</span>
+          </a>
+        </div>
       </div>
 
-      <div class="p-8 rounded-2xl bg-slate-50 border border-slate-200 text-center">
-        <div class="text-3xl mb-3">💬</div>
-        <h4 class="font-bold text-slate-900">Atención WhatsApp</h4>
-        <p class="text-sm text-slate-600 mt-2">+51 999 888 777</p>
-      </div>
-
-      <div class="p-8 rounded-2xl bg-slate-50 border border-slate-200 text-center">
-        <div class="text-3xl mb-3">✉️</div>
-        <h4 class="font-bold text-slate-900">Correo Electrónico</h4>
-        <p class="text-sm text-slate-600 mt-2">soporte@seniorlink.pe</p>
+      <div class="contact-map-card">
+        <div class="contact-map-top">
+          <span class="contact-map-label">ENCUÉNTRANOS</span>
+          <h3>Ubicación de referencia</h3>
+          <p>{locationName}</p>
+        </div>
+        <div class="contact-map-frame">
+          <iframe src={mapsEmbed} title="Mapa de referencia de la UNFV, Facultad de Ingeniería Electrónica e Informática, Anexo 8" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+        </div>
+        <a class="contact-map-link" href={mapsUrl} target="_blank" rel="noopener noreferrer">Abrir ubicación en Google Maps <span aria-hidden="true">→</span></a>
       </div>
     </div>
   </div>
 </section>
+
+<style>
+  .contact-section{padding:90px 0 105px;background:#f8fbf9;border-top:1px solid #e6eee9;scroll-margin-top:85px}
+  .contact-container{max-width:1200px;margin:0 auto;padding:0 28px}
+  .contact-heading{text-align:center;max-width:640px;margin:0 auto 48px}
+  .contact-eyebrow{color:#128274;font-size:11px;font-weight:850;letter-spacing:.15em}
+  .contact-heading h2{margin:12px 0 15px;color:#173e3a;font-size:clamp(29px,3.2vw,40px);font-weight:850;letter-spacing:-.035em}
+  .contact-heading p{margin:0;color:#70847c;font-size:15px;line-height:1.8}
+  .contact-layout{display:grid;grid-template-columns:.95fr 1.05fr;gap:30px;align-items:stretch}
+  .contact-information{display:flex;flex-direction:column;gap:23px}
+  .contact-intro{padding:4px 0 0}
+  .contact-intro-label,.contact-map-label{color:#128274;font-size:10px;font-weight:850;letter-spacing:.14em}
+  .contact-intro h3{max-width:420px;margin:10px 0;color:#1a473c;font-size:clamp(23px,2.5vw,31px);font-weight:850;letter-spacing:-.03em;line-height:1.25}
+  .contact-intro p{margin:0;color:#71867d;font-size:13px;line-height:1.7}
+  .contact-methods{display:flex;flex-direction:column;gap:13px}
+  .contact-method{display:flex;align-items:center;gap:16px;padding:19px;background:#fff;border:1px solid #e0ebe5;border-radius:15px;text-decoration:none;box-shadow:0 6px 20px rgba(18,66,55,.035);transition:border-color .2s,box-shadow .2s,transform .2s}
+  .contact-method:hover{border-color:#9bcebb;box-shadow:0 12px 28px rgba(18,66,55,.09);transform:translateY(-2px)}
+  .contact-icon{display:grid;place-items:center;width:48px;height:48px;flex-shrink:0;background:#e8f6ef;border-radius:13px;color:#117f6e}
+  .contact-icon svg{width:23px;height:23px}
+  .contact-method-copy{display:flex;flex-direction:column;min-width:0;gap:4px}
+  .contact-method-copy strong{color:#214b3f;font-size:14px;font-weight:800}
+  .contact-method-copy>span{color:#3d6758;font-size:13px;font-weight:700;overflow-wrap:anywhere}
+  .contact-method-copy small{color:#82958b;font-size:11px;line-height:1.5}
+  .contact-chevron{margin-left:auto;color:#16806e;font-size:21px;flex-shrink:0}
+  .contact-map-card{display:flex;flex-direction:column;overflow:hidden;background:#fff;border:1px solid #e0ebe5;border-radius:19px;box-shadow:0 10px 32px rgba(18,66,55,.06)}
+  .contact-map-top{padding:27px 28px 21px}
+  .contact-map-top h3{margin:9px 0 7px;color:#1d493e;font-size:21px;font-weight:800;letter-spacing:-.025em}
+  .contact-map-top p{margin:0;color:#75887e;font-size:12px;line-height:1.65}
+  .contact-map-frame{flex:1;min-height:320px;background:#e6f1eb}
+  .contact-map-frame iframe{display:block;width:100%;height:100%;min-height:320px;border:0}
+  .contact-map-link{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 27px;color:#137b6c;font-size:13px;font-weight:800;text-decoration:none}
+  .contact-map-link:hover{background:#f2faf5}
+  .contact-map-link span{font-size:19px}
+  @media(max-width:850px){.contact-layout{grid-template-columns:1fr}.contact-information{gap:20px}.contact-map-frame,.contact-map-frame iframe{min-height:330px}}
+  @media(max-width:600px){.contact-section{padding:66px 0 76px}.contact-container{padding:0 18px}.contact-heading{margin-bottom:32px}.contact-heading p{font-size:14px}.contact-intro h3{font-size:25px}.contact-method{padding:15px;gap:12px}.contact-icon{width:43px;height:43px}.contact-map-top{padding:22px}.contact-map-link{padding:17px 22px}.contact-map-frame,.contact-map-frame iframe{min-height:280px}}
+  @media(prefers-reduced-motion:reduce){.contact-method{transition:none}.contact-method:hover{transform:none}}
+</style>
