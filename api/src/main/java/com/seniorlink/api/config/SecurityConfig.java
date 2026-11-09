@@ -35,6 +35,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/login", "/api/v1/auth/registro").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/instituciones-aliadas").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/pagos/mercadopago/webhook").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/usuarios", "/api/v1/usuarios/total").hasRole("ADMINISTRADOR")
                 .anyRequest().authenticated())
