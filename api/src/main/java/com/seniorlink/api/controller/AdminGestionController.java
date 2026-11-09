@@ -31,14 +31,16 @@ public class AdminGestionController {
     private final UsuarioService usuarioService;
     private final RegistroUsuarioService registro;
     private final PersonalInternoService personal;
+    private final VinculacionFamiliarAdultoRepository vinculaciones;
 
     public AdminGestionController(UsuarioRepository usuarios, ReservaRepository reservas,
             InstitucionAliadaRepository instituciones, DescuentoRepository descuentos,
             HistorialEstadoReservaRepository historial, UsuarioService usuarioService,
-            RegistroUsuarioService registro, PersonalInternoService personal) {
+            RegistroUsuarioService registro, PersonalInternoService personal,
+            VinculacionFamiliarAdultoRepository vinculaciones) {
         this.usuarios = usuarios; this.reservas = reservas; this.instituciones = instituciones;
         this.descuentos = descuentos; this.historial = historial; this.usuarioService = usuarioService;
-        this.registro = registro; this.personal = personal;
+        this.registro = registro; this.personal = personal; this.vinculaciones = vinculaciones;
     }
 
     public record Resumen(long usuarios, long usuariosActivos, long acompanantes,
@@ -82,6 +84,30 @@ public class AdminGestionController {
     }
     @GetMapping("/usuarios/{dni}")
     public UsuarioDetalleDTO detalle(@PathVariable String dni) { return usuarioService.obtenerDetalle(dni); }
+
+    public record FamiliarVinculado(Long vinculacionId, String dni, String nombres,
+            String apellidos, String correoElectronico, String telefono,
+            String parentesco, String estado, OffsetDateTime solicitadoEn,
+            OffsetDateTime respondidoEn) {}
+
+    @GetMapping("/usuarios/{dni}/familiares")
+    @Transactional(readOnly = true)
+    public List<FamiliarVinculado> familiaresDelAdulto(@PathVariable String dni) {
+        Usuario adulto = usuarios.findById(dni)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+        if (adulto.getRol() == null || !"ADULTO_MAYOR".equals(adulto.getRol().getNombre()))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El usuario no es adulto mayor");
+        return vinculaciones.findAll().stream()
+            .filter(v -> dni.equals(v.getAdultoMayor().getDni()))
+            .map(v -> {
+                Usuario familiar = v.getFamiliar();
+                return new FamiliarVinculado(v.getId(), familiar.getDni(),
+                    familiar.getNombres(), familiar.getApellidos(),
+                    familiar.getCorreoElectronico(), familiar.getTelefono(),
+                    v.getParentesco() == null ? null : v.getParentesco().getNombre(),
+                    v.getEstado(), v.getSolicitadoEn(), v.getRespondidoEn());
+            }).toList();
+    }
 
     @PostMapping("/usuarios")
     @ResponseStatus(HttpStatus.CREATED)
