@@ -29,7 +29,22 @@ const { role, label, description } = Astro.props;
         <div class="sidebar-caption">MI ESPACIO</div>
         <a class="sidebar-link selected" href="#inicio">⌂ &nbsp; Inicio</a>
         <a class="sidebar-link" href="#mi-perfil">◯ &nbsp; Mi perfil</a>
-        <a class="sidebar-link" href="#herramientas">▦ &nbsp; Herramientas</a>
+        {role === 'ADMINISTRADOR' ? (
+          <>
+            <a class="sidebar-link" href="/admin">▦ &nbsp; Dashboard</a>
+            <a class="sidebar-link" href="/admin/usuarios">♙ &nbsp; Usuarios</a>
+            <a class="sidebar-link" href="/admin/perfiles/ACOMPANANTE">✦ &nbsp; Acompañantes</a>
+            <a class="sidebar-link" href="/admin/perfiles/ADULTO_MAYOR">♡ &nbsp; Adultos mayores</a>
+            <a class="sidebar-link" href="/admin/perfiles/FAMILIAR">♧ &nbsp; Familiares</a>
+            <a class="sidebar-link" href="/admin/perfiles/SOPORTE">☎ &nbsp; Soporte</a>
+            <a class="sidebar-link" href="/admin/perfiles/ADMINISTRADOR">♙ &nbsp; Administradores</a>
+            <a class="sidebar-link" href="/admin/reservas">▤ &nbsp; Reservas</a>
+            <a class="sidebar-link" href="/admin/instituciones">⌂ &nbsp; Instituciones</a>
+            <a class="sidebar-link" href="/admin/promociones">% &nbsp; Promociones</a>
+          </>
+        ) : (
+          <a class="sidebar-link" href="#herramientas">▦ &nbsp; Herramientas</a>
+        )}
         <div class="sidebar-foot">● &nbsp; Cuenta protegida de SeniorLink</div>
       </aside>
       <main class="panel-content" id="inicio">

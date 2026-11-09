@@ -1,195 +1,65 @@
 ---
 import RoleLayout from '../layouts/RoleLayout.astro';
 ---
-<RoleLayout role="ADMINISTRADOR" label="Administración" description="Administra usuarios, personal interno y las cuentas de la plataforma.">
-  <section id="herramientas" class="dashboard-grid" aria-label="Herramientas del perfil">
-    <article class="dashboard-card"><span class="card-symbol" aria-hidden="true">♙</span><h3>Usuarios del sistema</h3><p>Consulta las cuentas registradas y su estado.</p></article>
-<article class="dashboard-card"><span class="card-symbol" aria-hidden="true">✚</span><h3>Personal interno</h3><p>Registra administradores y agentes de soporte.</p></article>
-<article class="dashboard-card"><span class="card-symbol" aria-hidden="true">✓</span><h3>Gestión segura</h3><p>Las operaciones administrativas requieren autorización.</p></article>
-  </section>
-  <section id="mi-perfil">
-    <div class="section-heading"><h2>Mi información</h2><small>Datos de tu cuenta</small></div>
-    <div class="profile-box">
-      <div class="profile-grid">
-        <div><div class="profile-key">Nombre completo</div><div class="profile-value" data-field="usuario.nombreCompleto">Cargando...</div></div>
-        <div><div class="profile-key">Correo electrónico</div><div class="profile-value" data-field="usuario.correoElectronico">Cargando...</div></div>
-        <div><div class="profile-key">DNI</div><div class="profile-value" data-field="usuario.dni">Cargando...</div></div>
-        <div><div class="profile-key">Teléfono</div><div class="profile-value" data-field="usuario.telefono">Cargando...</div></div>
-        <div><div class="profile-key">Área o departamento</div><div class="profile-value" data-field="admin.areaODepartamento">Cargando...</div></div>
-<div><div class="profile-key">Nivel de acceso</div><div class="profile-value" data-field="admin.nivelAcceso">Cargando...</div></div>
-      </div>
-      <p class="profile-note">Esta información proviene de tu perfil registrado en SeniorLink.</p>
-    </div>
-  </section>
-  <section id="gestion-usuarios">
-  <div class="section-heading"><h2>Usuarios registrados</h2><small>Solo administradores</small></div>
-  <div class="section-box">
-    <p id="users-summary" class="profile-note" style="margin:0 0 12px">Cargando usuarios...</p>
-    <div style="overflow:auto"><table id="users-table" style="border-collapse:collapse;width:100%;text-align:left" hidden><thead><tr><th style="padding:10px">Nombre</th><th style="padding:10px">Correo</th><th style="padding:10px">Rol</th><th style="padding:10px">Estado</th></tr></thead><tbody id="users-body"></tbody></table></div>
+<RoleLayout role="ADMINISTRADOR" label="Administración" description="Métricas, indicadores y gestión integral de SeniorLink.">
+  <div class="section-heading"><h2>Indicadores generales</h2><small>Datos en tiempo real desde PostgreSQL</small></div>
+  <div class="dashboard-grid">
+    <article class="dashboard-card"><span class="card-symbol">♙</span><h3>Usuarios registrados</h3><div class="admin-metric" id="m-users">—</div></article>
+    <article class="dashboard-card"><span class="card-symbol">✓</span><h3>Usuarios activos</h3><div class="admin-metric" id="m-active">—</div></article>
+    <article class="dashboard-card"><span class="card-symbol">▤</span><h3>Reservas totales</h3><div class="admin-metric" id="m-reservations">—</div></article>
+    <article class="dashboard-card"><span class="card-symbol">✦</span><h3>Reservas completadas</h3><div class="admin-metric" id="m-completed">—</div></article>
+    <article class="dashboard-card"><span class="card-symbol">⌂</span><h3>Instituciones aliadas</h3><div class="admin-metric" id="m-institutions">—</div></article>
+    <article class="dashboard-card"><span class="card-symbol">%</span><h3>Promociones activas</h3><div class="admin-metric" id="m-promotions">—</div></article>
   </div>
-</section>
-<section id="crear-personal">
-  <div class="section-heading"><h2>Crear personal interno</h2><small>Administración y soporte</small></div>
-  <div class="section-box">
-    <form id="staff-form">
-      <div class="staff-grid">
-        <div><label class="staff-label" for="staff-role">Rol</label><select id="staff-role" class="staff-input" required><option value="SOPORTE">Soporte</option><option value="ADMINISTRADOR">Administrador</option></select></div>
-        <div><label class="staff-label" for="staff-dni">DNI</label><input id="staff-dni" class="staff-input" maxlength="8" pattern="[0-9]{8}" required /></div>
-        <div><label class="staff-label" for="staff-name">Nombres</label><input id="staff-name" class="staff-input" maxlength="100" required /></div>
-        <div><label class="staff-label" for="staff-surname">Apellidos</label><input id="staff-surname" class="staff-input" maxlength="100" required /></div>
-        <div><label class="staff-label" for="staff-email">Correo electrónico</label><input id="staff-email" class="staff-input" type="email" maxlength="150" required /></div>
-        <div><label class="staff-label" for="staff-phone">Teléfono (opcional)</label><input id="staff-phone" class="staff-input" maxlength="20" /></div>
-        <div><label class="staff-label" for="staff-pass">Contraseña inicial</label><input id="staff-pass" class="staff-input" type="password" minlength="8" maxlength="72" autocomplete="new-password" required /></div>
-      </div>
-      <div id="support-fields" class="staff-grid" style="margin-top:15px">
-        <div><label class="staff-label" for="staff-shift">Turno</label><select id="staff-shift" class="staff-input"><option>Mañana</option><option>Tarde</option><option>Noche</option></select></div>
-        <div><label class="staff-label" for="staff-ext">Extensión (opcional)</label><input id="staff-ext" class="staff-input" maxlength="20" /></div>
-      </div>
-      <div id="admin-fields" class="staff-grid" style="margin-top:15px" hidden>
-        <div><label class="staff-label" for="staff-area">Área o departamento</label><input id="staff-area" class="staff-input" maxlength="100" /></div>
-        <div><label class="staff-label" for="staff-access">Nivel de acceso</label><input id="staff-access" class="staff-input" type="number" min="1" max="32767" value="1" /></div>
-      </div>
-      <button id="staff-submit" class="staff-btn" type="submit" style="margin-top:20px">Crear cuenta</button>
-      <p id="staff-message" class="staff-message" role="status" aria-live="polite"></p>
-    </form>
+  <div class="section-heading"><h2>Distribución de usuarios por rol</h2></div>
+  <div class="profile-box"><div id="roles-graph" style="display:grid;gap:14px"></div></div>
+  <div class="section-heading"><h2>Módulos administrativos</h2></div>
+  <div class="dashboard-grid">
+    <a href="/admin/usuarios" class="dashboard-card" style="text-decoration:none;color:inherit"><span class="card-symbol">♙</span><h3>Usuarios y perfiles</h3><p>Consultar, registrar, editar y desactivar cuentas.</p></a>
+    <a href="/admin/reservas" class="dashboard-card" style="text-decoration:none;color:inherit"><span class="card-symbol">▤</span><h3>Reservas</h3><p>Consultar y actualizar estados con historial.</p></a>
+    <a href="/admin/instituciones" class="dashboard-card" style="text-decoration:none;color:inherit"><span class="card-symbol">⌂</span><h3>Instituciones</h3><p>Gestionar instituciones aliadas.</p></a>
+    <a href="/admin/promociones" class="dashboard-card" style="text-decoration:none;color:inherit"><span class="card-symbol">%</span><h3>Promociones</h3><p>Gestionar cupones y descuentos.</p></a>
   </div>
-</section>
+  <p id="dashboard-status" class="profile-note" role="status">Cargando indicadores...</p>
 </RoleLayout>
+<style>
+.admin-metric{font-size:30px;color:#0d9488;font-weight:700;margin-top:13px}
+</style>
 <script>
-  import { getSession, clearSession, API_URL } from '../lib/auth.js';
-  import { renderProfileFields } from '../lib/profile-fields';
-
-  type ApiError = Error & { status?: number };
-  type StaffPayload = {
-    dni: string; nombres: string; apellidos: string;
-    correoElectronico: string; contrasena: string; telefono: string | null;
-    rol: string; turno?: string; extensionTelefonica?: string | null;
-    areaODepartamento?: string; nivelAcceso?: number;
-  };
-  const el = <T extends HTMLElement>(id: string): T | null => document.getElementById(id) as T | null;
-  const input = (id: string): HTMLInputElement | null => el<HTMLInputElement>(id);
-  const val = (id: string): string => input(id)?.value.trim() ?? '';
-  const roleSelector = el<HTMLSelectElement>('staff-role');
-  const staffForm = el<HTMLFormElement>('staff-form');
-  const supportFields = el<HTMLDivElement>('support-fields');
-  const adminFields = el<HTMLDivElement>('admin-fields');
-  const shift = el<HTMLSelectElement>('staff-shift');
-  const area = input('staff-area');
-  const button = el<HTMLButtonElement>('staff-submit');
-  const msg = el<HTMLParagraphElement>('staff-message');
-
-  const sync = () => {
-    if (!roleSelector || !supportFields || !adminFields || !shift || !area) return;
-    const support = roleSelector.value === 'SOPORTE';
-    supportFields.hidden = !support;
-    adminFields.hidden = support;
-    shift.required = support;
-    area.required = !support;
-  };
-  roleSelector?.addEventListener('change', sync);
-  sync();
-
-  async function loadUsers(): Promise<void> {
-    const session = getSession();
-    const status = el<HTMLParagraphElement>('users-summary');
-    const body = el<HTMLTableSectionElement>('users-body');
-    const table = el<HTMLTableElement>('users-table');
-    if (!session || session.rolNombre !== 'ADMINISTRADOR' || !status || !body || !table) return;
+  import { adminRequest } from '../lib/admin-api';
+  document.addEventListener('seniorlink:profile', async () => {
+    const message = document.getElementById('dashboard-status');
     try {
-      const res = await fetch(API_URL + '/api/v1/usuarios', {
-        headers: { Authorization: 'Bearer ' + session.accessToken }
-      });
-      if (res.status === 401 || res.status === 403) {
-        throw Object.assign(new Error('No autorizado'), { status: res.status });
+      const data = await adminRequest<Record<string, number>>('/dashboard');
+      for (const [id, field] of Object.entries({
+        'm-users':'usuarios','m-active':'usuariosActivos','m-reservations':'reservas',
+        'm-completed':'reservasCompletadas','m-institutions':'instituciones','m-promotions':'promocionesActivas'
+      })) {
+        const target = document.getElementById(id);
+        if (target) target.textContent = String(data[field] ?? 0);
       }
-      if (!res.ok) throw new Error('No se pudieron consultar los usuarios.');
-      const users: unknown = await res.json();
-      if (!Array.isArray(users)) throw new Error('Respuesta inválida.');
-      body.replaceChildren();
-      for (const user of users) {
-        const tr = document.createElement('tr');
-        for (const value of [
-          [user.nombres, user.apellidos].filter(Boolean).join(' '),
-          user.correoElectronico, user.rolNombre, user.estaActivo ? 'Activo' : 'Inactivo'
-        ]) {
-          const td = document.createElement('td');
-          td.textContent = String(value || '—');
-          td.style.padding = '10px';
-          td.style.borderTop = '1px solid #e2ece8';
-          tr.appendChild(td);
+      const graph = document.getElementById('roles-graph');
+      if (graph) {
+        const roles: Array<[string,number]> = [
+          ['Acompañantes',data.acompanantes],['Adultos mayores',data.adultosMayores],
+          ['Familiares',data.familiares],['Soporte',data.soporte],['Administradores',data.administradores]
+        ];
+        const total = Math.max(1,Number(data.usuarios));
+        for (const [name,count] of roles) {
+          const wrapper = document.createElement('div');
+          const label = document.createElement('div');
+          label.textContent = name+' · '+count;
+          label.style.cssText='font-size:12px;margin-bottom:7px';
+          const track = document.createElement('div');
+          track.style.cssText='height:9px;border-radius:9px;background:#e7f5f0;overflow:hidden';
+          const fill = document.createElement('div');
+          fill.style.cssText='height:100%;background:#0d9488;border-radius:9px;width:'+Math.min(100,Math.max(0,Number(count)/total*100))+'%';
+          track.appendChild(fill);wrapper.append(label,track);graph.appendChild(wrapper);
         }
-        body.appendChild(tr);
       }
-      table.hidden = false;
-      status.textContent = users.length + ' usuario(s) registrados.';
-    } catch (error: unknown) {
-      status.textContent = error instanceof Error ? error.message : 'Error de conexión.';
-      const code = error instanceof Error && 'status' in error ? (error as ApiError).status : undefined;
-      if (code === 401 || code === 403) {
-        clearSession();
-        window.location.replace('/login');
-      }
+      if (message) message.textContent='Indicadores actualizados.';
+    } catch(error) {
+      if (message) message.textContent=error instanceof Error?error.message:'No se pudieron cargar las métricas.';
     }
-  }
-
-  document.addEventListener('seniorlink:profile', (event: Event) => {
-    renderProfileFields((event as CustomEvent).detail);
-    void loadUsers();
-  }, { once: true });
-
-  staffForm?.addEventListener('submit', async (event: SubmitEvent) => {
-    event.preventDefault();
-    const current = getSession();
-    if (!current || current.rolNombre !== 'ADMINISTRADOR' || !roleSelector || !button || !msg) return;
-
-    const payload: StaffPayload = {
-      dni: val('staff-dni'),
-      nombres: val('staff-name'),
-      apellidos: val('staff-surname'),
-      correoElectronico: val('staff-email'),
-      contrasena: input('staff-pass')?.value ?? '',
-      telefono: val('staff-phone') || null,
-      rol: roleSelector.value
-    };
-    if (payload.rol === 'SOPORTE') {
-      payload.turno = shift?.value ?? '';
-      payload.extensionTelefonica = val('staff-ext') || null;
-    } else {
-      payload.areaODepartamento = val('staff-area');
-      payload.nivelAcceso = Number(val('staff-access'));
-    }
-    msg.textContent = '';
-    msg.classList.remove('error');
-    button.disabled = true;
-    button.textContent = 'Creando...';
-    try {
-      const res = await fetch(API_URL + '/api/v1/admin/personal', {
-        method: 'POST',
-        headers: { Authorization: 'Bearer ' + current.accessToken, 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const result = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw Object.assign(new Error(
-          res.status === 409 ? 'El DNI o correo ya existen.'
-            : result.detail || result.error || result.message || 'No se pudo crear la cuenta.'
-        ), { status: res.status });
-      }
-      msg.textContent = 'Cuenta creada correctamente.';
-      staffForm.reset();
-      sync();
-      await loadUsers();
-    } catch (error: unknown) {
-      msg.textContent = error instanceof Error ? error.message : 'Error de conexión.';
-      msg.classList.add('error');
-      const code = error instanceof Error && 'status' in error ? (error as ApiError).status : undefined;
-      if (code === 401 || code === 403) {
-        clearSession();
-        window.location.replace('/login');
-      }
-    } finally {
-      button.disabled = false;
-      button.textContent = 'Crear cuenta';
-    }
-  });
+  }, { once:true });
 </script>

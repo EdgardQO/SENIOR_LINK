@@ -1,0 +1,43 @@
+---
+import RoleLayout from '../../layouts/RoleLayout.astro';
+---
+<RoleLayout role="ADMINISTRADOR" label="Administración" description="Consulta, añade, modifica y elimina instituciones sin perfiles vinculados.">
+  <nav class="admin-links" aria-label="Módulos de administración">
+<a href="/admin">Resumen</a><a href="/admin/usuarios">Usuarios</a><a href="/admin/perfiles/ACOMPANANTE">Acompañantes</a><a href="/admin/perfiles/ADULTO_MAYOR">Adultos mayores</a><a href="/admin/perfiles/FAMILIAR">Familiares</a><a href="/admin/perfiles/SOPORTE">Soporte</a><a href="/admin/perfiles/ADMINISTRADOR">Administradores</a><a href="/admin/reservas">Reservas</a><a href="/admin/instituciones">Instituciones</a><a href="/admin/promociones">Promociones</a></nav>
+  <section class="admin-shell" data-admin-module="instituciones" data-role-filter="">
+    <h2 style="margin:0 0 10px">Instituciones aliadas</h2>
+    <p class="admin-note">Consulta, añade, modifica y elimina instituciones sin perfiles vinculados.</p>
+    <div id="module-content"></div>
+    <p id="module-message" class="admin-message" role="status" aria-live="polite"></p>
+  </section>
+</RoleLayout>
+<style is:global>
+.admin-shell{background:#fff;border:1px solid #e2ece8;border-radius:17px;padding:22px;margin-top:22px}
+.admin-links{display:flex;gap:8px;flex-wrap:wrap;margin:15px 0}
+.admin-links a{border:1px solid #d5e9e2;color:#087a70;border-radius:10px;padding:10px 13px;text-decoration:none;font-size:12px}
+.admin-links a:hover{background:#e9f8f3}
+.admin-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.admin-form label{font-size:12px;color:#56756c;font-weight:600}
+.admin-form input,.admin-form select,.admin-form textarea,.admin-filter{width:100%;display:block;border:1px solid #d7e9e2;border-radius:10px;padding:11px;margin-top:7px;font:inherit;background:#fff}
+.admin-form input:focus,.admin-form select:focus,.admin-filter:focus{outline:2px solid #a9ded0}
+.admin-form [hidden]{display:none!important}
+.admin-table-wrap{overflow-x:auto}
+.admin-table{width:100%;border-collapse:collapse;text-align:left}
+.admin-table th{padding:12px;font-size:11px;color:#738b83;border-bottom:1px solid #e2ece8}
+.admin-table td{padding:12px;border-bottom:1px solid #e8f1ed;font-size:12px}
+.admin-btn{border:0;border-radius:10px;background:#0d9488;color:white;padding:11px 16px;cursor:pointer;font:600 12px Lexend}
+.admin-btn:disabled{opacity:.6}
+.admin-secondary{background:#edf8f4;color:#087a70}
+.admin-danger{background:#fff0f0;color:#ae3333}
+.admin-note{color:#708b81;font-size:12px;line-height:1.7}
+.admin-message{font-size:12px;margin-top:13px;color:#087a70}
+.admin-message.error{color:#b42336}
+@media(max-width:700px){.admin-form{grid-template-columns:1fr}}
+</style>
+<script>
+  import { initAdminModule } from '../../lib/admin-console';
+  document.addEventListener('seniorlink:profile', () => {
+    const root = document.querySelector<HTMLElement>('[data-admin-module]');
+    if (root) void initAdminModule(root);
+  }, { once: true });
+</script>
