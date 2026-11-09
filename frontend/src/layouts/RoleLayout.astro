@@ -41,23 +41,23 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
     <div class="panel-layout">
       <aside class="panel-sidebar" id="panel-sidebar">
         <div class="sidebar-caption">MI ESPACIO</div>
-        {role !== "ADMINISTRADOR" && <a class="sidebar-link" href="#inicio">⌂ &nbsp; Inicio</a>}
-        <a class="sidebar-link" href={role === "ADMINISTRADOR" ? "/admin/mi-perfil" : "#mi-perfil"}>◯ &nbsp; Mi perfil</a>
+        {role !== "ADMINISTRADOR" && <a class="sidebar-link" href="#inicio"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M9 21v-8h6v8"/></svg><span>Inicio</span></a>}
+        <a class="sidebar-link" href={role === "ADMINISTRADOR" ? "/admin/mi-perfil" : "#mi-perfil"}><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Mi perfil</span></a>
         {role === 'ADMINISTRADOR' ? (
           <>
-            <a class="sidebar-link" href="/admin">▦ &nbsp; Dashboard</a>
-            <a class="sidebar-link" href="/admin/usuarios">♙ &nbsp; Usuarios</a>
-            <a class="sidebar-link" href="/admin/perfiles/ACOMPANANTE">✦ &nbsp; Acompañantes</a>
-            <a class="sidebar-link" href="/admin/perfiles/ADULTO_MAYOR">♡ &nbsp; Adultos mayores</a>
-            <a class="sidebar-link" href="/admin/perfiles/FAMILIAR">♧ &nbsp; Familiares</a>
-            <a class="sidebar-link" href="/admin/perfiles/SOPORTE">☎ &nbsp; Soporte</a>
-            <a class="sidebar-link" href="/admin/perfiles/ADMINISTRADOR">♙ &nbsp; Administradores</a>
-            <a class="sidebar-link" href="/admin/reservas">▤ &nbsp; Reservas</a>
-            <a class="sidebar-link" href="/admin/instituciones">⌂ &nbsp; Instituciones</a>
-            <a class="sidebar-link" href="/admin/promociones">% &nbsp; Promociones</a>
+            <a class="sidebar-link" href="/admin"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>Dashboard</span></a>
+            <a class="sidebar-link" href="/admin/usuarios"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Usuarios</span></a>
+            <a class="sidebar-link" href="/admin/perfiles/ACOMPANANTE"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m2 10 10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5M22 10v7"/></svg><span>Acompañantes</span></a>
+            <a class="sidebar-link" href="/admin/perfiles/ADULTO_MAYOR"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8z"/></svg><span>Adultos mayores</span></a>
+            <a class="sidebar-link" href="/admin/perfiles/FAMILIAR"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="7" r="3"/><circle cx="17" cy="8" r="2.5"/><path d="M2 21v-3a6 6 0 0 1 12 0v3M15 15a5 5 0 0 1 7 5v1"/></svg><span>Familiares</span></a>
+            <a class="sidebar-link" href="/admin/perfiles/SOPORTE"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 14v-3a9 9 0 0 1 18 0v3"/><rect x="2" y="13" width="4" height="7" rx="2"/><rect x="18" y="13" width="4" height="7" rx="2"/><path d="M20 20c0 2-3 2-6 2"/></svg><span>Soporte</span></a>
+            <a class="sidebar-link" href="/admin/perfiles/ADMINISTRADOR"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 22 8-4V6l-8-4-8 4v12z"/><path d="m9 12 2 2 4-4"/></svg><span>Administradores</span></a>
+            <a class="sidebar-link" href="/admin/reservas"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></svg><span>Reservas</span></a>
+            <a class="sidebar-link" href="/admin/instituciones"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V5l8-3 8 3v16M2 21h20M9 21v-5h6v5M8 8h1m6 0h1M8 12h1m6 0h1"/></svg><span>Instituciones</span></a>
+            <a class="sidebar-link" href="/admin/promociones"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="2"/><circle cx="18" cy="18" r="2"/><path d="M4 20 20 4"/></svg><span>Promociones</span></a>
           </>
         ) : (
-          <a class="sidebar-link" href="#herramientas">▦ &nbsp; Herramientas</a>
+          <a class="sidebar-link" href="#herramientas"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 7a5 5 0 0 0-6 6L3 18l3 3 5-5a5 5 0 0 0 6-6l-3 3-3-3z"/></svg><span>Herramientas</span></a>
         )}
         <div class="sidebar-foot">● &nbsp; Cuenta protegida de SeniorLink</div>
       </aside>
@@ -207,7 +207,11 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
   .panel-sidebar.is-open {visibility:visible}
   .panel-sidebar {display:flex;flex-direction:column;gap:6px;background:#fff;border-right:1px solid #e3eeeb;padding:32px 15px}
   .sidebar-caption {font-size:11px;color:#9aada9;letter-spacing:2px;font-weight:700;margin:0 15px 12px}
-  .sidebar-link {text-decoration:none;color:#607773;padding:14px;border-radius:11px;font-weight:500}
+  .sidebar-link {display:flex;align-items:center;gap:12px;text-decoration:none;color:#607773;padding:13px 14px;border-radius:11px;font-weight:500;line-height:1.4;transition:background .16s ease,color .16s ease}
+  .sidebar-icon {width:18px;height:18px;flex:0 0 18px;color:#79938c}
+  .sidebar-link:hover .sidebar-icon,.sidebar-link.selected .sidebar-icon {color:#087a70}
+  .sidebar-link.selected {font-weight:600}
+  .sidebar-link:focus-visible {outline:2px solid #0d9488;outline-offset:2px}
   .sidebar-link:hover,.sidebar-link.selected {color:#087a70;background:#e7f7f2}
   .sidebar-foot {font-size:11px;color:#91a6a1;margin-top:auto;padding:18px 10px}
   .panel-section-user {font-size:12px;color:#63867a;margin:12px 0 20px}
