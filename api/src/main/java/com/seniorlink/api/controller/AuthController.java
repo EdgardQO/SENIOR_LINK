@@ -2,7 +2,10 @@ package com.seniorlink.api.controller;
 
 import com.seniorlink.api.dto.LoginRequestDTO;
 import com.seniorlink.api.dto.LoginResponseDTO;
+import com.seniorlink.api.dto.RegistroUsuarioDTO;
+import com.seniorlink.api.dto.UsuarioDTO;
 import com.seniorlink.api.service.AuthService;
+import com.seniorlink.api.service.RegistroUsuarioService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,9 +18,16 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final RegistroUsuarioService registroUsuarioService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, RegistroUsuarioService registroUsuarioService) {
         this.authService = authService;
+        this.registroUsuarioService = registroUsuarioService;
+    }
+
+    @PostMapping("/registro")
+    public ResponseEntity<UsuarioDTO> registrar(@RequestBody RegistroUsuarioDTO request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(registroUsuarioService.registrar(request));
     }
 
     @PostMapping("/login")
