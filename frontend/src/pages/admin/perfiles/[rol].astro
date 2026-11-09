@@ -10,7 +10,7 @@ const labels: Record<string,string> = {ADMINISTRADOR:'Administradores',ACOMPANAN
   
   <section class="admin-shell" data-admin-module="usuarios" data-role-filter={rol}>
     <h2 style="margin:0 0 10px">Perfiles: {labels[rol]}</h2>
-    <p class="admin-note">Visualiza, crea, edita y desactiva usuarios de este perfil.</p>
+    <p class="admin-note">Consulta los usuarios de este rol. Selecciona «Ver perfil» para abrir su ficha completa con datos generales y específicos.</p>
     <div id="module-content"></div>
     <p id="module-message" class="admin-message" role="status" aria-live="polite"></p>
   </section>
@@ -36,7 +36,18 @@ const labels: Record<string,string> = {ADMINISTRADOR:'Administradores',ACOMPANAN
 .admin-note{color:#708b81;font-size:12px;line-height:1.7}
 .admin-message{font-size:12px;margin-top:13px;color:#087a70}
 .admin-message.error{color:#b42336}
-@media(max-width:700px){.admin-form{grid-template-columns:1fr}}
+.admin-profile-detail{margin:20px 0;padding:24px;border:1px solid #cce9df;border-radius:18px;background:#f9fdfb;box-shadow:0 8px 25px #15302e0b}
+.admin-profile-header{display:flex;justify-content:space-between;align-items:start;gap:16px;flex-wrap:wrap}
+.admin-profile-header h3{font-size:22px;margin:6px 0 4px;color:#15302e}
+.admin-profile-eyebrow{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#087a70;font-weight:700}
+.admin-profile-section{background:#fff;border:1px solid #e2ece8;border-radius:14px;padding:20px;margin-top:18px}
+.admin-profile-section h4{font-size:15px;margin:0 0 18px;color:#087a70}
+.admin-profile-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px 18px}
+.admin-profile-field{min-width:0;display:flex;flex-direction:column;gap:6px;overflow-wrap:anywhere}
+.admin-profile-label{font-size:11px;color:#708b81}
+.admin-profile-field strong{font-size:13px;font-weight:600;color:#15302e;white-space:pre-wrap}
+@media(max-width:900px){.admin-profile-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){.admin-form,.admin-profile-grid{grid-template-columns:1fr}.admin-profile-detail{padding:14px}.admin-profile-section{padding:15px}}
 </style>
 <script>
   import { initAdminModule } from '../../../lib/admin-console';
