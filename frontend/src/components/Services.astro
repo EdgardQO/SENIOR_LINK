@@ -1,54 +1,64 @@
 ---
 const services = [
-  {
-    icon: '🏥',
-    title: 'Acompañamiento a Citas Médicas',
-    desc: 'Traslado seguro, espera en sala, toma de indicaciones y entrega de informe detallado al familiar.',
-  },
-  {
-    icon: '📋',
-    title: 'Gestión de Trámites y Compras',
-    desc: 'Asistencia y soporte físico para compras en supermercado, farmacias y trámites bancarios o públicos.',
-  },
-  {
-    icon: '☕',
-    title: 'Paseos y Compañía Diaria',
-    desc: 'Paseos al aire libre, conversaciones amenas, lectura compartida y estimulación social activa.',
-  },
-  {
-    icon: '📱',
-    title: 'Capacitación Tecnológica',
-    desc: 'Enseñanza práctica de uso de smartphones, videollamadas con nietos y aplicaciones esenciales.',
-  },
+  { icon: 'footprints', title: 'Caminatas y recreación', description: 'Paseos acompañados y actividades recreativas.' },
+  { icon: 'shopping-cart', title: 'Compras y trámites', description: 'Apoyo en compras y gestiones cotidianas.' },
+  { icon: 'calendar-check', title: 'Acompañamiento a citas', description: 'Compañía durante citas y diligencias.' },
+  { icon: 'monitor-smartphone', title: 'Apoyo digital', description: 'Orientación para usar dispositivos y aplicaciones.' },
+  { icon: 'users-round', title: 'Compañía y actividades', description: 'Conversación y actividades compartidas.' },
+  { icon: 'book-open', title: 'Lectura y estimulación', description: 'Lectura acompañada y actividades de estimulación.' },
+  { icon: 'utensils', title: 'Alimentación consciente', description: 'Acompañamiento durante rutinas de alimentación.' },
+  { icon: 'ellipsis', title: 'Servicios personalizados', description: 'Apoyo adaptado a las necesidades de cada persona.' },
 ];
 ---
 
-<section id="servicios" class="py-24 bg-white border-t border-slate-100">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="text-center max-w-3xl mx-auto mb-16">
-      <span class="text-teal-600 font-bold text-sm uppercase tracking-wider">Catálogo Especializado</span>
-      <h2 class="text-3xl sm:text-4xl font-black text-slate-900 mt-2">
-        Servicios diseñados para su bienestar y tu tranquilidad
-      </h2>
-      <p class="text-slate-600 mt-4 text-base">
-        Puedes combinar múltiples servicios en una sola reserva con cálculo proporcional de horas.
-      </p>
+<section id="servicios" class="services-section" aria-labelledby="services-title">
+  <div class="services-container">
+    <div class="services-heading">
+      <span class="services-kicker">CUIDADO Y BIENESTAR</span>
+      <h2 id="services-title">Nuestros servicios de acompañamiento</h2>
+      <p>Apoyo cercano en actividades cotidianas para promover el bienestar y la calidad de vida.</p>
     </div>
 
-    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-      {services.map((s) => (
-        <div class="p-8 rounded-2xl bg-slate-50 hover:bg-teal-50/50 border border-slate-200/60 hover:border-teal-200 transition-all duration-300 group hover:-translate-y-1 shadow-xs hover:shadow-md">
-          <div class="text-4xl mb-4 p-3 bg-white w-fit rounded-xl shadow-xs border border-slate-100 group-hover:scale-110 transition-transform">
-            {s.icon}
+    <div class="services-grid">
+      {services.map((service, index) => (
+        <article class="service-card">
+          <div class="service-icon" aria-hidden="true">
+            {service.icon === 'footprints' && <svg viewBox="0 0 24 24"><path d="M10 5.5 12 3l2.5 2M12 3l-.5 6-3.5 3m3.5-3 4 3 3 1m-7.5-4-2 5-4 4m6-4 3 3 1 4"/></svg>}
+            {service.icon === 'shopping-cart' && <svg viewBox="0 0 24 24"><circle cx="9" cy="20" r="1"/><circle cx="19" cy="20" r="1"/><path d="M2 3h2l3 13h13l2-9H5"/></svg>}
+            {service.icon === 'calendar-check' && <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18m-13 5 3 3 5-5"/></svg>}
+            {service.icon === 'monitor-smartphone' && <svg viewBox="0 0 24 24"><rect x="2" y="4" width="15" height="12" rx="2"/><path d="M9.5 16v4m-4 0h8"/><rect x="18" y="9" width="4" height="11" rx="1"/></svg>}
+            {service.icon === 'users-round' && <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2M17 5a3 3 0 0 1 0 6m1 4a5 5 0 0 1 3 5"/></svg>}
+            {service.icon === 'book-open' && <svg viewBox="0 0 24 24"><path d="M12 6c-3-2-6-2-10-1v14c4-1 7-1 10 1 3-2 6-2 10-1V5c-4-1-7-1-10 1Zm0 0v14"/></svg>}
+            {service.icon === 'utensils' && <svg viewBox="0 0 24 24"><path d="M4 3v7a3 3 0 0 0 6 0V3M7 3v18M19 21V3c-4 2-5 7-5 11h5"/></svg>}
+            {service.icon === 'ellipsis' && <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>}
           </div>
-          <h3 class="text-lg font-bold text-slate-900 group-hover:text-teal-700 transition-colors">
-            {s.title}
-          </h3>
-          <p class="text-slate-600 text-sm mt-3 leading-relaxed">
-            {s.desc}
-          </p>
-        </div>
+          <h3>{service.title}</h3>
+          <p>{service.description}</p>
+        </article>
       ))}
     </div>
   </div>
 </section>
+
+<style>
+  .services-section{padding:76px 0 82px;background:#fff;scroll-margin-top:85px}
+  .services-container{max-width:1360px;margin:auto;padding:0 24px}
+  .services-heading{text-align:center;margin:0 auto 34px;max-width:760px}
+  .services-kicker{font-size:11px;font-weight:800;letter-spacing:.16em;color:#15968e}
+  .services-heading h2{margin:9px 0 10px;font-size:clamp(25px,3vw,37px);line-height:1.2;font-weight:800;letter-spacing:-.035em;color:#173f43}
+  .services-heading>p{font-size:14px;line-height:1.6;color:#647b82;margin:0}
+  .services-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+  .service-card{min-width:0;min-height:164px;padding:22px 16px 18px;border:1px solid #dcecf0;border-radius:17px;background:linear-gradient(145deg,#eaf8fc,#effaf5);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}
+  .service-card:nth-child(4n+2){background:linear-gradient(145deg,#eaf5fb,#e4f5f5)}
+  .service-card:nth-child(4n+3){background:linear-gradient(145deg,#eef8fc,#e7f8f2)}
+  .service-card:nth-child(4n+4){background:linear-gradient(145deg,#f1f9f5,#eaf7fc)}
+  .service-card:hover{transform:translateY(-4px);border-color:#a5d6d5;box-shadow:0 12px 25px rgba(21,90,91,.09)}
+  .service-icon{width:42px;height:42px;display:grid;place-items:center;color:#187a9b;margin-bottom:12px}
+  .service-icon svg{width:36px;height:36px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .service-card h3{font-size:14px;font-weight:750;line-height:1.3;color:#173f49;margin:0;max-width:190px}
+  .service-card p{font-size:12px;line-height:1.45;color:#5d7c82;margin:9px 0 0;max-width:210px}
+  @media(min-width:1200px){.services-grid{grid-template-columns:repeat(8,minmax(0,1fr));gap:10px}.service-card{min-height:165px;padding:17px 8px}.service-card h3{font-size:12px}.service-card p{font-size:11px}.service-icon svg{width:32px;height:32px}}
+  @media(max-width:700px){.services-section{padding:56px 0 62px}.services-container{padding:0 16px}.services-heading{margin-bottom:24px}.services-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.service-card{min-height:154px;padding:18px 10px}.service-card h3{font-size:12px}.service-card p{font-size:11px}.service-icon{margin-bottom:9px}}
+  @media(max-width:360px){.services-grid{grid-template-columns:1fr}.service-card{min-height:132px}}
+  @media(prefers-reduced-motion:reduce){.service-card{transition:none}.service-card:hover{transform:none}}
+</style>
