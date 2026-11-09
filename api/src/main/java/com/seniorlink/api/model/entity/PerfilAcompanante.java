@@ -3,6 +3,8 @@ package com.seniorlink.api.model.entity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "perfiles_acompanante")
@@ -16,6 +18,14 @@ public class PerfilAcompanante {
     @MapsId
     @JoinColumn(name = "usuario_dni")
     private Usuario usuario;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "acompanante_institucion",
+            joinColumns = @JoinColumn(name = "acompanante_dni", referencedColumnName = "usuario_dni"),
+            inverseJoinColumns = @JoinColumn(name = "institucion_ruc", referencedColumnName = "ruc")
+    )
+    private Set<InstitucionAliada> institucionesAliadas = new HashSet<>();
 
     @Column(name = "biografia", columnDefinition = "TEXT")
     private String biografia;
@@ -54,5 +64,7 @@ public class PerfilAcompanante {
     public void setPromedioCalificacion(BigDecimal promedioCalificacion) { this.promedioCalificacion = promedioCalificacion; }
     public Integer getTotalCalificaciones() { return totalCalificaciones; }
     public void setTotalCalificaciones(Integer totalCalificaciones) { this.totalCalificaciones = totalCalificaciones; }
+    public Set<InstitucionAliada> getInstitucionesAliadas() { return institucionesAliadas; }
+    public void setInstitucionesAliadas(Set<InstitucionAliada> institucionesAliadas) { this.institucionesAliadas = institucionesAliadas; }
     public OffsetDateTime getCreadoEn() { return creadoEn; }
 }
