@@ -117,7 +117,7 @@ function displayProfileValue(profile: AnyRecord, key: string): string {
   const value = profile?.[key];
   return value === null || value === undefined || value === '' ? 'No registrado' : String(value);
 }
-function detailPanel(root: HTMLElement, data: AnyRecord): void {
+function detailPanel(root: HTMLElement, data: AnyRecord, relatives: AnyRecord[] = []): void {
   const content = $<HTMLElement>(root,'#module-content');
   if (!content || !data?.usuario) return;
   $<HTMLElement>(content,'#user-detail')?.remove();
@@ -201,6 +201,41 @@ function detailPanel(root: HTMLElement, data: AnyRecord): void {
     const notice=node('p','El backend no devolvió información específica para este perfil.','admin-note');
     panel.appendChild(notice);
   }
+  if (role === 'ADULTO_MAYOR') {
+    const linked = relatives.filter(v => v.estado === 'ACEPTADO');
+    const pending = relatives.filter(v => v.estado !== 'ACEPTADO');
+    const familyBlock = node('section','','admin-profile-section');
+    familyBlock.appendChild(node('h4','Familiares vinculados y responsables'));
+    if (!linked.length) familyBlock.appendChild(node('p','No hay familiares con vinculación aceptada.','admin-note'));
+    for (const familiar of linked) {
+      const family = node('div','','admin-profile-family');
+      const name = [familiar.nombres,familiar.apellidos].filter(Boolean).join(' ');
+      family.appendChild(node('strong',name || 'Familiar'));
+      const grid = node('div','','admin-profile-grid');
+      for (const [label,value] of [
+        ['DNI',familiar.dni],['Parentesco',familiar.parentesco],
+        ['Teléfono',familiar.telefono],['Correo',familiar.correoElectronico],
+        ['Vinculación',familiar.estado]
+      ] as Array<[string,unknown]>) {
+        const item=node('div','','admin-profile-field');
+        item.append(node('span',label,'admin-profile-label'),
+          node('strong',value == null || value === '' ? 'No registrado' : String(value)));
+        grid.appendChild(item);
+      }
+      family.appendChild(grid);
+      familyBlock.appendChild(family);
+    }
+    if (pending.length) {
+      familyBlock.appendChild(node('h4','Otras solicitudes de vinculación'));
+      for (const familiar of pending) {
+        familyBlock.appendChild(node('p',
+          [familiar.nombres,familiar.apellidos].filter(Boolean).join(' ') +
+          ' · ' + (familiar.parentesco || 'Parentesco no registrado') +
+          ' · Estado: ' + (familiar.estado || 'No registrado'),'admin-note'));
+      }
+    }
+    panel.appendChild(familyBlock);
+  }
   panel.appendChild(node('p','La información se obtiene de los registros del backend. Los campos sin valor se indican como «No registrado».','admin-note'));
   content.prepend(panel);
   panel.scrollIntoView({behavior:'smooth',block:'start'});
@@ -256,7 +291,15 @@ async function usersModule(root: HTMLElement) {
   const viewUser=async(dni:string)=>{
     try {
       const d=profiles[dni] ?? await adminRequest<AnyRecord>('/usuarios/'+encodeURIComponent(dni));
-      detailPanel(root,d);
+      let relatives: AnyRecord[] = [];
+      if (d.usuario?.rolNombre === 'ADULTO_MAYOR') {
+        try {
+          relatives = await adminRequest<AnyRecord[]>('/usuarios/'+encodeURIComponent(dni)+'/familiares');
+        } catch (error) {
+          status(root,'No se pudieron consultar los familiares vinculados: '+String(error),true);
+        }
+      }
+      detailPanel(root,d,relatives);
     }catch(e){status(root,e instanceof Error?e.message:'No se pudo consultar.',true);}
   };
   const editUser=async(dni:string)=>{
