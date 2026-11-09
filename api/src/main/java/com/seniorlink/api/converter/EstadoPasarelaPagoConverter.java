@@ -6,14 +6,13 @@ import jakarta.persistence.Converter;
 
 @Converter(autoApply = true)
 public class EstadoPasarelaPagoConverter implements AttributeConverter<EstadoPasarelaPago, String> {
-
     @Override
     public String convertToDatabaseColumn(EstadoPasarelaPago attribute) {
-        return attribute == null ? null : attribute.getValor();
+        return attribute != null ? attribute.getValor() : null;
     }
 
     @Override
     public EstadoPasarelaPago convertToEntityAttribute(String dbData) {
-        return dbData == null ? null : EstadoPasarelaPago.desdeValor(dbData);
+        return dbData != null ? EstadoPasarelaPago.desdeValor(dbData) : null;
     }
 }

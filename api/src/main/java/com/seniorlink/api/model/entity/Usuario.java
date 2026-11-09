@@ -39,6 +39,7 @@ public class Usuario {
     @Column(name = "actualizado_en", nullable = false)
     private OffsetDateTime actualizadoEn = OffsetDateTime.now();
 
+    // Getters y Setters
     public String getDni() { return dni; }
     public void setDni(String dni) { this.dni = dni; }
     public Rol getRol() { return rol; }

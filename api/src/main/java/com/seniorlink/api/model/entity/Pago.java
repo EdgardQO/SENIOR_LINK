@@ -7,26 +7,24 @@ import org.hibernate.type.SqlTypes;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.Map;
-import java.util.UUID;
 
 @Entity
 @Table(name = "pagos")
 public class Pago {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "codigo_identificador", updatable = false, nullable = false)
-    private UUID codigoIdentificador;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "reserva_codigo_id", nullable = false)
+    @JoinColumn(name = "reserva_id", nullable = false)
     private Reserva reserva;
 
     @Column(name = "monto", nullable = false, precision = 10, scale = 2)
     private BigDecimal monto;
 
-    @Column(name = "moneda", nullable = false, length = 3)
-    private String moneda = "PEN";
+    @Column(name = "moneda", nullable = false, length = 5)
+    private String moneda = "S/.";
 
     @Column(name = "mp_preferencia_id", length = 150)
     private String mpPreferenciaId;
@@ -54,8 +52,8 @@ public class Pago {
     private OffsetDateTime actualizadoEn = OffsetDateTime.now();
 
     // Getters y Setters
-    public UUID getCodigoIdentificador() { return codigoIdentificador; }
-    public void setCodigoIdentificador(UUID codigoIdentificador) { this.codigoIdentificador = codigoIdentificador; }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
     public Reserva getReserva() { return reserva; }
     public void setReserva(Reserva reserva) { this.reserva = reserva; }
     public BigDecimal getMonto() { return monto; }

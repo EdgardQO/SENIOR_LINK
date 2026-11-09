@@ -21,11 +21,12 @@ public enum EstadoReserva {
     }
 
     public static EstadoReserva desdeValor(String valor) {
-        for (EstadoReserva estado : values()) {
-            if (estado.valor.equalsIgnoreCase(valor)) {
-                return estado;
+        if (valor == null) return null;
+        for (EstadoReserva e : values()) {
+            if (e.valor.equalsIgnoreCase(valor) || e.name().equalsIgnoreCase(valor)) {
+                return e;
             }
         }
-        throw new IllegalArgumentException("Estado de reserva inválido: " + valor);
+        throw new IllegalArgumentException("EstadoReserva no válido: " + valor);
     }
 }

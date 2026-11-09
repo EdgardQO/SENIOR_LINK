@@ -10,10 +10,18 @@ const { logoSrc = "" } = Astro.props;
 <aside class="brand">
   <div class="brand-inner">
     <div class="logo-card">
-      <img src={logoSrc} alt="SeniorLink: acompañamiento que conecta generaciones" width="520" height="401" />
+      <img 
+        src={logoSrc} 
+        alt="SeniorLink: acompañamiento que conecta generaciones" 
+        width="520" 
+        height="401" 
+        loading="eager"
+      />
     </div>
+
     <h1>Acompañamiento de confianza, a un clic</h1>
     <p>Reserva, paga y haz seguimiento desde un solo lugar.</p>
+
     <ul>
       <li>
         <span class="check">
@@ -40,30 +48,137 @@ const { logoSrc = "" } = Astro.props;
         Historial para volver a elegir a tu favorito
       </li>
     </ul>
+
     <p class="note">Servicio de acompañamiento no clínico en Lima Metropolitana.</p>
   </div>
 </aside>
 
 <style>
-.brand{position:relative;overflow:hidden;color:#fff;display:flex;align-items:center;padding:48px 8%;
-  background:linear-gradient(180deg,#1479ab 0%,#0f6495 45%,#0a4f7c 100%)}
-.brand::after{content:"";position:absolute;right:-90px;bottom:-110px;width:300px;height:300px;border-radius:50%;background:rgba(255,255,255,.12)}
-.brand-inner{position:relative;max-width:560px;z-index:1}
-.logo-card{background:#fff;border-radius:22px;padding:18px 26px;width:min(300px,100%);margin-bottom:32px;box-shadow:0 10px 30px rgba(0,0,0,.18)}
-.logo-card img{display:block;width:100%;height:auto}
-.brand h1{font-size:clamp(2rem,3.4vw,3rem);line-height:1.2;margin:0 0 28px;font-weight:600}
-.brand p{margin:0 0 22px;font-size:1rem;opacity:.95}
-.brand ul{list-style:none;margin:0 0 26px;padding:0;display:grid;gap:16px}
-.brand li{display:flex;align-items:center;gap:14px;font-size:1rem}
-.check{flex:none;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.22);display:grid;place-items:center}
-.check svg{width:14px;height:14px}
-.note{font-size:0.9rem;opacity:0.85;margin:0}
+.brand {
+  position: relative;
+  overflow: hidden;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 8%;
+  background: linear-gradient(180deg, var(--color-primary-hover) 0%, var(--color-primary) 50%, var(--color-text-main) 100%);
+}
 
-@media (max-width:860px){
-  .brand{padding:32px 24px}
-  .brand ul,.brand .note,.brand p{display:none}
-  .brand h1{font-size:1.6rem;margin:0}
-  .logo-card{width:170px;padding:10px 16px;margin-bottom:14px;border-radius:16px}
-  .brand::after{display:none}
+.brand::after {
+  content: "";
+  position: absolute;
+  right: -90px;
+  bottom: -110px;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.brand-inner {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  z-index: 1;
+}
+
+/* Tarjeta contenedora del logo: centrada horizontalmente */
+.logo-card {
+  background: var(--color-bg-card);
+  border-radius: 20px;
+  padding: 18px 24px;
+  width: 100%;
+  max-width: 280px;
+  margin: 0 auto 36px auto; /* Centrado automático en el ancho disponible */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.22);
+}
+
+/* Imagen del logo sin deformación de altura */
+.logo-card img {
+  display: block;
+  width: 100%;
+  max-width: 220px;
+  height: auto;
+  object-fit: contain;
+}
+
+.brand h1 {
+  font-size: clamp(2rem, 3.2vw, 2.75rem);
+  line-height: 1.2;
+  margin: 0 0 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.brand p {
+  margin: 0 0 24px;
+  font-size: 1.05rem;
+  opacity: 0.95;
+  line-height: 1.5;
+}
+
+.brand ul {
+  list-style: none;
+  margin: 0 0 28px;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+}
+
+.brand li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 0.98rem;
+}
+
+.check {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  display: grid;
+  place-items: center;
+}
+
+.check svg {
+  width: 14px;
+  height: 14px;
+}
+
+.note {
+  font-size: 0.88rem;
+  opacity: 0.8;
+  margin: 0;
+}
+
+@media (max-width: 860px) {
+  .brand {
+    padding: 36px 24px;
+  }
+  .brand ul,
+  .brand .note,
+  .brand p {
+    display: none;
+  }
+  .brand h1 {
+    font-size: 1.55rem;
+    margin: 0;
+    text-align: center;
+  }
+  .logo-card {
+    max-width: 190px;
+    padding: 12px 18px;
+    margin-bottom: 16px;
+    border-radius: 14px;
+  }
+  .brand::after {
+    display: none;
+  }
 }
 </style>

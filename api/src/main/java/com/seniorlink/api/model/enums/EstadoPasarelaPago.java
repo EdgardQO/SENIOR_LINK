@@ -22,11 +22,12 @@ public enum EstadoPasarelaPago {
     }
 
     public static EstadoPasarelaPago desdeValor(String valor) {
-        for (EstadoPasarelaPago estado : values()) {
-            if (estado.valor.equalsIgnoreCase(valor)) {
-                return estado;
+        if (valor == null) return null;
+        for (EstadoPasarelaPago e : values()) {
+            if (e.valor.equalsIgnoreCase(valor) || e.name().equalsIgnoreCase(valor)) {
+                return e;
             }
         }
-        throw new IllegalArgumentException("Estado de pasarela no válido: " + valor);
+        throw new IllegalArgumentException("EstadoPasarelaPago no válido: " + valor);
     }
 }

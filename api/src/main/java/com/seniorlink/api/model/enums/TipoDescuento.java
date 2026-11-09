@@ -18,11 +18,12 @@ public enum TipoDescuento {
     }
 
     public static TipoDescuento desdeValor(String valor) {
+        if (valor == null) return null;
         for (TipoDescuento t : values()) {
-            if (t.valor.equalsIgnoreCase(valor)) {
+            if (t.valor.equalsIgnoreCase(valor) || t.name().equalsIgnoreCase(valor)) {
                 return t;
             }
         }
-        throw new IllegalArgumentException("Tipo de descuento inválido: " + valor);
+        throw new IllegalArgumentException("TipoDescuento no válido: " + valor);
     }
 }

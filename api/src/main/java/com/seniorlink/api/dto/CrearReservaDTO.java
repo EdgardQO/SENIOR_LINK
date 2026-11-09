@@ -7,12 +7,12 @@ import java.util.List;
 public record CrearReservaDTO(
         String clienteDni,
         String acompananteDni,
-        List<ServicioHorasDTO> servicios,
+        List<ItemServicioDTO> servicios,
         String codigoCupon,
         OffsetDateTime fechaHoraInicio,
         OffsetDateTime fechaHoraFin,
         String direccionEncuentro,
         String indicacionesAdicionales
 ) {
-    public record ServicioHorasDTO(Long servicioId, BigDecimal horas) {}
+    public record ItemServicioDTO(Long servicioId, BigDecimal horas) {}
 }

@@ -27,9 +27,6 @@ public class Reserva {
     @JoinColumn(name = "descuento_id")
     private Descuento descuento;
 
-    @OneToMany(mappedBy = "reserva", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ReservaServicio> servicios = new ArrayList<>();
-
     @Column(name = "fecha_hora_inicio", nullable = false)
     private OffsetDateTime fechaHoraInicio;
 
@@ -54,7 +51,6 @@ public class Reserva {
     @Column(name = "monto_total", nullable = false, precision = 10, scale = 2)
     private BigDecimal montoTotal;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "estado_actual", nullable = false)
     private EstadoReserva estadoActual = EstadoReserva.PENDIENTE_PAGO;
 
@@ -64,6 +60,9 @@ public class Reserva {
     @Column(name = "indicaciones_adicionales", columnDefinition = "TEXT")
     private String indicacionesAdicionales;
 
+    @OneToMany(mappedBy = "reserva", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ReservaServicio> servicios = new ArrayList<>();
+
     @Column(name = "creado_en", nullable = false, updatable = false)
     private OffsetDateTime creadoEn = OffsetDateTime.now();
 
@@ -71,13 +70,14 @@ public class Reserva {
     private OffsetDateTime actualizadoEn = OffsetDateTime.now();
 
     public void agregarServicio(Servicio servicio, BigDecimal horas) {
-        ReservaServicio rs = new ReservaServicio();
-        rs.setReserva(this);
-        rs.setServicio(servicio);
-        rs.setHoras(horas);
-        this.servicios.add(rs);
+        ReservaServicio item = new ReservaServicio();
+        item.setReserva(this);
+        item.setServicio(servicio);
+        item.setHoras(horas);
+        this.servicios.add(item);
     }
 
+    // Getters y Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Usuario getCliente() { return cliente; }
@@ -86,8 +86,6 @@ public class Reserva {
     public void setAcompanante(Usuario acompanante) { this.acompanante = acompanante; }
     public Descuento getDescuento() { return descuento; }
     public void setDescuento(Descuento descuento) { this.descuento = descuento; }
-    public List<ReservaServicio> getServicios() { return servicios; }
-    public void setServicios(List<ReservaServicio> servicios) { this.servicios = servicios; }
     public OffsetDateTime getFechaHoraInicio() { return fechaHoraInicio; }
     public void setFechaHoraInicio(OffsetDateTime fechaHoraInicio) { this.fechaHoraInicio = fechaHoraInicio; }
     public OffsetDateTime getFechaHoraFin() { return fechaHoraFin; }
@@ -110,6 +108,8 @@ public class Reserva {
     public void setDireccionEncuentro(String direccionEncuentro) { this.direccionEncuentro = direccionEncuentro; }
     public String getIndicacionesAdicionales() { return indicacionesAdicionales; }
     public void setIndicacionesAdicionales(String indicacionesAdicionales) { this.indicacionesAdicionales = indicacionesAdicionales; }
+    public List<ReservaServicio> getServicios() { return servicios; }
+    public void setServicios(List<ReservaServicio> servicios) { this.servicios = servicios; }
     public OffsetDateTime getCreadoEn() { return creadoEn; }
     public OffsetDateTime getActualizadoEn() { return actualizadoEn; }
     public void setActualizadoEn(OffsetDateTime actualizadoEn) { this.actualizadoEn = actualizadoEn; }
