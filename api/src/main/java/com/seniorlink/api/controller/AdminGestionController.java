@@ -97,13 +97,35 @@ public class AdminGestionController {
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
         if (adulto.getRol() == null || !"ADULTO_MAYOR".equals(adulto.getRol().getNombre()))
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El usuario no es adulto mayor");
-        return vinculaciones.findAll().stream()
-            .filter(v -> dni.equals(v.getAdultoMayor().getDni()))
+        return vinculaciones.findByAdultoMayorDni(dni).stream()
             .map(v -> {
                 Usuario familiar = v.getFamiliar();
                 return new FamiliarVinculado(v.getId(), familiar.getDni(),
                     familiar.getNombres(), familiar.getApellidos(),
                     familiar.getCorreoElectronico(), familiar.getTelefono(),
+                    v.getParentesco() == null ? null : v.getParentesco().getNombre(),
+                    v.getEstado(), v.getSolicitadoEn(), v.getRespondidoEn());
+            }).toList();
+    }
+
+    public record AdultoVinculado(Long vinculacionId, String dni, String nombres,
+            String apellidos, String correoElectronico, String telefono,
+            String parentesco, String estado, OffsetDateTime solicitadoEn,
+            OffsetDateTime respondidoEn) {}
+
+    @GetMapping("/usuarios/{dni}/adultos-mayores")
+    @Transactional(readOnly = true)
+    public List<AdultoVinculado> adultosDelFamiliar(@PathVariable String dni) {
+        Usuario familiar = usuarios.findById(dni)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+        if (familiar.getRol() == null || !"FAMILIAR".equals(familiar.getRol().getNombre()))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El usuario no es familiar");
+        return vinculaciones.findByFamiliarDni(dni).stream()
+            .map(v -> {
+                Usuario adulto = v.getAdultoMayor();
+                return new AdultoVinculado(v.getId(), adulto.getDni(),
+                    adulto.getNombres(), adulto.getApellidos(),
+                    adulto.getCorreoElectronico(), adulto.getTelefono(),
                     v.getParentesco() == null ? null : v.getParentesco().getNombre(),
                     v.getEstado(), v.getSolicitadoEn(), v.getRespondidoEn());
             }).toList();
