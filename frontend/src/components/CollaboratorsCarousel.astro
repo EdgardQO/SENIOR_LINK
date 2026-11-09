@@ -8,107 +8,42 @@ const institutions = [
   { name: 'Universidad Norbert Wiener', image: '/Universidades/LOGO_WIENER.png' },
   { name: 'Universidad Nacional Federico Villarreal', image: '/Universidades/logo_unfv.jpg' },
 ];
+const logos = [...institutions, ...institutions];
 ---
 
-<section id="clientes" class="collaborators-section scroll-mt-24" aria-labelledby="collaborators-title">
-  <div class="collaborators-container">
-    <div class="collaborators-heading">
-      <div>
-        <span class="collaborators-eyebrow">SENIORLINK</span>
-        <h2 id="collaborators-title">Nuestros clientes y colaboradores</h2>
-        <p>Conoce a las instituciones que forman parte de nuestra comunidad.</p>
-      </div>
-      <div class="collaborators-controls" aria-label="Controles del carrusel">
-        <button class="collaborators-arrow" data-carousel-prev type="button" aria-label="Ver instituciones anteriores">
-          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg>
-        </button>
-        <button class="collaborators-arrow" data-carousel-next type="button" aria-label="Ver siguientes instituciones">
-          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg>
-        </button>
-      </div>
-    </div>
-    <div class="collaborators-track" data-collaborators-track tabindex="0" role="region" aria-roledescription="carrusel" aria-label="Universidades colaboradoras">
-      {institutions.map((institution) => (
-        <article class="collaborator-card" aria-label={institution.name}>
-          <div class="collaborator-logo">
-            <img src={institution.image} alt={`Logo de ${institution.name}`} loading="lazy" decoding="async" />
-          </div>
-          <h3>{institution.name}</h3>
-        </article>
+<section id="clientes" class="partners-section scroll-mt-24" aria-labelledby="partners-title">
+  <div class="partners-heading">
+    <span class="partners-eyebrow">SENIORLINK</span>
+    <h2 id="partners-title">Nuestros clientes y colaboradores</h2>
+    <p>Instituciones que forman parte de nuestra comunidad.</p>
+  </div>
+  <div class="partners-marquee" aria-label="Universidades colaboradoras">
+    <div class="partners-track">
+      {logos.map((institution, index) => (
+        <div class="partner-logo" aria-hidden={index >= institutions.length ? 'true' : undefined}>
+          <img src={institution.image} alt={index < institutions.length ? institution.name : ''} loading={index < institutions.length ? 'eager' : 'lazy'} decoding="async" />
+        </div>
       ))}
     </div>
-    <p class="collaborators-hint">Desliza horizontalmente para conocer todas las instituciones.</p>
   </div>
 </section>
 
 <style>
-  .collaborators-section{padding:82px 0;background:linear-gradient(180deg,#f8fcfa 0%,#edf8f4 100%);overflow:hidden}
-  .collaborators-container{max-width:1280px;margin:0 auto;padding:0 24px;min-width:0}
-  .collaborators-heading{display:flex;align-items:end;justify-content:space-between;gap:24px;margin-bottom:28px}
-  .collaborators-eyebrow{display:block;color:#0d9488;font-size:12px;font-weight:800;letter-spacing:.13em;margin-bottom:12px}
-  .collaborators-heading h2{font-size:clamp(27px,3.5vw,40px);font-weight:800;color:#163c35;letter-spacing:-.035em;line-height:1.17;margin:0 0 12px}
-  .collaborators-heading p{color:#648278;font-size:15px;line-height:1.65;margin:0}
-  .collaborators-controls{display:flex;flex:none;gap:10px}
-  .collaborators-arrow{width:43px;height:43px;display:grid;place-items:center;border:1px solid #cce5da;border-radius:12px;color:#087a70;background:white;cursor:pointer;transition:background .2s,border-color .2s,transform .2s}
-  .collaborators-arrow:hover{background:#e2f7ee;border-color:#8dcfbb;transform:translateY(-2px)}
-  .collaborators-arrow:focus-visible{outline:3px solid #62bfa8;outline-offset:2px}
-  .collaborators-arrow svg{width:20px;height:20px;display:block}
-  .collaborators-track{display:flex;gap:18px;overflow-x:auto;overscroll-behavior-inline:contain;scroll-snap-type:x mandatory;scroll-behavior:smooth;scrollbar-width:none;padding:8px 2px 18px;outline-offset:4px}
-  .collaborators-track::-webkit-scrollbar{display:none}
-  .collaborator-card{flex:0 0 calc((100% - 36px)/3);min-width:0;scroll-snap-align:start;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:17px;min-height:208px;padding:24px 22px;background:#fff;border:1px solid #e1eee8;border-radius:17px;box-shadow:0 9px 28px rgba(20,73,57,.06);transition:border-color .2s,box-shadow .2s}
-  .collaborator-card:hover{border-color:#b4dacb;box-shadow:0 12px 30px rgba(20,73,57,.12)}
-  .collaborator-logo{height:105px;width:100%;display:flex;align-items:center;justify-content:center}
-  .collaborator-logo img{display:block;max-height:105px;max-width:100%;width:auto;height:auto;object-fit:contain}
-  .collaborator-card h3{font-size:13px;font-weight:600;line-height:1.5;text-align:center;color:#45685d;margin:0}
-  .collaborators-hint{font-size:12px;color:#79958a;margin:8px 0 0;text-align:center}
-  @media(max-width:900px){.collaborator-card{flex-basis:calc((100% - 18px)/2)}}
+  .partners-section{padding:64px 0 72px;background:#f2f0fc;overflow:hidden}
+  .partners-heading{text-align:center;padding:0 20px 32px}
+  .partners-eyebrow{display:block;font-size:11px;font-weight:800;letter-spacing:.15em;color:#628d88;margin-bottom:10px}
+  .partners-heading h2{font-size:clamp(25px,3vw,36px);font-weight:800;letter-spacing:-.03em;color:#264841;line-height:1.2;margin:0 0 10px}
+  .partners-heading p{font-size:14px;color:#6d827f;margin:0}
+  .partners-marquee{width:100%;overflow:hidden;user-select:none;pointer-events:none}
+  .partners-track{display:flex;align-items:center;width:max-content;animation:partners-scroll 32s linear infinite;will-change:transform}
+  .partner-logo{width:clamp(170px,21vw,270px);height:112px;flex:none;display:flex;align-items:center;justify-content:center;padding:14px 28px}
+  .partner-logo img{display:block;max-width:100%;max-height:76px;width:auto;height:auto;object-fit:contain}
+  @keyframes partners-scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
   @media(max-width:600px){
-    .collaborators-section{padding:58px 0}
-    .collaborators-container{padding:0 18px}
-    .collaborators-heading{gap:12px;align-items:center}
-    .collaborators-heading h2{font-size:26px}
-    .collaborators-heading p{font-size:13px}
-    .collaborators-controls{gap:6px}
-    .collaborators-arrow{width:36px;height:36px;border-radius:10px}
-    .collaborator-card{flex-basis:84%;min-height:188px;padding:20px}
-    .collaborator-logo{height:96px}
-    .collaborator-logo img{max-height:96px}
+    .partners-section{padding:48px 0 55px}
+    .partners-heading{padding-bottom:20px}
+    .partner-logo{width:165px;height:95px;padding:12px 20px}
+    .partner-logo img{max-height:68px}
   }
-  @media(prefers-reduced-motion:reduce){.collaborators-track{scroll-behavior:auto}.collaborator-card,.collaborators-arrow{transition:none}}
+  @media(prefers-reduced-motion:reduce){.partners-track{animation:none}}
 </style>
-
-<script>
-  const carousel = document.querySelector<HTMLElement>('[data-collaborators-track]');
-  const previous = document.querySelector<HTMLButtonElement>('[data-carousel-prev]');
-  const next = document.querySelector<HTMLButtonElement>('[data-carousel-next]');
-  if (carousel) {
-    const step = () => {
-      const card = carousel.querySelector<HTMLElement>('.collaborator-card');
-      if (!card) return carousel.clientWidth;
-      const gap = parseFloat(getComputedStyle(carousel).columnGap) || 0;
-      return card.getBoundingClientRect().width + gap;
-    };
-    const scrollToDirection = (direction: number) => {
-      const increment = step();
-      const maxScroll = carousel.scrollWidth - carousel.clientWidth;
-      const nearEnd = carousel.scrollLeft >= maxScroll - 8;
-      const nearStart = carousel.scrollLeft <= 8;
-      const target = direction > 0 && nearEnd ? 0 : direction < 0 && nearStart ? maxScroll : carousel.scrollLeft + direction * increment;
-      carousel.scrollTo({ left: target, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
-    };
-    previous?.addEventListener('click', () => scrollToDirection(-1));
-    next?.addEventListener('click', () => scrollToDirection(1));
-    let paused = false;
-    carousel.addEventListener('pointerenter', () => { paused = true; });
-    carousel.addEventListener('pointerleave', () => { paused = false; });
-    carousel.addEventListener('focusin', () => { paused = true; });
-    carousel.addEventListener('focusout', (event) => {
-      if (!(event.relatedTarget instanceof Node && carousel.contains(event.relatedTarget))) paused = false;
-    });
-    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      window.setInterval(() => {
-        if (!paused && !document.hidden && carousel.scrollWidth > carousel.clientWidth) scrollToDirection(1);
-      }, 5000);
-    }
-  }
-</script>
