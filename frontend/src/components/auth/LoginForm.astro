@@ -176,65 +176,68 @@ input:focus-visible {
 <script>
   import { API_URL, getSession, homeForRole, saveSession } from '../../lib/auth.js';
 
-  const form = document.getElementById('loginForm');
-  const email = document.getElementById('lEmail');
-  const password = document.getElementById('lPass');
-  const remember = document.getElementById('lRemember');
-  const message = document.getElementById('lMsg');
-  const submit = form?.querySelector('button[type="submit"]');
-  const toggle = form?.querySelector('.toggle');
+  const form = document.querySelector<HTMLFormElement>('#loginForm');
+  const email = document.querySelector<HTMLInputElement>('#lEmail');
+  const password = document.querySelector<HTMLInputElement>('#lPass');
+  const remember = document.querySelector<HTMLInputElement>('#lRemember');
+  const message = document.querySelector<HTMLParagraphElement>('#lMsg');
+  const submit = form?.querySelector<HTMLButtonElement>('button[type="submit"]');
+  const toggle = form?.querySelector<HTMLButtonElement>('.toggle');
 
   const existingSession = getSession();
   if (existingSession) window.location.replace(homeForRole(existingSession.rolNombre));
 
-  toggle?.addEventListener('click', () => {
-    const visible = password.type === 'password';
-    password.type = visible ? 'text' : 'password';
-    toggle.textContent = visible ? 'Ocultar' : 'Mostrar';
-    toggle.setAttribute('aria-label', visible ? 'Ocultar contraseña' : 'Mostrar contraseña');
-  });
+  if (form && email && password && remember && message && submit) {
+    toggle?.addEventListener('click', () => {
+      const visible = password.type === 'password';
+      password.type = visible ? 'text' : 'password';
+      toggle.textContent = visible ? 'Ocultar' : 'Mostrar';
+      toggle.setAttribute('aria-label', visible ? 'Ocultar contraseña' : 'Mostrar contraseña');
+    });
 
-  if (new URLSearchParams(window.location.search).get('registro') === 'ok') {
-    message.style.color = '#047857';
-    message.textContent = 'Cuenta creada correctamente. Ya puedes iniciar sesión.';
-  }
-
-  form?.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    message.style.color = '#dc2626';
-    message.textContent = '';
-    if (!form.checkValidity()) {
-      form.reportValidity();
-      return;
+    if (new URLSearchParams(window.location.search).get('registro') === 'ok') {
+      message.style.color = '#047857';
+      message.textContent = 'Cuenta creada correctamente. Ya puedes iniciar sesión.';
     }
 
-    submit.disabled = true;
-    submit.textContent = 'Ingresando...';
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      message.style.color = '#dc2626';
+      message.textContent = '';
 
-    try {
-      const response = await fetch(`${API_URL}/api/v1/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          correoElectronico: email.value.trim(),
-          contrasena: password.value
-        })
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(response.status === 401
-          ? 'Correo o contraseña incorrectos.'
-          : data.message || data.error || 'No se pudo iniciar sesión.');
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
       }
 
-      const destination = saveSession(data, remember.checked);
-      window.location.replace(destination);
-    } catch (error) {
-      message.textContent = error instanceof TypeError
-        ? 'No se pudo conectar con el servidor. Verifica que la API esté encendida.'
-        : error.message || 'Ocurrió un error al iniciar sesión.';
-      submit.disabled = false;
-      submit.textContent = 'Ingresar';
-    }
-  });
+      submit.disabled = true;
+      submit.textContent = 'Ingresando...';
+
+      try {
+        const response = await fetch(`${API_URL}/api/v1/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            correoElectronico: email.value.trim(),
+            contrasena: password.value
+          })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(response.status === 401
+            ? 'Correo o contraseña incorrectos.'
+            : data.message || data.error || 'No se pudo iniciar sesión.');
+        }
+
+        const destination = saveSession(data, remember.checked);
+        window.location.replace(destination);
+      } catch (error) {
+        message.textContent = error instanceof TypeError
+          ? 'No se pudo conectar con el servidor. Verifica que la API esté encendida.'
+          : error instanceof Error ? error.message : 'Ocurrió un error al iniciar sesión.';
+        submit.disabled = false;
+        submit.textContent = 'Ingresar';
+      }
+    });
+  }
 </script>
