@@ -8,7 +8,7 @@ const institutions = [
   { name: 'Universidad Norbert Wiener', image: '/Universidades/LOGO_WIENER.png' },
   { name: 'Universidad Nacional Federico Villarreal', image: '/Universidades/logo_unfv.jpg' },
 ];
-const logos = [...institutions, ...institutions];
+const logos = [...institutions, ...institutions, ...institutions, ...institutions];
 ---
 
 <section id="clientes" class="partners-section scroll-mt-24" aria-labelledby="partners-title">
@@ -35,15 +35,15 @@ const logos = [...institutions, ...institutions];
   .partners-heading h2{font-size:clamp(25px,3vw,36px);font-weight:800;letter-spacing:-.03em;color:#264841;line-height:1.2;margin:0 0 10px}
   .partners-heading p{font-size:14px;color:#6d827f;margin:0}
   .partners-marquee{width:100%;overflow:hidden;user-select:none;pointer-events:none}
-  .partners-track{display:flex;align-items:center;width:max-content;animation:partners-scroll 32s linear infinite;will-change:transform}
-  .partner-logo{width:clamp(170px,21vw,270px);height:112px;flex:none;display:flex;align-items:center;justify-content:center;padding:14px 28px}
-  .partner-logo img{display:block;max-width:100%;max-height:76px;width:auto;height:auto;object-fit:contain}
+  .partners-track{display:flex;align-items:center;width:max-content;animation:partners-scroll 48s linear infinite;will-change:transform}
+  .partner-logo{width:clamp(135px,15vw,185px);height:100px;flex:none;display:flex;align-items:center;justify-content:center;padding:10px 8px}
+  .partner-logo img{display:block;max-width:100%;max-height:80px;width:auto;height:auto;object-fit:contain}
   @keyframes partners-scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
   @media(max-width:600px){
     .partners-section{padding:48px 0 55px}
     .partners-heading{padding-bottom:20px}
-    .partner-logo{width:165px;height:95px;padding:12px 20px}
-    .partner-logo img{max-height:68px}
+    .partner-logo{width:142px;height:88px;padding:8px 6px}
+    .partner-logo img{max-height:74px}
   }
   @media(prefers-reduced-motion:reduce){.partners-track{animation:none}}
 </style>
