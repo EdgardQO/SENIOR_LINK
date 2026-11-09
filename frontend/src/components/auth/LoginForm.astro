@@ -1,12 +1,11 @@
 ---
-// src/components/auth/LoginForm.astro
 ---
 
 <section id="login" class="auth-section">
   <h2>Bienvenido de nuevo</h2>
   <p class="sub">Ingresa con tu correo y contraseña.</p>
 
-  <form id="loginForm" novalidate>
+  <form id="loginForm">
     <div class="field">
       <label for="lEmail">Correo electrónico</label>
       <input id="lEmail" type="email" placeholder="nombre@correo.com" autocomplete="email" required />
@@ -18,13 +17,13 @@
         <input id="lPass" type="password" placeholder="Tu contraseña" autocomplete="current-password" required />
         <button type="button" class="toggle" data-target="lPass" aria-label="Mostrar contraseña">Mostrar</button>
       </div>
-      <p class="msg" id="lMsg" role="alert"></p>
     </div>
 
     <label class="check-row">
       <input type="checkbox" id="lRemember" /> Mantener sesión iniciada
     </label>
-    <p class="sub">Si olvidaste tu contraseña, contacta con soporte.</p>
+    <p class="support-note">Si olvidaste tu contraseña, contacta con soporte.</p>
+    <p class="msg" id="lMsg" role="status" aria-live="polite"></p>
     <button class="btn" type="submit">Ingresar</button>
   </form>
 
@@ -78,9 +77,6 @@ input:focus-visible {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.2);
 }
-input.invalid {
-  border-color: #dc2626;
-}
 .pw {
   position: relative;
 }
@@ -126,17 +122,6 @@ input.invalid {
   accent-color: var(--color-primary);
   flex: none;
 }
-.forgot {
-  display: inline-block;
-  font-weight: 600;
-  margin-bottom: 22px;
-  color: var(--color-primary);
-  text-decoration: none;
-}
-.forgot:hover {
-  color: var(--color-primary-hover);
-  text-decoration: underline;
-}
 .btn {
   width: 100%;
   height: 52px;
@@ -174,59 +159,82 @@ input.invalid {
   color: var(--color-text-muted);
   margin-top: 26px;
 }
+.support-note {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  margin: 0 0 16px;
+}
 .msg {
   font-size: 0.85rem;
   color: #dc2626;
   margin: 6px 0 0;
   min-height: 0;
 }
+.msg:empty { display: none; }
 </style>
 
 <script>
-import { API_URL, saveSession } from '../../lib/auth.js';
-const emailOk = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-document.querySelectorAll('.toggle').forEach(btn => btn.addEventListener('click', () => {
-  const input = document.getElementById(btn.dataset.target);
-  if (!input) return;
-  const visible = input.type === 'password';
-  input.type = visible ? 'text' : 'password';
-  btn.textContent = visible ? 'Ocultar' : 'Mostrar';
-}));
-document.getElementById('loginForm')?.addEventListener('submit', async e => {
-  e.preventDefault();
+  import { API_URL, getSession, homeForRole, saveSession } from '../../lib/auth.js';
+
+  const form = document.getElementById('loginForm');
   const email = document.getElementById('lEmail');
-  const pass = document.getElementById('lPass');
-  const msg = document.getElementById('lMsg');
-  const button = e.currentTarget.querySelector('button[type="submit"]');
-  msg.textContent = '';
-  if (!emailOk(email.value.trim()) || !pass.value) {
-    msg.textContent = 'Ingresa un correo válido y tu contraseña.';
-    return;
+  const password = document.getElementById('lPass');
+  const remember = document.getElementById('lRemember');
+  const message = document.getElementById('lMsg');
+  const submit = form?.querySelector('button[type="submit"]');
+  const toggle = form?.querySelector('.toggle');
+
+  const existingSession = getSession();
+  if (existingSession) window.location.replace(homeForRole(existingSession.rolNombre));
+
+  toggle?.addEventListener('click', () => {
+    const visible = password.type === 'password';
+    password.type = visible ? 'text' : 'password';
+    toggle.textContent = visible ? 'Ocultar' : 'Mostrar';
+    toggle.setAttribute('aria-label', visible ? 'Ocultar contraseña' : 'Mostrar contraseña');
+  });
+
+  if (new URLSearchParams(window.location.search).get('registro') === 'ok') {
+    message.style.color = '#047857';
+    message.textContent = 'Cuenta creada correctamente. Ya puedes iniciar sesión.';
   }
-  button.disabled = true;
-  button.textContent = 'Ingresando...';
-  try {
-    const response = await fetch(API_URL + '/api/v1/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ correoElectronico: email.value.trim(), contrasena: pass.value })
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(response.status === 401 ? 'Correo o contraseña incorrectos.' : (data.error || data.message || 'No se pudo iniciar sesión.'));
-    if (!data.accessToken || !data.rutaInicio) throw new Error('Respuesta de autenticación incompleta.');
-    const route = saveSession(data, document.getElementById('lRemember').checked);
-    window.location.replace(route);
-  } catch (error) {
-    msg.textContent = error instanceof TypeError ? 'No se pudo conectar con el servidor. Verifica que la API esté encendida.' : error.message;
-  } finally {
-    button.disabled = false;
-    button.textContent = 'Ingresar';
-  }
-});
-const params = new URLSearchParams(window.location.search);
-if (params.get('registro') === 'ok') {
-  const msg = document.getElementById('lMsg');
-  msg.style.color = '#047857';
-  msg.textContent = 'Cuenta creada correctamente. Ya puedes iniciar sesión.';
-}
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    message.style.color = '#dc2626';
+    message.textContent = '';
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+
+    submit.disabled = true;
+    submit.textContent = 'Ingresando...';
+
+    try {
+      const response = await fetch(`${API_URL}/api/v1/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          correoElectronico: email.value.trim(),
+          contrasena: password.value
+        })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(response.status === 401
+          ? 'Correo o contraseña incorrectos.'
+          : data.message || data.error || 'No se pudo iniciar sesión.');
+      }
+
+      const destination = saveSession(data, remember.checked);
+      window.location.replace(destination);
+    } catch (error) {
+      message.textContent = error instanceof TypeError
+        ? 'No se pudo conectar con el servidor. Verifica que la API esté encendida.'
+        : error.message || 'Ocurrió un error al iniciar sesión.';
+      submit.disabled = false;
+      submit.textContent = 'Ingresar';
+    }
+  });
 </script>
