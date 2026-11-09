@@ -16,6 +16,9 @@ public interface VinculacionFamiliarAdultoRepository extends JpaRepository<Vincu
     // Listar solicitudes según el adulto mayor y estado (ej. 'PENDIENTE', 'ACEPTADO')
     List<VinculacionFamiliarAdulto> findByAdultoMayorDniAndEstado(String adultoMayorDni, String estado);
 
+    // Listar todas las vinculaciones del adulto mayor, cualquiera sea su estado
+    List<VinculacionFamiliarAdulto> findByAdultoMayorDni(String adultoMayorDni);
+
     // Listar vinculaciones de un familiar
     List<VinculacionFamiliarAdulto> findByFamiliarDni(String familiarDni);
 
