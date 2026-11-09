@@ -91,7 +91,7 @@ const services = [
   .service-content p{margin-bottom:20px}
   .service-more:hover{background:#10695e;transform:translateY(-1px)}
   .service-more:focus-visible,.service-dialog button:focus-visible{outline:3px solid #70c6b6;outline-offset:3px}
-  .service-dialog{width:min(520px,calc(100vw - 32px));max-height:min(85vh,750px);padding:0;border:0;border-radius:18px;background:#fff;color:#234943;box-shadow:0 25px 85px rgba(0,33,30,.23);overflow:auto}
+  .service-dialog{position:fixed;inset:0;margin:auto;width:min(520px,calc(100vw - 32px));max-height:min(85vh,750px);padding:0;border:0;border-radius:18px;background:#fff;color:#234943;box-shadow:0 25px 85px rgba(0,33,30,.23);overflow:auto}
   .service-dialog::backdrop{background:rgba(12,38,35,.58);backdrop-filter:blur(3px)}
   .service-dialog-inner{position:relative}
   .service-dialog-close{position:absolute;z-index:1;top:14px;right:14px;width:36px;height:36px;border:0;border-radius:50%;background:rgba(255,255,255,.95);color:#244d46;font-size:25px;line-height:1;cursor:pointer}
