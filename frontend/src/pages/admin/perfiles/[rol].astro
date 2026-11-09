@@ -1,8 +1,7 @@
 ---
 import RoleLayout from '../../../layouts/RoleLayout.astro';
-const roles = ['ADMINISTRADOR','ACOMPANANTE','ADULTO_MAYOR','SOPORTE','FAMILIAR'];
 export function getStaticPaths() {
-  return roles.map(rol => ({ params: { rol } }));
+  return ['ADMINISTRADOR','ACOMPANANTE','ADULTO_MAYOR','SOPORTE','FAMILIAR'].map(rol => ({ params: { rol } }));
 }
 const rol = Astro.params.rol!;
 const labels: Record<string,string> = {ADMINISTRADOR:'Administradores',ACOMPANANTE:'Acompañantes',ADULTO_MAYOR:'Adultos mayores',SOPORTE:'Soporte',FAMILIAR:'Familiares'};
