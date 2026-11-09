@@ -1,13 +1,13 @@
 ---
 const services = [
-  { title: 'Caminatas y recreación', description: 'Paseos y momentos al aire libre, siempre en buena compañía.', image: '/Servicios/caminata.png' },
-  { title: 'Compras y trámites', description: 'Una mano amiga para resolver las tareas del día a día.', image: '/Servicios/compras.png' },
-  { title: 'Acompañamiento a citas', description: 'Apoyo y compañía para acudir a citas y diligencias.', image: '/Servicios/citas.png' },
-  { title: 'Apoyo digital', description: 'Ayuda sencilla para usar el celular y otras tecnologías.', image: '/Servicios/tecnologia.png' },
-  { title: 'Compañía y actividades', description: 'Compartir conversaciones, aficiones y buenos momentos.', image: '/Servicios/compania.png' },
-  { title: 'Lectura y estimulación', description: 'Lecturas y actividades para mantener la mente activa.', image: '/Servicios/lectura.png' },
-  { title: 'Alimentación consciente', description: 'Compañía en las rutinas de alimentación cotidianas.', image: '/Servicios/alimentacion.png' },
-  { title: 'Otros servicios', description: 'Acompañamiento personalizado según cada necesidad.', image: '/Servicios/otros.png' },
+  { title: 'Caminatas y recreación', description: 'Paseos y momentos al aire libre, siempre en buena compañía.', image: '/Servicios/caminata.png', details: "Disfruta de paseos tranquilos, visitas a parques y actividades recreativas con acompañamiento. La actividad se adapta a los intereses, preferencias y ritmo de cada persona." },
+  { title: 'Compras y trámites', description: 'Una mano amiga para resolver las tareas del día a día.', image: '/Servicios/compras.png', details: "Brindamos compañía durante compras de productos cotidianos y gestiones sencillas, como acudir a establecimientos o realizar trámites. El objetivo es que la persona se sienta acompañada y segura durante el recorrido." },
+  { title: 'Acompañamiento a citas', description: 'Apoyo y compañía para acudir a citas y diligencias.', image: '/Servicios/citas.png', details: "Ofrecemos compañía para acudir a citas, reuniones y diligencias programadas, desde el traslado hasta el regreso, según lo acordado. Este servicio no sustituye la atención ni las indicaciones de profesionales de salud." },
+  { title: 'Apoyo digital', description: 'Ayuda sencilla para usar el celular y otras tecnologías.', image: '/Servicios/tecnologia.png', details: "Ayudamos a familiarizarse con el celular, las videollamadas, la mensajería y otras herramientas digitales de uso diario. La orientación es práctica y se realiza paso a paso, respetando la privacidad del usuario." },
+  { title: 'Compañía y actividades', description: 'Compartir conversaciones, aficiones y buenos momentos.', image: '/Servicios/compania.png', details: "Compartimos momentos de conversación, juegos de mesa, actividades culturales y pasatiempos elegidos por la persona. Buscamos crear experiencias agradables y fortalecer la conexión social." },
+  { title: 'Lectura y estimulación', description: 'Lecturas y actividades para mantener la mente activa.', image: '/Servicios/lectura.png', details: "Acompañamos en sesiones de lectura, juegos de memoria, conversación sobre historias y otras actividades recreativas que invitan a participar y mantener la curiosidad." },
+  { title: 'Alimentación consciente', description: 'Compañía en las rutinas de alimentación cotidianas.', image: '/Servicios/alimentacion.png', details: "Brindamos compañía durante las comidas y apoyamos en la organización de rutinas cotidianas relacionadas con la alimentación. No reemplazamos la orientación nutricional ni la atención médica." },
+  { title: 'Otros servicios', description: 'Acompañamiento personalizado según cada necesidad.', image: '/Servicios/otros.png', details: "¿Necesitas un tipo de acompañamiento diferente? Podemos conversar sobre las actividades, horarios y preferencias de la persona para evaluar una propuesta personalizada, de acuerdo con los servicios disponibles." },
 ];
 ---
 
@@ -26,12 +26,51 @@ const services = [
           <div class="service-content">
             <h3>{service.title}</h3>
             <p>{service.description}</p>
+            <button class="service-more" type="button" data-service-index={services.indexOf(service)} aria-haspopup="dialog">Más información <span aria-hidden="true">→</span></button>
           </div>
         </article>
       ))}
     </div>
   </div>
+  <dialog id="service-details-dialog" class="service-dialog" aria-labelledby="service-dialog-title" aria-describedby="service-dialog-description">
+    <div class="service-dialog-inner">
+      <button type="button" class="service-dialog-close" aria-label="Cerrar información del servicio" data-service-close>×</button>
+      <img id="service-dialog-image" class="service-dialog-image" alt="" />
+      <div class="service-dialog-body">
+        <span class="service-dialog-label">SERVICIOS SENIORLINK</span>
+        <h3 id="service-dialog-title"></h3>
+        <p id="service-dialog-description"></p>
+        <button type="button" class="service-dialog-done" data-service-close>Entendido</button>
+      </div>
+    </div>
+  </dialog>
 </section>
+
+<script define:vars={{ services }}>
+  const dialog = document.querySelector<HTMLDialogElement>('#service-details-dialog');
+  const dialogTitle = document.querySelector<HTMLElement>('#service-dialog-title');
+  const dialogDescription = document.querySelector<HTMLElement>('#service-dialog-description');
+  const dialogImage = document.querySelector<HTMLImageElement>('#service-dialog-image');
+  const buttons = document.querySelectorAll<HTMLButtonElement>('[data-service-index]');
+  buttons.forEach(button => {
+    button.addEventListener('click', () => {
+      const index = Number(button.dataset.serviceIndex);
+      const service = services[index];
+      if (!service || !dialog || !dialogTitle || !dialogDescription || !dialogImage) return;
+      dialogTitle.textContent = service.title;
+      dialogDescription.textContent = service.details;
+      dialogImage.src = service.image;
+      dialogImage.alt = service.title;
+      dialog.showModal();
+    });
+  });
+  dialog?.querySelectorAll<HTMLButtonElement>('[data-service-close]').forEach(button => {
+    button.addEventListener('click', () => dialog.close());
+  });
+  dialog?.addEventListener('click', event => {
+    if (event.target === dialog) dialog.close();
+  });
+</script>
 
 <style>
   .services-section{padding:76px 0 88px;background:#f8faf9;scroll-margin-top:85px}
@@ -49,6 +88,23 @@ const services = [
   .service-card:hover .service-content{background:#deefe7}
   .service-content h3{color:#234943;font-size:16px;font-weight:750;line-height:1.35;letter-spacing:-.012em;margin:0 0 9px}
   .service-content p{font-size:13px;color:#6c827b;line-height:1.55;margin:0}
+  .service-more{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;margin-top:18px;padding:0 0 4px;border:0;border-bottom:1px solid #16877b;background:transparent;color:#126f65;font:inherit;font-size:12px;font-weight:750;cursor:pointer;transition:gap .2s ease,color .2s ease}
+  .service-more:hover{gap:12px;color:#084d46}
+  .service-more:focus-visible,.service-dialog button:focus-visible{outline:3px solid #70c6b6;outline-offset:4px}
+  .service-content{display:flex;flex-direction:column;align-items:flex-start}
+  .service-more{margin-top:auto;position:relative;top:12px}
+  .service-dialog{width:min(520px,calc(100vw - 32px));max-height:min(85vh,750px);padding:0;border:0;border-radius:18px;background:#fff;color:#234943;box-shadow:0 25px 85px rgba(0,33,30,.23);overflow:auto}
+  .service-dialog::backdrop{background:rgba(12,38,35,.58);backdrop-filter:blur(3px)}
+  .service-dialog-inner{position:relative}
+  .service-dialog-close{position:absolute;z-index:1;top:14px;right:14px;width:36px;height:36px;border:0;border-radius:50%;background:rgba(255,255,255,.95);color:#244d46;font-size:25px;line-height:1;cursor:pointer}
+  .service-dialog-image{display:block;width:100%;height:215px;object-fit:cover;background:#eaf5f0}
+  .service-dialog-body{padding:27px 32px 32px}
+  .service-dialog-label{color:#148477;font-size:10px;font-weight:800;letter-spacing:.13em}
+  .service-dialog-body h3{font-size:25px;line-height:1.22;letter-spacing:-.025em;margin:10px 0 14px;color:#193f3b}
+  .service-dialog-body p{font-size:14px;line-height:1.8;color:#5b756f;margin:0 0 25px}
+  .service-dialog-done{border:0;border-radius:10px;padding:11px 22px;background:#167f72;color:#fff;font:inherit;font-size:13px;font-weight:750;cursor:pointer}
+  .service-dialog-done:hover{background:#10695e}
+  @media(max-width:600px){.service-dialog-image{height:165px}.service-dialog-body{padding:23px}.service-dialog-body h3{font-size:21px}.service-more{font-size:11px}}
   @media(max-width:950px){.services-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.services-container{max-width:750px}}
   @media(max-width:600px){.services-section{padding:54px 0 62px}.services-container{padding:0 16px}.services-heading{margin-bottom:28px}.services-grid{gap:13px}.service-card{border-radius:12px}.service-photo{aspect-ratio:1.12}.service-content{padding:15px 14px 19px}.service-content h3{font-size:13px;line-height:1.3}.service-content p{font-size:11px;line-height:1.5}}
   @media(max-width:360px){.services-grid{grid-template-columns:1fr}.service-photo{aspect-ratio:1.5}.service-content h3{font-size:15px}.service-content p{font-size:12px}}
