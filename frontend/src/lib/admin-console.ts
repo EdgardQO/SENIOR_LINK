@@ -217,7 +217,7 @@ function detailPanel(root: HTMLElement, data: AnyRecord, relatives: AnyRecord[] 
       family.appendChild(node('strong',name || 'Familiar'));
       const grid = node('div','','admin-profile-grid');
       for (const [label,value] of [
-        ['DNI',familiar.dni],['Parentesco',familiar.parentesco],
+        ['DNI',familiar.dni],[role === 'FAMILIAR' ? 'Relación registrada del familiar' : 'Parentesco',familiar.parentesco],
         ['Teléfono',familiar.telefono],['Correo',familiar.correoElectronico],
         ['Vinculación',familiar.estado]
       ] as Array<[string,unknown]>) {
@@ -234,7 +234,7 @@ function detailPanel(root: HTMLElement, data: AnyRecord, relatives: AnyRecord[] 
       for (const familiar of pending) {
         familyBlock.appendChild(node('p',
           [familiar.nombres,familiar.apellidos].filter(Boolean).join(' ') +
-          ' · ' + (familiar.parentesco || 'Parentesco no registrado') +
+          ' · ' + (role === 'FAMILIAR' ? 'Adulto mayor vinculado' : (familiar.parentesco || 'Parentesco no registrado')) +
           ' · Estado: ' + (familiar.estado || 'No registrado'),'admin-note'));
       }
     }
@@ -272,7 +272,7 @@ async function usersModule(root: HTMLElement) {
       if (hasRelations) {
         const matches=relations[u.dni];
         td(tr,!matches ? 'No disponible' : matches.filter(v=>v.estado==='ACEPTADO')
-          .map(v=>[v.nombres,v.apellidos].filter(Boolean).join(' ')+' ('+(v.parentesco||'Sin parentesco')+')')
+          .map(v=>[v.nombres,v.apellidos].filter(Boolean).join(' ')+' ('+(filter === 'FAMILIAR' ? 'Adulto mayor' : (v.parentesco||'Sin parentesco'))+')')
           .join('; ') || 'Sin vinculaciones aceptadas');
       }
       td(tr,u.estaActivo?'Activo':'Inactivo');
