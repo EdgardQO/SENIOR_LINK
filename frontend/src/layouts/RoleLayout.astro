@@ -21,7 +21,7 @@ const { role, label, description } = Astro.props;
   <div id="session-loading" class="session-loading">Verificando tu sesión...</div>
   <div id="app-shell" hidden>
     <header class="panel-header">
-      <div class="panel-brand"><button id="menu-toggle" type="button" class="panel-menu-toggle" aria-label="Abrir menú" aria-controls="panel-sidebar" aria-expanded="false"><span aria-hidden="true">☰</span><span class="menu-toggle-text">Menú</span></button><a href="/" class="panel-logo"><span class="panel-logo-mark">S</span>Senior<span>Link</span></a></div>
+      <div class="panel-brand"><button id="menu-toggle" type="button" class="panel-menu-toggle" aria-label="Ocultar menú" aria-controls="panel-sidebar" aria-expanded="true"><span aria-hidden="true">☰</span><span class="menu-toggle-text">Menú</span></button><a href="/" class="panel-logo"><span class="panel-logo-mark">S</span>Senior<span>Link</span></a></div>
       <div class="panel-header-actions"><span class="panel-role">{label}</span><button id="logout" type="button" class="panel-logout">Cerrar sesión</button></div>
     </header>
     <div class="panel-layout">
@@ -70,25 +70,51 @@ const { role, label, description } = Astro.props;
     const welcomeName = document.querySelector<HTMLSpanElement>('#welcome-name');
     const menuToggle = document.querySelector<HTMLButtonElement>('#menu-toggle');
     const sidebar = document.querySelector<HTMLElement>('#panel-sidebar');
-    const closeMenu = () => {
-      sidebar?.classList.remove('is-open');
-      menuToggle?.setAttribute('aria-expanded', 'false');
-      menuToggle?.setAttribute('aria-label', 'Abrir menú');
+    const layout = document.querySelector<HTMLElement>('.panel-layout');
+    const mobileQuery = window.matchMedia('(max-width:700px)');
+    const desktopStorageKey = 'seniorlink_sidebar_collapsed';
+    const syncMenu = () => {
+      const mobile = mobileQuery.matches;
+      const expanded = mobile
+        ? sidebar?.classList.contains('is-open') === true
+        : !layout?.classList.contains('is-collapsed');
+      menuToggle?.setAttribute('aria-expanded', String(expanded));
+      menuToggle?.setAttribute('aria-label', expanded ? 'Ocultar menú' : 'Mostrar menú');
     };
+    if (!mobileQuery.matches && localStorage.getItem(desktopStorageKey) === 'true') {
+      layout?.classList.add('is-collapsed');
+    }
+    syncMenu();
     menuToggle?.addEventListener('click', () => {
-      const open = sidebar?.classList.toggle('is-open') ?? false;
-      menuToggle.setAttribute('aria-expanded', String(open));
-      menuToggle.setAttribute('aria-label', open ? 'Cerrar menú' : 'Abrir menú');
+      if (mobileQuery.matches) {
+        sidebar?.classList.toggle('is-open');
+      } else {
+        const collapsed = layout?.classList.toggle('is-collapsed') ?? false;
+        localStorage.setItem(desktopStorageKey, String(collapsed));
+      }
+      syncMenu();
+    });
+    mobileQuery.addEventListener('change', () => {
+      sidebar?.classList.remove('is-open');
+      syncMenu();
     });
     sidebar?.querySelectorAll<HTMLAnchorElement>('a.sidebar-link').forEach(link => {
       if (link.getAttribute('href') === window.location.pathname) {
         link.classList.add('selected');
         link.setAttribute('aria-current', 'page');
       }
-      link.addEventListener('click', closeMenu);
+      link.addEventListener('click', () => {
+        if (mobileQuery.matches) {
+          sidebar?.classList.remove('is-open');
+          syncMenu();
+        }
+      });
     });
     document.addEventListener('keydown', event => {
-      if (event.key === 'Escape') closeMenu();
+      if (event.key === 'Escape' && mobileQuery.matches) {
+        sidebar?.classList.remove('is-open');
+        syncMenu();
+      }
     });
 
     document.querySelector<HTMLButtonElement>('#logout')?.addEventListener('click', () => {
@@ -157,8 +183,8 @@ const { role, label, description } = Astro.props;
   .panel-logout {background:white;color:#087a70;border:1px solid #cee5dd;border-radius:11px;padding:11px 15px;cursor:pointer;font:600 12px Lexend}
   .panel-logout:hover {background:#effbf7}
   .panel-layout {display:grid;grid-template-columns:230px minmax(0,1fr);min-height:calc(100vh - 76px);transition:grid-template-columns .2s}
-  .panel-layout:has(.panel-sidebar:not(.is-open)) {grid-template-columns:0 minmax(0,1fr)}
-  .panel-layout:has(.panel-sidebar:not(.is-open)) .panel-sidebar {visibility:hidden;padding-left:0;padding-right:0;overflow:hidden;border:0}
+  .panel-layout.is-collapsed {grid-template-columns:0 minmax(0,1fr)}
+  .panel-layout.is-collapsed .panel-sidebar {visibility:hidden;padding-left:0;padding-right:0;overflow:hidden;border:0}
   .panel-sidebar.is-open {visibility:visible}
   .panel-sidebar {display:flex;flex-direction:column;gap:6px;background:#fff;border-right:1px solid #e3eeeb;padding:32px 15px}
   .sidebar-caption {font-size:11px;color:#9aada9;letter-spacing:2px;font-weight:700;margin:0 15px 12px}
@@ -202,10 +228,10 @@ const { role, label, description } = Astro.props;
   .staff-message.error {color:#b33939}
   @media(max-width:1000px){.dashboard-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.panel-layout{grid-template-columns:180px 1fr}}
   @media(max-width:700px){
-    .panel-layout,.panel-layout:has(.panel-sidebar:not(.is-open)){display:block}
-    .panel-sidebar{position:fixed;z-index:40;top:68px;left:0;bottom:0;width:min(300px,86vw);overflow-y:auto;box-shadow:12px 0 30px #183a3022;transform:translateX(-105%);transition:transform .2s ease;padding:20px 15px;visibility:hidden}
-    .panel-sidebar.is-open{visibility:visible;transform:translateX(0);display:flex;flex-direction:column}
-    .panel-layout:has(.panel-sidebar:not(.is-open)) .panel-sidebar{visibility:hidden}
+    .panel-layout,.panel-layout.is-collapsed{display:block}
+    .panel-sidebar,.panel-layout.is-collapsed .panel-sidebar{position:fixed;z-index:40;top:68px;left:0;bottom:0;width:min(300px,86vw);overflow-y:auto;box-shadow:12px 0 30px #183a3022;transform:translateX(-105%);transition:transform .2s ease;padding:20px 15px;visibility:hidden}
+    .panel-sidebar.is-open,.panel-layout.is-collapsed .panel-sidebar.is-open{visibility:visible;transform:translateX(0);display:flex;flex-direction:column}
+    .panel-layout.is-collapsed .panel-sidebar:not(.is-open){visibility:hidden}
     .sidebar-caption,.sidebar-foot{display:block}
     .sidebar-link{white-space:normal}
     .panel-header{padding:0 15px;height:68px}
