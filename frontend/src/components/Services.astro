@@ -26,7 +26,7 @@ const services = [
           <div class="service-content">
             <h3>{service.title}</h3>
             <p>{service.description}</p>
-            <button class="service-more" type="button" data-service-index={services.indexOf(service)} aria-haspopup="dialog">Más información <span aria-hidden="true">→</span></button>
+            <button class="service-more" type="button" data-service-title={service.title} data-service-details={service.details} data-service-image={service.image} aria-haspopup="dialog">Más información <span aria-hidden="true">→</span></button>
           </div>
         </article>
       ))}
@@ -46,22 +46,20 @@ const services = [
   </dialog>
 </section>
 
-<script define:vars={{ services }}>
+<script>
+  // Script procesado por Astro: evita TypeScript sin compilar en el navegador.
   const dialog = document.querySelector<HTMLDialogElement>('#service-details-dialog');
   const dialogTitle = document.querySelector<HTMLElement>('#service-dialog-title');
   const dialogDescription = document.querySelector<HTMLElement>('#service-dialog-description');
   const dialogImage = document.querySelector<HTMLImageElement>('#service-dialog-image');
-  const buttons = document.querySelectorAll<HTMLButtonElement>('[data-service-index]');
-  buttons.forEach(button => {
+  document.querySelectorAll<HTMLButtonElement>('.service-more').forEach(button => {
     button.addEventListener('click', () => {
-      const index = Number(button.dataset.serviceIndex);
-      const service = services[index];
-      if (!service || !dialog || !dialogTitle || !dialogDescription || !dialogImage) return;
-      dialogTitle.textContent = service.title;
-      dialogDescription.textContent = service.details;
-      dialogImage.src = service.image;
-      dialogImage.alt = service.title;
-      dialog.showModal();
+      if (!dialog || !dialogTitle || !dialogDescription || !dialogImage) return;
+      dialogTitle.textContent = button.dataset.serviceTitle || '';
+      dialogDescription.textContent = button.dataset.serviceDetails || '';
+      dialogImage.src = button.dataset.serviceImage || '';
+      dialogImage.alt = button.dataset.serviceTitle || '';
+      if (!dialog.open) dialog.showModal();
     });
   });
   dialog?.querySelectorAll<HTMLButtonElement>('[data-service-close]').forEach(button => {
@@ -88,11 +86,11 @@ const services = [
   .service-card:hover .service-content{background:#deefe7}
   .service-content h3{color:#234943;font-size:16px;font-weight:750;line-height:1.35;letter-spacing:-.012em;margin:0 0 9px}
   .service-content p{font-size:13px;color:#6c827b;line-height:1.55;margin:0}
-  .service-more{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;margin-top:18px;padding:0 0 4px;border:0;border-bottom:1px solid #16877b;background:transparent;color:#126f65;font:inherit;font-size:12px;font-weight:750;cursor:pointer;transition:gap .2s ease,color .2s ease}
-  .service-more:hover{gap:12px;color:#084d46}
-  .service-more:focus-visible,.service-dialog button:focus-visible{outline:3px solid #70c6b6;outline-offset:4px}
-  .service-content{display:flex;flex-direction:column;align-items:flex-start}
-  .service-more{margin-top:auto;position:relative;top:12px}
+  .service-content{display:flex;flex-direction:column;align-items:stretch}
+  .service-more{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:40px;margin-top:auto;padding:10px 12px;border:1px solid #177e72;border-radius:9px;background:#167f72;color:#fff;font:inherit;font-size:12px;font-weight:750;cursor:pointer;transition:background .2s ease,transform .2s ease}
+  .service-content p{margin-bottom:20px}
+  .service-more:hover{background:#10695e;transform:translateY(-1px)}
+  .service-more:focus-visible,.service-dialog button:focus-visible{outline:3px solid #70c6b6;outline-offset:3px}
   .service-dialog{width:min(520px,calc(100vw - 32px));max-height:min(85vh,750px);padding:0;border:0;border-radius:18px;background:#fff;color:#234943;box-shadow:0 25px 85px rgba(0,33,30,.23);overflow:auto}
   .service-dialog::backdrop{background:rgba(12,38,35,.58);backdrop-filter:blur(3px)}
   .service-dialog-inner{position:relative}
