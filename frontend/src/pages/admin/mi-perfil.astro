@@ -5,10 +5,19 @@ import RoleLayout from '../../layouts/RoleLayout.astro';
   <section class="profile-box" aria-labelledby="own-profile-title">
     <h2 id="own-profile-title">Mi perfil de administrador</h2>
     <p class="profile-note">Información de tu cuenta y de tu perfil administrativo.</p>
-    <div class="profile-grid" id="own-profile-fields"></div>
+    <div class="own-profile-sections" id="own-profile-fields"></div>
     <p id="own-profile-status" class="profile-note" role="status">Cargando tu información...</p>
   </section>
 </RoleLayout>
+<style>
+.own-profile-sections{display:grid;gap:18px;margin-top:22px}
+.own-profile-section{padding:22px;border:1px solid #e2ece8;border-radius:14px;background:#fbfefd}
+.own-profile-section h3{font-size:16px;color:#087a70;margin:0 0 20px}
+.own-profile-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 28px}
+.own-profile-field{min-width:0;overflow-wrap:anywhere}
+.own-profile-field .profile-value{line-height:1.6}
+@media(max-width:700px){.own-profile-section{padding:16px}.own-profile-grid{grid-template-columns:1fr;gap:17px}}
+</style>
 <script>
   type Profile = Record<string, unknown>;
   const labels: Record<string,string> = {
@@ -33,25 +42,37 @@ import RoleLayout from '../../layouts/RoleLayout.astro';
     const status = document.querySelector<HTMLElement>('#own-profile-status');
     if (!grid || !status || !detail?.usuario) return;
     grid.replaceChildren();
-    for (const [heading,values] of [
-      ['Datos del usuario',detail.usuario],
-      ['Perfil administrativo',detail.admin || {}]
-    ] as Array<[string,Profile]>) {
-      const title = document.createElement('h3');
-      title.textContent = heading;
-      title.style.gridColumn = '1 / -1';
-      grid.appendChild(title);
-      for (const [key,value] of Object.entries(values)) {
-        const item = document.createElement('div');
-        const label = document.createElement('div');
-        label.className = 'profile-key';
-        label.textContent = labels[key] || key;
-        const text = document.createElement('div');
-        text.className = 'profile-value';
-        text.textContent = format(value,key);
+    const sections: Array<[string,Profile,Array<[string,string]>]> = [
+      ['Datos personales',detail.usuario,[
+        ['nombres','Nombres'],['apellidos','Apellidos'],['dni','DNI'],
+        ['correoElectronico','Correo electrónico'],['telefono','Teléfono']]],
+      ['Información de la cuenta',detail.usuario,[
+        ['rolNombre','Rol'],['estaActivo','Estado de la cuenta'],
+        ['creadoEn','Fecha de registro'],['actualizadoEn','Última actualización']]],
+      ['Perfil administrativo',detail.admin || {},[
+        ['areaODepartamento','Área o departamento'],['nivelAcceso','Nivel de acceso']]]
+    ];
+    for (const [heading,values,fields] of sections) {
+      const block=document.createElement('section');
+      block.className='own-profile-section';
+      const title=document.createElement('h3');
+      title.textContent=heading;
+      const fieldGrid=document.createElement('div');
+      fieldGrid.className='own-profile-grid';
+      for(const [key,labelText] of fields) {
+        const item=document.createElement('div');
+        item.className='own-profile-field';
+        const label=document.createElement('div');
+        label.className='profile-key';
+        label.textContent=labelText;
+        const text=document.createElement('div');
+        text.className='profile-value';
+        text.textContent=format(values[key],key);
         item.append(label,text);
-        grid.appendChild(item);
+        fieldGrid.appendChild(item);
       }
+      block.append(title,fieldGrid);
+      grid.appendChild(block);
     }
     status.textContent = detail.admin ? '' : 'No se encontraron datos adicionales del perfil administrativo.';
   }
