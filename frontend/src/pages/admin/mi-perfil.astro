@@ -9,19 +9,27 @@ import RoleLayout from '../../layouts/RoleLayout.astro';
     <p id="own-profile-status" class="profile-note" role="status">Cargando tu información...</p>
   </section>
 </RoleLayout>
-<style>
-.own-profile-sections{display:grid;gap:22px;margin-top:22px}
-.own-profile-section{overflow:hidden;border:1px solid #dceae5;border-radius:14px;background:#fff}
-.own-profile-section h3{font-size:15px;color:#087a70;margin:0;padding:17px 22px;background:#f0faf6;border-bottom:1px solid #dceae5}
-.own-profile-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
-.own-profile-field{display:grid;grid-template-columns:minmax(105px,38%) minmax(0,1fr);align-items:center;min-height:66px;min-width:0;border-bottom:1px solid #edf2f0;overflow-wrap:anywhere}
-.own-profile-field:nth-child(odd){border-right:1px solid #edf2f0}
-.own-profile-field .profile-key{margin:0;padding:15px 12px 15px 20px;font-size:12px;color:#5b7970;font-weight:600}
-.own-profile-field .profile-value{padding:15px 18px 15px 8px;font-size:13px;line-height:1.5;color:#183d35;font-weight:600}
-.own-profile-field:last-child:nth-child(odd){grid-column:1/-1;border-right:0}
-.own-profile-field:last-child:nth-child(odd) .profile-key{max-width:none}
-@media(max-width:950px){.own-profile-field{grid-template-columns:1fr;align-content:center;gap:5px}.own-profile-field .profile-key{padding:12px 14px 0}.own-profile-field .profile-value{padding:0 14px 12px}}
-@media(max-width:700px){.own-profile-grid{grid-template-columns:1fr}.own-profile-field:nth-child(odd){border-right:0}.own-profile-field:last-child:nth-child(odd){grid-column:auto}.own-profile-section h3{padding:15px}}
+<style is:global>
+#own-profile-fields.own-profile-sections{display:grid;grid-template-columns:minmax(0,1fr);gap:22px;margin-top:24px;width:100%}
+#own-profile-fields .own-profile-section{min-width:0;overflow:hidden;border:1px solid #dceae5;border-radius:14px;background:#fff;box-shadow:0 3px 12px rgba(21,67,55,.04)}
+#own-profile-fields .own-profile-section h3{font-size:15px;color:#087a70;margin:0;padding:17px 22px;background:#eff9f5;border-bottom:1px solid #dceae5;font-weight:700}
+#own-profile-fields .own-profile-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;width:100%;gap:0}
+#own-profile-fields .own-profile-field{display:grid;grid-template-columns:minmax(110px,40%) minmax(0,1fr);align-items:center;min-height:66px;min-width:0;border-bottom:1px solid #edf2f0;overflow-wrap:anywhere}
+#own-profile-fields .own-profile-field:nth-child(odd){border-right:1px solid #edf2f0}
+#own-profile-fields .own-profile-field .profile-key{margin:0;padding:15px 10px 15px 20px;font-size:12px;color:#607b73;font-weight:600}
+#own-profile-fields .own-profile-field .profile-value{margin:0;padding:15px 18px 15px 8px;font-size:13px;line-height:1.5;color:#183d35;font-weight:650;overflow-wrap:anywhere}
+#own-profile-fields .own-profile-field:last-child:nth-child(odd){grid-column:1/-1;border-right:0}
+@media(max-width:1050px){
+#own-profile-fields .own-profile-field{grid-template-columns:1fr;align-content:center;gap:5px}
+#own-profile-fields .own-profile-field .profile-key{padding:12px 14px 0}
+#own-profile-fields .own-profile-field .profile-value{padding:0 14px 12px}
+}
+@media(max-width:700px){
+#own-profile-fields .own-profile-grid{grid-template-columns:1fr!important}
+#own-profile-fields .own-profile-field:nth-child(odd){border-right:0}
+#own-profile-fields .own-profile-field:last-child:nth-child(odd){grid-column:auto}
+#own-profile-fields .own-profile-section h3{padding:15px}
+}
 </style>
 <script>
   type Profile = Record<string, unknown>;
