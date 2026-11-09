@@ -94,7 +94,7 @@ const institutions = [
       const nearEnd = carousel.scrollLeft >= maxScroll - 8;
       const nearStart = carousel.scrollLeft <= 8;
       const target = direction > 0 && nearEnd ? 0 : direction < 0 && nearStart ? maxScroll : carousel.scrollLeft + direction * increment;
-      carousel.scrollTo({ left: target, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+      carousel.scrollTo({ left: target, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
     };
     previous?.addEventListener('click', () => scrollToDirection(-1));
     next?.addEventListener('click', () => scrollToDirection(1));
