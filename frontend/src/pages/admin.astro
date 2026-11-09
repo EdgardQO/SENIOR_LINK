@@ -4,14 +4,14 @@ import RoleLayout from '../layouts/RoleLayout.astro';
 <RoleLayout role="ADMINISTRADOR" label="Administración" description="Métricas, indicadores y gestión integral de SeniorLink.">
   <div class="section-heading"><h2>Indicadores generales</h2><small>Datos en tiempo real desde PostgreSQL</small></div>
   <div class="dashboard-grid">
-    <article class="dashboard-card"><span class="card-symbol">♙</span><h3>Usuarios registrados</h3><div class="admin-metric" id="m-users">—</div></article>
-    <article class="dashboard-card"><span class="card-symbol">✓</span><h3>Usuarios activos</h3><div class="admin-metric" id="m-active">—</div></article>
+    <article class="dashboard-card"><span class="card-symbol">♙</span><h3>Usuarios registrados (sin personal interno)</h3><div class="admin-metric" id="m-users">—</div></article>
+    <article class="dashboard-card"><span class="card-symbol">✓</span><h3>Usuarios activos (sin personal interno)</h3><div class="admin-metric" id="m-active">—</div></article>
     <article class="dashboard-card"><span class="card-symbol">▤</span><h3>Reservas totales</h3><div class="admin-metric" id="m-reservations">—</div></article>
     <article class="dashboard-card"><span class="card-symbol">✦</span><h3>Reservas completadas</h3><div class="admin-metric" id="m-completed">—</div></article>
     <article class="dashboard-card"><span class="card-symbol">⌂</span><h3>Instituciones aliadas</h3><div class="admin-metric" id="m-institutions">—</div></article>
     <article class="dashboard-card"><span class="card-symbol">%</span><h3>Promociones activas</h3><div class="admin-metric" id="m-promotions">—</div></article>
   </div>
-  <div class="section-heading"><h2>Distribución de usuarios por rol</h2></div>
+  <div class="section-heading"><h2>Distribución de usuarios por rol</h2></div><p class="profile-note">Solo acompañantes, adultos mayores y familiares. No se cuentan administradores ni soporte.</p>
   <div class="profile-box"><div id="roles-graph" style="display:grid;gap:14px"></div></div>
   <div class="section-heading"><h2>Módulos administrativos</h2></div>
   <div class="dashboard-grid">
@@ -27,46 +27,81 @@ import RoleLayout from '../layouts/RoleLayout.astro';
 </style>
 <script>
   import { adminRequest } from '../lib/admin-api';
+  type User = { rolNombre?: string; estaActivo?: boolean };
+  type Summary = Record<string, number>;
+  const setMetric = (id: string, count: number) => {
+    const element = document.getElementById(id);
+    if (element) element.textContent = Number(count).toLocaleString('es-PE');
+  };
+  const drawRoles = (roles: Array<[string,number]>) => {
+    const graph = document.getElementById('roles-graph');
+    if (!graph) return;
+    graph.replaceChildren();
+    const total = Math.max(1, roles.reduce((sum,[,count]) => sum + count,0));
+    for (const [name,count] of roles) {
+      const item = document.createElement('div');
+      const label = document.createElement('div');
+      label.textContent = name + ' · ' + count.toLocaleString('es-PE');
+      label.style.cssText = 'font-size:12px;margin-bottom:7px';
+      const track = document.createElement('div');
+      track.style.cssText = 'height:9px;border-radius:9px;background:#e7f5f0;overflow:hidden';
+      const fill = document.createElement('div');
+      fill.style.cssText = 'height:100%;background:#0d9488;border-radius:9px;width:' + (count / total * 100) + '%';
+      track.appendChild(fill);
+      item.append(label,track);
+      graph.appendChild(item);
+    }
+  };
+  let started = false;
   async function loadDashboard() {
+    if (started) return;
+    started = true;
     const message = document.getElementById('dashboard-status');
-    try {
-      if (message) message.textContent = 'Consultando métricas del servidor...';
-      const data = await adminRequest<Record<string, number>>('/dashboard');
-      for (const [id, field] of Object.entries({
-        'm-users':'usuarios','m-active':'usuariosActivos','m-reservations':'reservas',
-        'm-completed':'reservasCompletadas','m-institutions':'instituciones','m-promotions':'promocionesActivas'
-      })) {
-        const target = document.getElementById(id);
-        if (target) target.textContent = String(data[field] ?? 0);
+    if (message) message.textContent = 'Consultando los datos del backend...';
+    // Los usuarios se consultan de forma independiente para no bloquear sus métricas
+    // si falla alguna consulta de reservas, instituciones o promociones.
+    const [usersResult, summaryResult] = await Promise.allSettled([
+      adminRequest<User[]>('/usuarios'),
+      adminRequest<Summary>('/dashboard')
+    ]);
+    const errors: string[] = [];
+    if (usersResult.status === 'fulfilled') {
+      const users = usersResult.value;
+      const endUsers = users.filter(u => ['ACOMPANANTE','ADULTO_MAYOR','FAMILIAR'].includes(u.rolNombre ?? ''));
+      setMetric('m-users',endUsers.length);
+      setMetric('m-active',endUsers.filter(u => u.estaActivo === true).length);
+      drawRoles([
+        ['Acompañantes',endUsers.filter(u => u.rolNombre === 'ACOMPANANTE').length],
+        ['Adultos mayores',endUsers.filter(u => u.rolNombre === 'ADULTO_MAYOR').length],
+        ['Familiares',endUsers.filter(u => u.rolNombre === 'FAMILIAR').length]
+      ]);
+    } else {
+      errors.push('Usuarios: ' + String(usersResult.reason));
+    }
+    if (summaryResult.status === 'fulfilled') {
+      const data = summaryResult.value;
+      setMetric('m-reservations',data.reservas);
+      setMetric('m-completed',data.reservasCompletadas);
+      setMetric('m-institutions',data.instituciones);
+      setMetric('m-promotions',data.promocionesActivas);
+      if (usersResult.status !== 'fulfilled') {
+        setMetric('m-users',data.usuarios);
+        setMetric('m-active',data.usuariosActivos);
+        drawRoles([
+          ['Acompañantes',data.acompanantes],
+          ['Adultos mayores',data.adultosMayores],
+          ['Familiares',data.familiares]
+        ]);
       }
-      const graph = document.getElementById('roles-graph');
-      if (graph) {
-        const roles: Array<[string,number]> = [
-          ['Acompañantes',data.acompanantes],['Adultos mayores',data.adultosMayores],
-          ['Familiares',data.familiares],['Soporte',data.soporte],['Administradores',data.administradores]
-        ];
-        const total = Math.max(1,Number(data.usuarios));
-        for (const [name,count] of roles) {
-          const wrapper = document.createElement('div');
-          const label = document.createElement('div');
-          label.textContent = name+' · '+count;
-          label.style.cssText='font-size:12px;margin-bottom:7px';
-          const track = document.createElement('div');
-          track.style.cssText='height:9px;border-radius:9px;background:#e7f5f0;overflow:hidden';
-          const fill = document.createElement('div');
-          fill.style.cssText='height:100%;background:#0d9488;border-radius:9px;width:'+Math.min(100,Math.max(0,Number(count)/total*100))+'%';
-          track.appendChild(fill);wrapper.append(label,track);graph.appendChild(wrapper);
-        }
-      }
-      if (message) message.textContent='Indicadores actualizados.';
-    } catch(error) {
-      if (message) message.textContent='No se pudieron cargar las métricas: '+(error instanceof Error?error.message:'Error desconocido.');
+    } else {
+      errors.push('Resumen: ' + String(summaryResult.reason));
+    }
+    if (message) {
+      message.textContent = errors.length ? 'No se pudieron cargar todas las métricas. ' + errors.join(' | ') : 'Métricas actualizadas desde el backend.';
+      message.style.color = errors.length ? '#b42336' : '#087a70';
     }
   }
-  // Ejecutar al recibir el perfil o inmediatamente si el layout ya lo verificó.
-  if (document.documentElement.dataset.profileReady === 'true') {
-    void loadDashboard();
-  } else {
-    document.addEventListener('seniorlink:profile', () => void loadDashboard(), { once: true });
-  }
+  // El layout valida el JWT; esta señal se dispara después de verificar el perfil.
+  if (document.documentElement.dataset.profileReady === 'true') void loadDashboard();
+  else document.addEventListener('seniorlink:profile', () => void loadDashboard(), { once:true });
 </script>

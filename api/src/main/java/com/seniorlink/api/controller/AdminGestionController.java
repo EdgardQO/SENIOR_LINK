@@ -52,7 +52,9 @@ public class AdminGestionController {
         var all = usuarios.findAll();
         var bookings = reservas.findAll();
         var promos = descuentos.findAll();
-        return new Resumen(all.size(), all.stream().filter(u -> Boolean.TRUE.equals(u.getEstaActivo())).count(),
+        return new Resumen(
+            all.stream().filter(this::esUsuarioFinal).count(),
+            all.stream().filter(this::esUsuarioFinal).filter(u -> Boolean.TRUE.equals(u.getEstaActivo())).count(),
             contar(all,"ACOMPANANTE"), contar(all,"ADULTO_MAYOR"), contar(all,"FAMILIAR"),
             contar(all,"SOPORTE"), contar(all,"ADMINISTRADOR"), bookings.size(),
             bookings.stream().filter(r -> r.getEstadoActual() == EstadoReserva.CONFIRMADA).count(),
@@ -61,6 +63,11 @@ public class AdminGestionController {
             bookings.stream().filter(r -> r.getEstadoActual() != EstadoReserva.CANCELADA)
                 .map(Reserva::getMontoTotal).filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add));
+    }
+    private boolean esUsuarioFinal(Usuario u) {
+        if (u.getRol() == null) return false;
+        String nombre = u.getRol().getNombre();
+        return "ACOMPANANTE".equals(nombre) || "ADULTO_MAYOR".equals(nombre) || "FAMILIAR".equals(nombre);
     }
     private long contar(List<Usuario> all, String rol) {
         return all.stream().filter(u -> u.getRol() != null && rol.equals(u.getRol().getNombre())).count();

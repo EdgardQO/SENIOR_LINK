@@ -21,8 +21,8 @@ const { role, label, description } = Astro.props;
   <div id="session-loading" class="session-loading">Verificando tu sesión...</div>
   <div id="app-shell" hidden>
     <header class="panel-header">
-      <a href="/" class="panel-logo"><span class="panel-logo-mark">S</span>Senior<span>Link</span></a>
-      <div class="panel-header-actions"><button id="menu-toggle" type="button" class="panel-menu-toggle" aria-label="Abrir menú" aria-controls="panel-sidebar" aria-expanded="false"><span aria-hidden="true">☰</span><span class="menu-toggle-text">Menú</span></button><span class="panel-role">{label}</span><button id="logout" type="button" class="panel-logout">Cerrar sesión</button></div>
+      <div class="panel-brand"><button id="menu-toggle" type="button" class="panel-menu-toggle" aria-label="Abrir menú" aria-controls="panel-sidebar" aria-expanded="false"><span aria-hidden="true">☰</span><span class="menu-toggle-text">Menú</span></button><a href="/" class="panel-logo"><span class="panel-logo-mark">S</span>Senior<span>Link</span></a></div>
+      <div class="panel-header-actions"><span class="panel-role">{label}</span><button id="logout" type="button" class="panel-logout">Cerrar sesión</button></div>
     </header>
     <div class="panel-layout">
       <aside class="panel-sidebar" id="panel-sidebar">
@@ -148,6 +148,7 @@ const { role, label, description } = Astro.props;
   .panel-logo {display:flex;align-items:center;text-decoration:none;color:#182f2d;font-size:23px;font-weight:700;letter-spacing:-.8px;}
   .panel-logo span:last-child {color:#0d9488;}
   .panel-logo-mark {display:inline-flex;align-items:center;justify-content:center;margin-right:10px;width:42px;height:42px;background:#0d9488;border-radius:13px;color:white!important;letter-spacing:0}
+  .panel-brand {display:flex;align-items:center;gap:16px;min-width:0}
   .panel-header-actions {display:flex;align-items:center;gap:16px}
   .panel-menu-toggle {display:inline-flex;align-items:center;gap:8px;border:1px solid #cee5dd;background:#eaf8f3;color:#087a70;border-radius:11px;padding:10px 13px;cursor:pointer;font:600 12px Lexend}
   .panel-menu-toggle span:first-child {font-size:19px;line-height:1}
