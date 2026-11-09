@@ -39,7 +39,14 @@
         <div class="field"><label for="aCiclo">Ciclo académico (1 a 20)</label><input id="aCiclo" type="number" min="1" max="20" step="1" /></div>
         <div class="field"><label for="aCarrera">Carrera</label><input id="aCarrera" type="text" maxlength="150" placeholder="Ej. Enfermería" /></div>
       </div>
-      <div class="field"><label for="aRuc">RUC de institución aliada <span class="opt">(opcional)</span></label><input id="aRuc" type="text" inputmode="numeric" maxlength="11" placeholder="11 dígitos" /><p class="hint">La institución debe estar registrada previamente.</p></div>
+      <div class="field"><label for="aRuc">RUC de institución aliada <span class="opt">(opcional)</span></label><input id="aRuc" type="text" inputmode="numeric" maxlength="11" placeholder="11 dígitos" /><p class="hint">Escribe los 11 dígitos para comprobar a qué institución pertenece el RUC.</p>
+        <div id="aInstitucionEstado" class="institution-status" role="status" aria-live="polite" hidden></div>
+        <div class="field" id="aInstitucionResultado" hidden>
+          <label for="aInstitucionNombre">Institución encontrada</label>
+          <input id="aInstitucionNombre" type="text" readonly aria-readonly="true" />
+          <p class="hint">Confirma visualmente que esta es tu institución. El nombre se consulta en SeniorLink y no se envía en el registro.</p>
+        </div>
+      </div>
       <div class="field">
         <label for="aTarifa">Tarifa por hora (S/)</label>
         <input id="aTarifa" type="number" min="0" step="0.01" placeholder="Ej. 25" />
@@ -263,6 +270,11 @@ input.invalid {
 .form-heading { font-size: 1.05rem; font-weight: 600; margin: 22px 0 16px; color: var(--color-text-main); }
 .role-help { padding: 12px 14px; background: var(--color-primary-light); border: 1px solid var(--color-border); border-radius: 12px; color: var(--color-text-main); font-size: 0.88rem; line-height: 1.5; }
 .section-hint { margin: -8px 0 18px; }
+.institution-status { margin-top: 10px; font-size: .86rem; color: var(--color-text-muted); }
+.institution-status[data-state="error"] { color: #b91c1c; }
+.institution-status[data-state="ok"] { color: #047857; }
+#aInstitucionResultado { margin-top: 12px; }
+#aInstitucionNombre[readonly] { background: var(--color-primary-light); cursor: default; }
 .extra h3 {
   margin: 0 0 18px;
   font-size: 1.05rem;
@@ -542,6 +554,70 @@ function syncRole() {
 document.querySelectorAll('input[name="rRole"]').forEach(radio => radio.addEventListener('change', syncRole));
 syncRole();
 g('mNacimiento').max = new Date().toISOString().slice(0, 10);
+
+let instituciones = [];
+let institucionesCargadas = false;
+let institucionesError = false;
+let consultaRucId = 0;
+const estadoInstitucion = (mensaje, tipo = '') => {
+  const status = g('aInstitucionEstado');
+  status.hidden = !mensaje;
+  status.textContent = mensaje;
+  status.dataset.state = tipo;
+};
+const limpiarInstitucion = () => {
+  g('aInstitucionResultado').hidden = true;
+  g('aInstitucionNombre').value = '';
+};
+async function cargarInstituciones() {
+  if (institucionesCargadas) return;
+  const response = await fetch(apiUrl + '/api/v1/instituciones-aliadas');
+  if (!response.ok) throw new Error('No se pudo consultar el catálogo de instituciones.');
+  const data = await response.json();
+  if (!Array.isArray(data)) throw new Error('El catálogo de instituciones no tiene el formato esperado.');
+  instituciones = data;
+  institucionesCargadas = true;
+  institucionesError = false;
+}
+async function validarRucInstitucion() {
+  const id = ++consultaRucId;
+  const ruc = val('aRuc');
+  limpiarInstitucion();
+  if (!ruc) { estadoInstitucion(''); return; }
+  if (!/^\d{11}$/.test(ruc)) {
+    estadoInstitucion('Introduce los 11 dígitos del RUC.', 'error');
+    return;
+  }
+  estadoInstitucion('Buscando institución...');
+  try {
+    await cargarInstituciones();
+    if (id !== consultaRucId || ruc !== val('aRuc')) return;
+    const institucion = instituciones.find(item => item.ruc === ruc);
+    if (!institucion) {
+      estadoInstitucion('Este RUC no está registrado como institución aliada en SeniorLink.', 'error');
+      return;
+    }
+    g('aInstitucionNombre').value = institucion.nombre;
+    g('aInstitucionResultado').hidden = false;
+    estadoInstitucion('Institución encontrada. Verifica el nombre antes de continuar.', 'ok');
+  } catch (error) {
+    if (id !== consultaRucId) return;
+    institucionesError = true;
+    estadoInstitucion('No se pudo verificar el RUC. Comprueba que la API esté disponible.', 'error');
+  }
+}
+let debounceRuc;
+g('aRuc')?.addEventListener('input', () => {
+  clearTimeout(debounceRuc);
+  limpiarInstitucion();
+  estadoInstitucion('');
+  debounceRuc = setTimeout(validarRucInstitucion, 350);
+});
+g('aRuc')?.addEventListener('blur', () => {
+  clearTimeout(debounceRuc);
+  validarRucInstitucion();
+});
+
 function ageFrom(iso) {
   if (!iso) return null;
   const birth = new Date(iso + 'T00:00:00');
@@ -577,6 +653,10 @@ g('registerForm')?.addEventListener('submit', async event => {
     if (!val('aCarrera') || val('aCarrera').length > 150) return fail('Ingresa tu carrera.', 'aCarrera');
     if (!val('aTarifa') || !Number.isFinite(tarifa) || tarifa < 0 || !/^\d+(\.\d{1,2})?$/.test(val('aTarifa'))) return fail('Ingresa una tarifa válida con máximo dos decimales.', 'aTarifa');
     if (val('aRuc') && !/^\d{11}$/.test(val('aRuc'))) return fail('El RUC debe tener 11 dígitos.', 'aRuc');
+    if (val('aRuc')) {
+      await validarRucInstitucion();
+      if (g('aInstitucionResultado').hidden) return fail('Verifica el RUC y confirma que la institución aparezca antes de registrarte.', 'aRuc');
+    }
     payload.acompanante = { ciclo, carrera: val('aCarrera'), biografia: val('aBio') || null, tarifaBasePorHora: tarifa, tarifaActualPorHora: tarifa, institucionRuc: val('aRuc') || null };
   }
   if (role === 'adulto_mayor') {
