@@ -9,6 +9,7 @@ const { role, label, description } = Astro.props;
 const adminSection = role === 'ADMINISTRADOR' && Astro.url.pathname !== '/admin';
 const sectionNames: Record<string,string> = {
   '/admin/usuarios':'Usuarios',
+  '/admin/mi-perfil':'Mi perfil',
   '/admin/reservas':'Reservas',
   '/admin/instituciones':'Instituciones',
   '/admin/promociones':'Promociones',
@@ -40,8 +41,8 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
     <div class="panel-layout">
       <aside class="panel-sidebar" id="panel-sidebar">
         <div class="sidebar-caption">MI ESPACIO</div>
-        <a class="sidebar-link" href={role === "ADMINISTRADOR" ? "/admin" : "#inicio"}>⌂ &nbsp; Inicio</a>
-        <a class="sidebar-link" href={role === "ADMINISTRADOR" ? "/admin/usuarios" : "#mi-perfil"}>◯ &nbsp; Mi perfil</a>
+        {role !== "ADMINISTRADOR" && <a class="sidebar-link" href="#inicio">⌂ &nbsp; Inicio</a>}
+        <a class="sidebar-link" href={role === "ADMINISTRADOR" ? "/admin/mi-perfil" : "#mi-perfil"}>◯ &nbsp; Mi perfil</a>
         {role === 'ADMINISTRADOR' ? (
           <>
             <a class="sidebar-link" href="/admin">▦ &nbsp; Dashboard</a>
@@ -112,8 +113,12 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
       sidebar?.classList.remove('is-open');
       syncMenu();
     });
+    const currentPath = window.location.pathname.replace(/\/$/, '') || '/';
     sidebar?.querySelectorAll<HTMLAnchorElement>('a.sidebar-link').forEach(link => {
-      if (link.getAttribute('href') === window.location.pathname) {
+      const href = link.getAttribute('href');
+      link.classList.remove('selected');
+      link.removeAttribute('aria-current');
+      if (href && href.startsWith('/') && href === currentPath) {
         link.classList.add('selected');
         link.setAttribute('aria-current', 'page');
       }
