@@ -8,7 +8,7 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
     server: {
-      allowedHosts: ['parameters-notified-comes-miniature.trycloudflare.com']
+      allowedHosts: ['.trycloudflare.com']
     }
   }
 });
