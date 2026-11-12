@@ -94,6 +94,7 @@ function ensureEditorStyles() {
   .admin-create-section input,.admin-create-section select,.admin-create-section textarea{display:block;width:100%;margin-top:8px;padding:12px 13px;border:1px solid #d5e7df;border-radius:10px;font:inherit;background:#fff;color:#15302e}
   .admin-create-section input:focus,.admin-create-section select:focus,.admin-create-section textarea:focus{outline:2px solid #83d1bd;outline-offset:1px}
   .admin-create-role-label{max-width:380px}
+  .admin-create-role-locked select:disabled{background:#eaf5ef;color:#16584e;border-color:#b9dccc;opacity:1;cursor:not-allowed;font-weight:700}
   .admin-create-hint{font-size:11px;line-height:1.6;color:#6b8b7e;margin:12px 0 0}
   .admin-create-wide{grid-column:1/-1}
   .admin-create-dialog .admin-modal-actions{padding:18px 30px;box-shadow:0 -5px 20px rgba(0,0,0,.025)}
@@ -178,7 +179,7 @@ function formBox(root: HTMLElement, title: string, fields: Array<[string,string,
     }finally{save.disabled=false;cancel.disabled=false;closeBtn.disabled=false;}
   });
 }
-function createUserModal(root: HTMLElement, initialRole: string, refresh: () => Promise<void>) {
+function createUserModal(root: HTMLElement, initialRole: string, refresh: () => Promise<void>, lockedRole = false) {
   ensureEditorStyles();
   document.querySelector<HTMLElement>('#admin-modal-overlay')?.remove();
   const overlay=node('div','','admin-modal-overlay');
@@ -207,8 +208,10 @@ function createUserModal(root: HTMLElement, initialRole: string, refresh: () => 
   roleSelect.name='rol';roleSelect.required=true;
   for(const role of ROLES){const option=document.createElement('option');option.value=role;option.textContent=LABELS[role];roleSelect.append(option);}
   roleSelect.value=initialRole;
+  roleSelect.disabled=lockedRole;
   roleLabel.append(roleSelect);
-  roleSection.append(roleLabel,node('p','Los campos adicionales se adaptan automáticamente al rol seleccionado.','admin-create-hint'));
+  roleSection.append(roleLabel,node('p',lockedRole ? 'El rol está fijado por la sección desde la que estás creando la cuenta.' : 'Los campos adicionales se adaptan automáticamente al rol seleccionado.','admin-create-hint'));
+  if(lockedRole)roleSection.classList.add('admin-create-role-locked');
   const commonSection=node('section','','admin-create-section');
   commonSection.append(node('h3','02 · Datos de la cuenta'));
   const commonGrid=node('div','','admin-create-grid');
@@ -279,6 +282,7 @@ function createUserModal(root: HTMLElement, initialRole: string, refresh: () => 
   }
   let previousRole=roleSelect.value;
   roleSelect.addEventListener('change',()=>{
+    if(lockedRole)return;
     profileDrafts[previousRole]=values(form);
     previousRole=roleSelect.value;
     renderProfile();
@@ -325,7 +329,7 @@ function createUserModal(root: HTMLElement, initialRole: string, refresh: () => 
       error.textContent=e instanceof Error?e.message:'No se pudo crear la cuenta.';
       error.hidden=false;error.scrollIntoView({block:'nearest'});
       busy=false;
-    }finally{save.disabled=false;cancel.disabled=false;closeBtn.disabled=false;roleSelect.disabled=false;}
+    }finally{save.disabled=false;cancel.disabled=false;closeBtn.disabled=false;roleSelect.disabled=lockedRole;}
   });
 }
 function table(root: HTMLElement, headers: string[], rows: AnyRecord[], render: (row: AnyRecord,tr: HTMLTableRowElement)=>void) {
@@ -600,7 +604,7 @@ async function usersModule(root: HTMLElement) {
       await refresh();
     }catch(e){status(root,e instanceof Error?e.message:'Error al cambiar estado.',true);}
   };
-  const createUser=()=>createUserModal(root,filter||roleSelect.value||'ACOMPANANTE',refresh);
+  const createUser=()=>createUserModal(root,filter||roleSelect.value||'ACOMPANANTE',refresh,Boolean(filter));
   topButton(root,'+ Crear usuario',createUser);
   roleSelect.addEventListener('change',render);search.addEventListener('input',render);
   await refresh();
