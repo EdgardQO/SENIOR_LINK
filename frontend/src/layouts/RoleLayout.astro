@@ -103,7 +103,6 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
       <main class="panel-content" id="inicio">
         <div class="panel-intro">
           <div><div class="panel-eyebrow">{adminSection ? 'ADMINISTRACIÓN / ' + sectionName.toUpperCase() : label.toUpperCase() + ' / INICIO'}</div><h1>{adminSection ? sectionName : <>¡Hola, <span id="welcome-name">usuario</span>!</>}</h1><p>{description}</p></div>
-          <span class="panel-intro-icon" aria-hidden="true">✦</span>
         </div>
         {!adminSection && <div class="panel-banner">
           <div><div class="banner-kicker">BIENVENIDO A SENIORLINK</div><h2>Tu espacio de {label.toLowerCase()}</h2><p>Tu información, tus herramientas y tus servicios en un solo lugar.</p></div><span aria-hidden="true">✳</span>
