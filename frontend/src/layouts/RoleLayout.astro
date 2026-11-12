@@ -62,7 +62,8 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
       </button>
     </div>
     <div class="panel-layout">
-      <aside class="panel-sidebar" id="panel-sidebar">
+      <aside class:list={["panel-sidebar", role === "ADMINISTRADOR" && "admin-sidebar"]} id="panel-sidebar">
+        {role === 'ADMINISTRADOR' && <div class="admin-sidebar-welcome"><span class="admin-sidebar-welcome-symbol" aria-hidden="true">✦</span><div><strong>Panel de control</strong><small>Gestión de SeniorLink</small></div></div>}
         <div class="sidebar-top-row"><div class="sidebar-caption">MI ESPACIO</div>        <div class="sidebar-top-controls" aria-label="Búsqueda y barra lateral">
         <button id="panel-search-toggle" type="button" class="panel-icon-button" aria-label="Filtrar secciones" title="Filtrar secciones">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="7"/><path d="m16 16 5 5"/></svg>
@@ -98,7 +99,7 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
         ) : (
           <a class="sidebar-link" href="#herramientas"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 7a5 5 0 0 0-6 6L3 18l3 3 5-5a5 5 0 0 0 6-6l-3 3-3-3z"/></svg><span>Herramientas</span></a>
         )}
-        <div class="sidebar-foot">● &nbsp; Cuenta protegida de SeniorLink</div>
+        <div class="sidebar-foot"><span class="sidebar-status-dot" aria-hidden="true"></span> Cuenta protegida de SeniorLink</div>
       </aside>
       <main class="panel-content" id="inicio">
         <div class="panel-intro">
@@ -424,4 +425,31 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
     .sidebar-mobile-actions{top:82px;left:12px}
     .sidebar-top-controls{gap:4px}
   }
+</style>
+<style is:global>
+  /* Identidad visual específica del panel de administración */
+  html[data-expected-role="ADMINISTRADOR"] .panel-layout{grid-template-columns:254px minmax(0,1fr)}
+  html[data-expected-role="ADMINISTRADOR"] .panel-layout.is-collapsed{grid-template-columns:0 minmax(0,1fr)}
+  .admin-sidebar{background:linear-gradient(180deg,#f2faf7 0%,#fff 46%,#f7fbf9 100%);border-right:1px solid #d7e9e2;padding:22px 14px 20px;gap:5px}
+  .admin-sidebar-welcome{display:flex;align-items:center;gap:12px;padding:15px 13px;margin:0 2px 18px;background:linear-gradient(130deg,#0d766d,#145348);border-radius:15px;color:#fff;box-shadow:0 9px 22px #12594b24}
+  .admin-sidebar-welcome-symbol{display:grid;place-items:center;width:39px;height:39px;border-radius:11px;background:#ffffff24;color:#bdf4de;font-size:24px;flex-shrink:0}
+  .admin-sidebar-welcome strong{display:block;font-size:13px;font-weight:700;letter-spacing:-.2px}
+  .admin-sidebar-welcome small{display:block;margin-top:4px;font-size:10px;color:#cee8df;line-height:1.3}
+  .admin-sidebar .sidebar-caption{color:#58796f;font-size:10px;letter-spacing:1.65px;margin:0 9px 8px}
+  .admin-sidebar .sidebar-top-row{margin-bottom:5px;min-height:35px}
+  .admin-sidebar .sidebar-link{position:relative;gap:11px;min-height:44px;padding:10px 12px;color:#4e6861;border:1px solid transparent;border-radius:11px;font-weight:550;transition:background .17s,border-color .17s,color .17s,transform .17s}
+  .admin-sidebar .sidebar-link .sidebar-icon{width:18px;height:18px;flex:0 0 18px;color:#398879}
+  .admin-sidebar .sidebar-link:hover{background:#e7f5f0;border-color:#cfe7dd;color:#0b6a5c;transform:translateX(2px)}
+  .admin-sidebar .sidebar-link.selected{background:linear-gradient(95deg,#d7f3e7,#e7f8ef);border-color:#b9e5d3;color:#0b6657;font-weight:750;box-shadow:inset 3px 0 #0c9981,0 2px 9px #146f5810}
+  .admin-sidebar .sidebar-link.selected .sidebar-icon{color:#087965}
+  .admin-sidebar .sidebar-link:focus-visible{outline:2px solid #0b8975;outline-offset:2px}
+  .admin-sidebar .sidebar-foot{display:flex;gap:9px;align-items:center;color:#517b6d;border-top:1px solid #dcece6;margin:16px 7px 0;padding:19px 3px 6px;font-size:10px}
+  .admin-sidebar .sidebar-status-dot{width:8px;height:8px;flex:0 0 8px;border-radius:50%;background:#14a77f;box-shadow:0 0 0 4px #d7f5e9}
+  .admin-sidebar .sidebar-search-box{background:#fff;border:1px solid #d9ece3;border-radius:12px;padding:12px;margin-bottom:10px}
+  @media(max-width:700px){
+    html[data-expected-role="ADMINISTRADOR"] .panel-layout,html[data-expected-role="ADMINISTRADOR"] .panel-layout.is-collapsed{display:block}
+    .admin-sidebar,.panel-layout.is-collapsed .admin-sidebar{width:min(310px,88vw);padding:22px 12px}
+    .admin-sidebar .sidebar-link:hover{transform:none}
+  }
+  @media(prefers-reduced-motion:reduce){.admin-sidebar .sidebar-link{transition:none}.admin-sidebar .sidebar-link:hover{transform:none}}
 </style>
