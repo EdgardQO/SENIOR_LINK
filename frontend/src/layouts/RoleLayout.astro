@@ -242,7 +242,7 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
         return;
       }
 
-      if (!loading || !shell || !welcomeName) return;
+      if (!loading || !shell) return;
 
       try {
         const data = await fetchProfile(current);
@@ -250,7 +250,7 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
           throw Object.assign(new Error('No tienes autorización para este perfil.'), { status: 403 });
         }
 
-        welcomeName.textContent = data.usuario.nombres?.split(' ')[0] || 'usuario';
+        if (welcomeName) welcomeName.textContent = data.usuario.nombres?.split(' ')[0] || 'usuario';
         shell.hidden = false;
         loading.hidden = true;
         document.dispatchEvent(new CustomEvent('seniorlink:profile', { detail: data }));
