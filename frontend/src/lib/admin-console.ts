@@ -81,6 +81,24 @@ function ensureEditorStyles() {
   .admin-modal-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;padding:18px 26px;border-top:1px solid #e6efeb;background:#fff}
   .admin-modal-actions .admin-btn{margin:0!important;min-width:110px}
   .admin-modal-error{color:#b42336;font-size:12px;margin:0;padding:0 26px 12px}
+
+  .admin-create-dialog{width:min(850px,100%);border-radius:22px}
+  .admin-create-dialog .admin-modal-header{background:linear-gradient(110deg,#e8f7f1,#f8fcfa);padding:23px 30px}
+  .admin-create-kicker{font-size:10px;letter-spacing:1.6px;font-weight:800;color:#0d9488;margin-bottom:8px}
+  .admin-create-dialog .admin-modal-heading{font-size:23px}
+  .admin-create-fields{overflow-y:auto;min-height:0;padding:24px 30px;display:flex;flex-direction:column;gap:21px;background:#f7faf9}
+  .admin-create-section{background:#fff;border:1px solid #dcebe4;border-radius:15px;padding:20px;box-shadow:0 4px 15px rgba(20,85,65,.035)}
+  .admin-create-section h3{margin:0 0 17px;color:#15594e;font-size:13px;font-weight:800}
+  .admin-create-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px}
+  .admin-create-section label{display:block;font-size:12px;font-weight:650;color:#4c6c61;min-width:0}
+  .admin-create-section input,.admin-create-section select,.admin-create-section textarea{display:block;width:100%;margin-top:8px;padding:12px 13px;border:1px solid #d5e7df;border-radius:10px;font:inherit;background:#fff;color:#15302e}
+  .admin-create-section input:focus,.admin-create-section select:focus,.admin-create-section textarea:focus{outline:2px solid #83d1bd;outline-offset:1px}
+  .admin-create-role-label{max-width:380px}
+  .admin-create-hint{font-size:11px;line-height:1.6;color:#6b8b7e;margin:12px 0 0}
+  .admin-create-wide{grid-column:1/-1}
+  .admin-create-dialog .admin-modal-actions{padding:18px 30px;box-shadow:0 -5px 20px rgba(0,0,0,.025)}
+  .admin-create-dialog .admin-modal-actions .admin-btn:not(.admin-secondary){background:#0c8274}
+  @media(max-width:600px){.admin-create-dialog .admin-modal-header{padding:17px}.admin-create-fields{padding:15px;gap:14px}.admin-create-section{padding:15px}.admin-create-grid{grid-template-columns:1fr;gap:14px}.admin-create-dialog .admin-modal-actions{padding:14px}}
   @media(max-width:600px){.admin-modal-overlay{padding:10px}.admin-modal-dialog{max-height:94vh;border-radius:14px}.admin-modal-header{padding:17px}.admin-modal-fields{grid-template-columns:1fr;padding:18px;gap:14px}.admin-modal-actions{padding:15px}}
   `;
   document.head.appendChild(style);
@@ -158,6 +176,156 @@ function formBox(root: HTMLElement, title: string, fields: Array<[string,string,
       error.hidden=false;
       busy=false;
     }finally{save.disabled=false;cancel.disabled=false;closeBtn.disabled=false;}
+  });
+}
+function createUserModal(root: HTMLElement, initialRole: string, refresh: () => Promise<void>) {
+  ensureEditorStyles();
+  document.querySelector<HTMLElement>('#admin-modal-overlay')?.remove();
+  const overlay=node('div','','admin-modal-overlay');
+  overlay.id='admin-modal-overlay';
+  const dialog=node('section','','admin-modal-dialog admin-create-dialog');
+  dialog.setAttribute('role','dialog');
+  dialog.setAttribute('aria-modal','true');
+  dialog.setAttribute('aria-labelledby','admin-create-title');
+  const header=node('div','','admin-modal-header');
+  const heading=node('div');
+  heading.append(node('div','GESTIÓN DE USUARIOS','admin-create-kicker'));
+  const title=node('h2','Crear nueva cuenta','admin-modal-heading');
+  title.id='admin-create-title';
+  const subtitle=node('p','Completa los datos generales y la información específica del rol.','admin-modal-subtitle');
+  heading.append(title,subtitle);
+  const closeBtn=node('button','×','admin-modal-close') as HTMLButtonElement;
+  closeBtn.type='button';closeBtn.setAttribute('aria-label','Cerrar ventana');
+  header.append(heading,closeBtn);
+  const form=document.createElement('form');
+  form.className='admin-modal-form';
+  const fields=node('div','','admin-create-fields');
+  const roleSection=node('section','','admin-create-section');
+  roleSection.append(node('h3','01 · Tipo de cuenta'));
+  const roleLabel=node('label','Rol del usuario','admin-create-role-label');
+  const roleSelect=document.createElement('select');
+  roleSelect.name='rol';roleSelect.required=true;
+  for(const role of ROLES){const option=document.createElement('option');option.value=role;option.textContent=LABELS[role];roleSelect.append(option);}
+  roleSelect.value=initialRole;
+  roleLabel.append(roleSelect);
+  roleSection.append(roleLabel,node('p','Los campos adicionales se adaptan automáticamente al rol seleccionado.','admin-create-hint'));
+  const commonSection=node('section','','admin-create-section');
+  commonSection.append(node('h3','02 · Datos de la cuenta'));
+  const commonGrid=node('div','','admin-create-grid');
+  for(const [key,label,type] of [
+    ['dni','DNI','text'],['nombres','Nombres','text'],['apellidos','Apellidos','text'],
+    ['correoElectronico','Correo electrónico','email'],['contrasena','Contraseña inicial','password'],
+    ['telefono','Teléfono (opcional)','tel']
+  ]) {
+    const element=field(key,label,type,['dni','nombres','apellidos','correoElectronico','contrasena'].includes(key));
+    const input=element.querySelector('input')!;
+    if(key==='dni'){input.inputMode='numeric';input.pattern='[0-9]{8}';input.maxLength=8;input.placeholder='8 dígitos';}
+    if(key==='contrasena'){input.minLength=8;input.maxLength=72;input.autocomplete='new-password';}
+    if(key==='correoElectronico')input.autocomplete='email';
+    commonGrid.append(element);
+  }
+  commonSection.append(commonGrid);
+  const profileSection=node('section','','admin-create-section');
+  const profileHeading=node('h3','03 · Información del perfil');
+  const profileHint=node('p','','admin-create-hint');
+  const profileGrid=node('div','','admin-create-grid');
+  profileSection.append(profileHeading,profileHint,profileGrid);
+  fields.append(roleSection,commonSection,profileSection);
+  form.append(fields);
+  const error=node('p','','admin-modal-error');error.hidden=true;error.setAttribute('role','alert');
+  const actions=node('div','','admin-modal-actions');
+  const cancel=action('Cancelar',()=>close(),'admin-secondary');
+  const save=node('button','Crear cuenta','admin-btn') as HTMLButtonElement;
+  save.type='submit';actions.append(cancel,save);form.append(error,actions);
+  dialog.append(header,form);overlay.append(dialog);
+  const previousFocus=document.activeElement instanceof HTMLElement?document.activeElement:null;
+  const previousOverflow=document.body.style.overflow;
+  document.body.style.overflow='hidden';document.body.append(overlay);
+  let busy=false;
+  const profileDrafts:Record<string,AnyRecord>={};
+  const requiredProfile:Record<string,string[]>={
+    ADMINISTRADOR:['areaODepartamento'],
+    ACOMPANANTE:['carrera','ciclo','tarifaBasePorHora'],
+    ADULTO_MAYOR:['fechaNacimiento','contactoEmergencia','telefonoEmergencia'],
+    SOPORTE:['turno'],FAMILIAR:[]
+  };
+  function renderProfile(){
+    const role=roleSelect.value;
+    profileHeading.textContent='03 · Información del perfil · '+LABELS[role];
+    profileHint.textContent='Estos datos se guardarán en el perfil de '+LABELS[role].toLowerCase()+'.';
+    profileGrid.replaceChildren();
+    const roleFields=[...PROFILE_FIELDS[role]];
+    if(role==='ACOMPANANTE')roleFields.push(['institucionRuc','RUC institución (opcional)','text']);
+    for(const [key,label,type] of roleFields){
+      const element=field('profile_'+key,label,type,requiredProfile[role]?.includes(key));
+      const input=element.querySelector('input')!;
+      if(key==='biografia'||key==='observacionesMedicas'){
+        const textarea=document.createElement('textarea');
+        textarea.name=input.name;textarea.rows=3;textarea.placeholder=label;
+        element.replaceChild(textarea,input);
+        element.classList.add('admin-create-wide');
+      } else {
+        if(key==='ciclo'){input.min='1';input.max='20';input.step='1';}
+        if(key==='nivelAcceso'){input.min='1';input.step='1';}
+        if(key==='tarifaBasePorHora'||key==='tarifaActualPorHora'){input.min='0';input.step='0.01';input.placeholder='S/ 0.00';}
+        if(key==='institucionRuc'){input.inputMode='numeric';input.pattern='[0-9]{11}';input.maxLength=11;input.placeholder='11 dígitos';}
+      }
+      profileGrid.append(element);
+    }
+    for(const el of Array.from(profileGrid.querySelectorAll<HTMLInputElement|HTMLTextAreaElement>('input,textarea'))){
+      const draft=profileDrafts[role]?.[el.name];
+      if(draft!==undefined)el.value=String(draft);
+    }
+  }
+  let previousRole=roleSelect.value;
+  roleSelect.addEventListener('change',()=>{
+    profileDrafts[previousRole]=values(form);
+    previousRole=roleSelect.value;
+    renderProfile();
+  });
+  renderProfile();
+  function close(){
+    if(busy)return;
+    overlay.remove();document.body.style.overflow=previousOverflow;
+    previousFocus?.focus();document.removeEventListener('keydown',onKey);
+  }
+  function onKey(event:KeyboardEvent){
+    if(event.key==='Escape'){event.preventDefault();close();}
+    if(event.key!=='Tab')return;
+    const focusable=Array.from(dialog.querySelectorAll<HTMLElement>('button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled])'));
+    const first=focusable[0],last=focusable[focusable.length-1];
+    if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+    else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+  }
+  document.addEventListener('keydown',onKey);
+  closeBtn.addEventListener('click',close);
+  overlay.addEventListener('click',event=>{if(event.target===overlay)close();});
+  roleSelect.focus();
+  form.addEventListener('submit',async event=>{
+    event.preventDefault();if(busy||!form.reportValidity())return;
+    const vals=values(form),role=roleSelect.value;
+    busy=true;save.disabled=true;cancel.disabled=true;closeBtn.disabled=true;roleSelect.disabled=true;
+    error.hidden=true;
+    try{
+      const data:AnyRecord={rol:role};
+      for(const key of ['dni','nombres','apellidos','correoElectronico','contrasena','telefono'])data[key]=vals[key]||null;
+      const profile:AnyRecord={};
+      for(const [key] of PROFILE_FIELDS[role])if('profile_'+key in vals)profile[key]=vals['profile_'+key];
+      if(role==='ACOMPANANTE'&&vals.profile_institucionRuc)profile.institucionRuc=vals.profile_institucionRuc;
+      if(role==='ADMINISTRADOR'||role==='SOPORTE'){
+        Object.assign(data,profile);
+        await adminRequest('/personal',{method:'POST',body:JSON.stringify(data)});
+      }else{
+        data[PROFILE_KEY[role]]=profile;
+        await adminRequest('/usuarios',{method:'POST',body:JSON.stringify(data)});
+      }
+      await refresh();
+      busy=false;close();status(root,'Cuenta de '+LABELS[role].toLowerCase()+' creada correctamente.');
+    }catch(e){
+      error.textContent=e instanceof Error?e.message:'No se pudo crear la cuenta.';
+      error.hidden=false;error.scrollIntoView({block:'nearest'});
+      busy=false;
+    }finally{save.disabled=false;cancel.disabled=false;closeBtn.disabled=false;roleSelect.disabled=false;}
   });
 }
 function table(root: HTMLElement, headers: string[], rows: AnyRecord[], render: (row: AnyRecord,tr: HTMLTableRowElement)=>void) {
@@ -432,34 +600,7 @@ async function usersModule(root: HTMLElement) {
       await refresh();
     }catch(e){status(root,e instanceof Error?e.message:'Error al cambiar estado.',true);}
   };
-  const createUser=()=>{
-    const role=filter||roleSelect.value||'ACOMPANANTE';
-    const fields:Array<[string,string,string]>=[
-      ...(!filter?[['rol','Rol (ADMINISTRADOR, ACOMPANANTE, ADULTO_MAYOR, SOPORTE, FAMILIAR)','text'] as [string,string,string]]:[]),
-      ['dni','DNI','text'],['nombres','Nombres','text'],['apellidos','Apellidos','text'],
-      ['correoElectronico','Correo electrónico','email'],['contrasena','Contraseña inicial','password'],
-      ['telefono','Teléfono','text'],
-      ...PROFILE_FIELDS[role].map(([key,label,type])=>['profile_'+key,label,type] as [string,string,string]),
-      ...(role==='ACOMPANANTE'?[['profile_institucionRuc','RUC institución (opcional)','text'] as [string,string,string]]:[])
-    ];
-    formBox(root,'Crear cuenta · '+LABELS[role],fields,{rol:role},async vals=>{
-      const chosen=String(vals.rol||role).toUpperCase();
-      if(chosen!==role)throw new Error('Selecciona el rol en el filtro y vuelve a abrir el formulario.');
-      const data:AnyRecord={rol:chosen};
-      for(const key of ['dni','nombres','apellidos','correoElectronico','contrasena','telefono'])data[key]=vals[key]||null;
-      const profile:AnyRecord={};
-      for(const [key] of PROFILE_FIELDS[role])if('profile_'+key in vals)profile[key]=vals['profile_'+key];
-      if('profile_institucionRuc' in vals)profile.institucionRuc=vals.profile_institucionRuc;
-      data[PROFILE_KEY[role]]=profile;
-      if(role==='SOPORTE'||role==='ADMINISTRADOR'){
-        Object.assign(data,profile);delete data[PROFILE_KEY[role]];
-        await adminRequest('/personal',{method:'POST',body:JSON.stringify(data)});
-      }else{
-        await adminRequest('/usuarios',{method:'POST',body:JSON.stringify(data)});
-      }
-      await refresh();
-    });
-  };
+  const createUser=()=>createUserModal(root,filter||roleSelect.value||'ACOMPANANTE',refresh);
   topButton(root,'+ Crear usuario',createUser);
   roleSelect.addEventListener('change',render);search.addEventListener('input',render);
   await refresh();
