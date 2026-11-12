@@ -63,7 +63,6 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
     </div>
     <div class="panel-layout">
       <aside class:list={["panel-sidebar", role === "ADMINISTRADOR" && "admin-sidebar"]} id="panel-sidebar">
-        {role === 'ADMINISTRADOR' && <div class="admin-sidebar-welcome"><span class="admin-sidebar-welcome-symbol" aria-hidden="true">✦</span><div><strong>Panel de control</strong><small>Gestión de SeniorLink</small></div></div>}
         <div class="sidebar-top-row"><div class="sidebar-caption">MI ESPACIO</div>        <div class="sidebar-top-controls" aria-label="Búsqueda y barra lateral">
         <button id="panel-search-toggle" type="button" class="panel-icon-button" aria-label="Filtrar secciones" title="Filtrar secciones">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="7"/><path d="m16 16 5 5"/></svg>
@@ -431,17 +430,25 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
   html[data-expected-role="ADMINISTRADOR"] .panel-layout{grid-template-columns:254px minmax(0,1fr)}
   html[data-expected-role="ADMINISTRADOR"] .panel-layout.is-collapsed{grid-template-columns:0 minmax(0,1fr)}
   .admin-sidebar{background:linear-gradient(180deg,#f2faf7 0%,#fff 46%,#f7fbf9 100%);border-right:1px solid #d7e9e2;padding:22px 14px 20px;gap:5px}
-  .admin-sidebar-welcome{display:flex;align-items:center;gap:12px;padding:15px 13px;margin:0 2px 18px;background:linear-gradient(130deg,#0d766d,#145348);border-radius:15px;color:#fff;box-shadow:0 9px 22px #12594b24}
-  .admin-sidebar-welcome-symbol{display:grid;place-items:center;width:39px;height:39px;border-radius:11px;background:#ffffff24;color:#bdf4de;font-size:24px;flex-shrink:0}
-  .admin-sidebar-welcome strong{display:block;font-size:13px;font-weight:700;letter-spacing:-.2px}
-  .admin-sidebar-welcome small{display:block;margin-top:4px;font-size:10px;color:#cee8df;line-height:1.3}
   .admin-sidebar .sidebar-caption{color:#58796f;font-size:10px;letter-spacing:1.65px;margin:0 9px 8px}
   .admin-sidebar .sidebar-top-row{margin-bottom:5px;min-height:35px}
   .admin-sidebar .sidebar-link{position:relative;gap:11px;min-height:44px;padding:10px 12px;color:#4e6861;border:1px solid transparent;border-radius:11px;font-weight:550;transition:background .17s,border-color .17s,color .17s,transform .17s}
-  .admin-sidebar .sidebar-link .sidebar-icon{width:18px;height:18px;flex:0 0 18px;color:#398879}
-  .admin-sidebar .sidebar-link:hover{background:#e7f5f0;border-color:#cfe7dd;color:#0b6a5c;transform:translateX(2px)}
-  .admin-sidebar .sidebar-link.selected{background:linear-gradient(95deg,#d7f3e7,#e7f8ef);border-color:#b9e5d3;color:#0b6657;font-weight:750;box-shadow:inset 3px 0 #0c9981,0 2px 9px #146f5810}
-  .admin-sidebar .sidebar-link.selected .sidebar-icon{color:#087965}
+  .admin-sidebar .sidebar-link .sidebar-icon{width:19px;height:19px;flex:0 0 19px;color:var(--nav-accent,#087e68)}
+  .admin-sidebar .sidebar-link{background:var(--nav-bg,#edf7f3);border-color:var(--nav-border,#e0eee7)}
+  .admin-sidebar .sidebar-link[href="/admin/mi-perfil"]{--nav-bg:#e8f1ff;--nav-border:#d7e5fb;--nav-accent:#3972bb}
+  .admin-sidebar .sidebar-link[href="/admin"]{--nav-bg:#e0f5eb;--nav-border:#ccebdc;--nav-accent:#087c61}
+  .admin-sidebar .sidebar-link[href="/admin/usuarios"]{--nav-bg:#eaf2ff;--nav-border:#dbe7fb;--nav-accent:#397ab3}
+  .admin-sidebar .sidebar-link[href="/admin/perfiles/ACOMPANANTE"]{--nav-bg:#f0ecff;--nav-border:#e4dcfa;--nav-accent:#7861ae}
+  .admin-sidebar .sidebar-link[href="/admin/perfiles/ADULTO_MAYOR"]{--nav-bg:#fff0ec;--nav-border:#f9e0d7;--nav-accent:#bf705a}
+  .admin-sidebar .sidebar-link[href="/admin/perfiles/FAMILIAR"]{--nav-bg:#fff4e5;--nav-border:#f4e7d1;--nav-accent:#b78634}
+  .admin-sidebar .sidebar-link[href="/admin/perfiles/SOPORTE"]{--nav-bg:#e9f6fb;--nav-border:#d4eaf4;--nav-accent:#327e9c}
+  .admin-sidebar .sidebar-link[href="/admin/perfiles/ADMINISTRADOR"]{--nav-bg:#e9efff;--nav-border:#d8e2fa;--nav-accent:#526cba}
+  .admin-sidebar .sidebar-link[href="/admin/reservas"]{--nav-bg:#e8f7f6;--nav-border:#d2ebe7;--nav-accent:#198779}
+  .admin-sidebar .sidebar-link[href="/admin/instituciones"]{--nav-bg:#f1f3e7;--nav-border:#e3e9d2;--nav-accent:#758b39}
+  .admin-sidebar .sidebar-link[href="/admin/promociones"]{--nav-bg:#fff0f6;--nav-border:#f6dce8;--nav-accent:#b65b89}
+  .admin-sidebar .sidebar-link:hover{background:var(--nav-bg,#e7f5f0);border-color:var(--nav-accent,#087e68);color:#173f39;transform:translateX(2px)}
+  .admin-sidebar .sidebar-link.selected{background:var(--nav-bg,#e0f5eb);border-color:var(--nav-accent,#087c61);color:#173f39;font-weight:750;box-shadow:inset 3px 0 var(--nav-accent,#087c61),0 3px 11px #146f5812}
+  .admin-sidebar .sidebar-link.selected .sidebar-icon{color:var(--nav-accent,#087965)}
   .admin-sidebar .sidebar-link:focus-visible{outline:2px solid #0b8975;outline-offset:2px}
   .admin-sidebar .sidebar-foot{display:flex;gap:9px;align-items:center;color:#517b6d;border-top:1px solid #dcece6;margin:16px 7px 0;padding:19px 3px 6px;font-size:10px}
   .admin-sidebar .sidebar-status-dot{width:8px;height:8px;flex:0 0 8px;border-radius:50%;background:#14a77f;box-shadow:0 0 0 4px #d7f5e9}
