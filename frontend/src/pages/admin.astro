@@ -68,6 +68,26 @@ import RoleLayout from '../layouts/RoleLayout.astro';
 .dashboard-card .card-symbol{background:#e2f4ec;color:#087963;border:1px solid #c9e9dc}
 .dashboard-card .card-symbol svg{width:24px;height:24px}
 @media(prefers-reduced-motion:reduce){.dashboard-card{transition:none}.dashboard-card:hover{transform:none}}
+
+/* Dashboard administrativo: tarjetas compactas de estilo ejecutivo */
+.admin-overview{gap:15px;margin:18px 0 34px}
+.overview-card{min-height:126px;padding:20px 18px;display:grid;grid-template-columns:52px minmax(0,1fr);grid-template-rows:auto auto;column-gap:14px;row-gap:4px;align-content:center;align-items:center;text-align:left;background:#fff;border:1px solid #dfebe6;border-radius:16px;box-shadow:0 6px 20px rgba(16,73,60,.055)}
+.overview-card::before{display:none}
+.overview-card::after{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:#0d9488;opacity:.8}
+.overview-icon{grid-column:1;grid-row:1 / span 2;box-sizing:content-box;width:26px;height:26px;padding:12px;background:#e6f6ee;border-radius:13px;stroke:#087e68;filter:none}
+.overview-card strong{grid-column:2;grid-row:1;font-size:29px;letter-spacing:-.9px;color:#153f37}
+.overview-card>span:last-child{grid-column:2;grid-row:2;font-size:11px;line-height:1.5;color:#6a8179;font-weight:550;max-width:none}
+.overview-card:hover{transform:translateY(-3px);border-color:#b5dfce;box-shadow:0 12px 24px rgba(16,73,60,.10)}
+.admin-chart-grid{gap:18px;margin-bottom:34px}
+.chart-panel{border-radius:17px;border-color:#dfebe6;box-shadow:0 6px 20px rgba(16,73,60,.055)}
+.chart-heading{border-bottom:1px solid #edf3f0;padding-bottom:15px;margin-bottom:16px}
+.chart-heading h2{font-size:16px;color:#183d36}
+:global(html[data-expected-role="ADMINISTRADOR"] .section-heading){margin-top:28px;margin-bottom:16px}
+:global(html[data-expected-role="ADMINISTRADOR"] .section-heading h2){font-size:19px;color:#183d36;letter-spacing:-.35px}
+:global(html[data-expected-role="ADMINISTRADOR"] .dashboard-card){border-color:#dfebe6;box-shadow:0 6px 20px rgba(16,73,60,.055)}
+@media(max-width:1150px){.admin-overview{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.admin-overview{gap:10px}.overview-card{min-height:116px;padding:14px 11px;grid-template-columns:40px minmax(0,1fr);column-gap:9px}.overview-icon{width:22px;height:22px;padding:9px;border-radius:10px}.overview-card strong{font-size:25px}.overview-card>span:last-child{font-size:10px}.chart-panel{padding:17px}}
+@media(prefers-reduced-motion:reduce){.overview-card{transition:none}.overview-card:hover{transform:none}}
 </style>
 <script>
   import { adminRequest } from '../lib/admin-api';
