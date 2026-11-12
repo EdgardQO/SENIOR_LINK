@@ -43,7 +43,7 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
 
       </div>
       <div class="panel-header-actions">
-        <span class="panel-role">{label}</span>
+        {role === 'ADMINISTRADOR' ? <div class="admin-header-identity"><span class="admin-header-indicator" aria-hidden="true"></span><span><strong>Centro de gestión</strong><small>SeniorLink · Panel interno</small></span></div> : <span class="panel-role">{label}</span>}
         <button id="logout" type="button" class="panel-logout">Cerrar sesión</button>
       </div>
     </header>
@@ -102,12 +102,12 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
       </aside>
       <main class="panel-content" id="inicio">
         <div class="panel-intro">
-          <div><div class="panel-eyebrow">{adminSection ? 'ADMINISTRACIÓN / ' + sectionName.toUpperCase() : label.toUpperCase() + ' / INICIO'}</div><h1>{adminSection ? sectionName : <>¡Hola, <span id="welcome-name">usuario</span>!</>}</h1><p>{description}</p></div>
+          <div><div class="panel-eyebrow">{adminSection ? 'SENIORLINK / ' + sectionName.toUpperCase() : role === 'ADMINISTRADOR' ? 'SENIORLINK / DASHBOARD' : label.toUpperCase() + ' / INICIO'}</div><h1>{adminSection ? sectionName : <>¡Hola, <span id="welcome-name">usuario</span>!</>}</h1><p>{description}</p></div>
         </div>
         {!adminSection && (role === 'ADMINISTRADOR' ? (
           <section class="panel-banner admin-photo-banner" aria-label="Bienvenida al panel de administración">
             <div class="admin-banner-content">
-              <div class="banner-kicker">PANEL DE ADMINISTRACIÓN</div>
+              <div class="banner-kicker">CENTRO DE GESTIÓN</div>
               <h2>Gestiona SeniorLink desde un solo lugar</h2>
               <p>Supervisa usuarios, reservas y servicios de acompañamiento desde tu espacio de gestión.</p>
             </div>
@@ -117,7 +117,7 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
             <div><div class="banner-kicker">BIENVENIDO A SENIORLINK</div><h2>Tu espacio de {label.toLowerCase()}</h2><p>Tu información, tus herramientas y tus servicios en un solo lugar.</p></div><span aria-hidden="true">✳</span>
           </div>
         ))}
-        {adminSection && <div class="panel-section-user">Sesión administrativa: <strong id="welcome-name">usuario</strong></div>}
+        
         <div id="panel-error" class="panel-error" role="alert" hidden></div>
         <slot />
         <footer class="panel-footer">SeniorLink · Acompañamiento de confianza</footer>
@@ -470,4 +470,17 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
     .admin-sidebar .sidebar-link:hover{transform:none}
   }
   @media(prefers-reduced-motion:reduce){.admin-sidebar .sidebar-link{transition:none}.admin-sidebar .sidebar-link:hover{transform:none}}
+</style>
+
+<style is:global>
+  html[data-expected-role="ADMINISTRADOR"] .panel-header{background:linear-gradient(100deg,#fff 0%,#f7fcfa 100%);border-bottom:1px solid #d5e9e0;box-shadow:0 3px 16px rgba(13,70,57,.06)}
+  .admin-header-identity{display:flex;align-items:center;gap:11px;padding:7px 16px;border:1px solid #d4e9df;background:#eff8f4;border-radius:12px}
+  .admin-header-indicator{width:10px;height:10px;flex:0 0 10px;border-radius:50%;background:#0d9488;box-shadow:0 0 0 4px #d4efe5}
+  .admin-header-identity strong{display:block;color:#155548;font-size:12px;font-weight:750;line-height:1.3}
+  .admin-header-identity small{display:block;margin-top:3px;color:#6b8a7e;font-size:10px;line-height:1.2}
+  html[data-expected-role="ADMINISTRADOR"] .panel-logout{background:#145b50;color:#fff;border:1px solid #145b50;border-radius:11px;padding:11px 16px;transition:background .2s,box-shadow .2s}
+  html[data-expected-role="ADMINISTRADOR"] .panel-logout:hover{background:#0d7669;box-shadow:0 4px 12px #135b5028}
+  html[data-expected-role="ADMINISTRADOR"] .panel-logout:focus-visible{outline:3px solid #80d7c1;outline-offset:2px}
+  @media(max-width:600px){.admin-header-identity{padding:8px 10px}.admin-header-identity small{display:none}.admin-header-identity strong{font-size:10px}.admin-header-indicator{width:8px;height:8px;flex-basis:8px}html[data-expected-role="ADMINISTRADOR"] .panel-logout{padding:9px 10px;font-size:10px}}
+  @media(max-width:390px){.admin-header-identity{display:none}}
 </style>
