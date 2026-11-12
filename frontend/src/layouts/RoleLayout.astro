@@ -104,9 +104,19 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
         <div class="panel-intro">
           <div><div class="panel-eyebrow">{adminSection ? 'ADMINISTRACIÓN / ' + sectionName.toUpperCase() : label.toUpperCase() + ' / INICIO'}</div><h1>{adminSection ? sectionName : <>¡Hola, <span id="welcome-name">usuario</span>!</>}</h1><p>{description}</p></div>
         </div>
-        {!adminSection && <div class="panel-banner">
-          <div><div class="banner-kicker">BIENVENIDO A SENIORLINK</div><h2>Tu espacio de {label.toLowerCase()}</h2><p>Tu información, tus herramientas y tus servicios en un solo lugar.</p></div><span aria-hidden="true">✳</span>
-        </div>}
+        {!adminSection && (role === 'ADMINISTRADOR' ? (
+          <section class="panel-banner admin-photo-banner" aria-label="Bienvenida al panel de administración">
+            <div class="admin-banner-content">
+              <div class="banner-kicker">PANEL DE ADMINISTRACIÓN</div>
+              <h2>Gestiona SeniorLink desde un solo lugar</h2>
+              <p>Supervisa usuarios, reservas y servicios de acompañamiento desde tu espacio de gestión.</p>
+            </div>
+          </section>
+        ) : (
+          <div class="panel-banner">
+            <div><div class="banner-kicker">BIENVENIDO A SENIORLINK</div><h2>Tu espacio de {label.toLowerCase()}</h2><p>Tu información, tus herramientas y tus servicios en un solo lugar.</p></div><span aria-hidden="true">✳</span>
+          </div>
+        ))}
         {adminSection && <div class="panel-section-user">Sesión administrativa: <strong id="welcome-name">usuario</strong></div>}
         <div id="panel-error" class="panel-error" role="alert" hidden></div>
         <slot />
@@ -306,6 +316,13 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
   .panel-banner h2 {font-size:24px;margin:14px 0 8px}
   .panel-banner p {font-size:12px;opacity:.86;line-height:1.6;margin:0}
   .panel-banner>span {font-size:95px;line-height:1;opacity:.17}
+  .admin-photo-banner{position:relative;isolation:isolate;overflow:hidden;min-height:220px;padding:36px 40px;background:#0c544a url('/imagenes%20web/banner/banner%20admin.jfif') center 42%/cover no-repeat;box-shadow:0 12px 28px rgba(17,72,62,.13)}
+  .admin-photo-banner::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(6,49,45,.96) 0%,rgba(9,72,63,.91) 37%,rgba(9,72,63,.58) 65%,rgba(9,72,63,.14) 100%)}
+  .admin-banner-content{max-width:550px;position:relative;z-index:1}
+  .admin-photo-banner .banner-kicker{color:#c6f2e1;opacity:1;font-size:11px;letter-spacing:1.6px}
+  .admin-photo-banner h2{font-size:clamp(23px,2.6vw,32px);line-height:1.22;letter-spacing:-.6px;margin:14px 0 12px;color:#fff}
+  .admin-photo-banner p{font-size:13px;line-height:1.75;color:#e5f6f0;opacity:1;max-width:470px}
+  @media(max-width:640px){.admin-photo-banner{min-height:230px;padding:28px 24px;background-position:65% center}.admin-photo-banner::before{background:linear-gradient(90deg,rgba(6,49,45,.95),rgba(9,72,63,.76))}.admin-photo-banner h2{font-size:24px}}
   .dashboard-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:17px;margin:24px 0 32px}
   .dashboard-card,.profile-box,.section-box {border:1px solid #e2ece8;border-radius:17px;background:white;padding:24px;box-shadow:0 5px 18px #145e530a}
   .dashboard-card {min-height:162px}
