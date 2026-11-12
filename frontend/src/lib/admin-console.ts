@@ -210,7 +210,8 @@ function createUserModal(root: HTMLElement, initialRole: string, refresh: () => 
   roleSelect.value=initialRole;
   roleSelect.disabled=lockedRole;
   roleLabel.append(roleSelect);
-  roleSection.append(roleLabel,node('p',lockedRole ? 'El rol está fijado por la sección desde la que estás creando la cuenta.' : 'Los campos adicionales se adaptan automáticamente al rol seleccionado.','admin-create-hint'));
+  roleSection.append(roleLabel);
+  if(!lockedRole)roleSection.append(node('p','Los campos adicionales se adaptan automáticamente al rol seleccionado.','admin-create-hint'));
   if(lockedRole)roleSection.classList.add('admin-create-role-locked');
   const commonSection=node('section','','admin-create-section');
   commonSection.append(node('h3','02 · Datos de la cuenta'));
