@@ -1,0 +1,37 @@
+# Ejecutar desde deploy/: sudo docker compose --env-file .env up -d --build
+# Se conecta al PostgreSQL YA existente en seniorlink_internal.
+services:
+  backend:
+    build:
+      context: ../api
+    restart: unless-stopped
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/seniorlink_db
+      DB_USERNAME: seniorlink_user
+      DB_PASSWORD: ${SENIORLINK_DB_PASSWORD:?Define SENIORLINK_DB_PASSWORD en deploy/.env}
+      JWT_SECRET_BASE64: ${SENIORLINK_JWT_SECRET_BASE64:?Define SENIORLINK_JWT_SECRET_BASE64 en deploy/.env}
+      HIBERNATE_DDL_AUTO: ${HIBERNATE_DDL_AUTO:-update}
+      JPA_SHOW_SQL: "false"
+      FRONTEND_ALLOWED_ORIGINS: ${FRONTEND_ALLOWED_ORIGINS:-http://localhost:4321}
+    ports:
+      - "127.0.0.1:8080:8080"
+    networks:
+      - seniorlink_internal
+      - proxy
+
+  frontend:
+    build:
+      context: ../frontend
+      args:
+        PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8080}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:4321:80"
+    networks:
+      - proxy
+
+networks:
+  seniorlink_internal:
+    external: true
+  proxy:
+    external: true
