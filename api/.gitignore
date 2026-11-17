@@ -4,13 +4,6 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-### Entorno y credenciales ###
-.env
-.env.*
-!.env.example
-*.pem
-*.key
-
 ### STS ###
 .apt_generated
 .classpath

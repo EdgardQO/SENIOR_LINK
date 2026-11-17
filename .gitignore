@@ -1,8 +1,0 @@
-# Environment secrets: all components
-.env
-.env.*
-!.env.example
-*.pem
-*.key
-# IDE
-.idea/

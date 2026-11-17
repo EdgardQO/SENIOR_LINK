@@ -1,6 +1,0 @@
-.git
-.env
-.env.*
-target
-.idea
-*.iml
