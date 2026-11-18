@@ -17,6 +17,31 @@ const checks = [
   ] : [])
 ];
 let failures = 0;
+// Authentication/security checks. These send deliberately incomplete payloads;
+// no valid account can be created by these requests.
+const securityChecks = [
+  ['POST', '/api/v1/auth/registro', '{}', [400, 422]],
+  ['POST', '/api/v1/auth/login', '{}', [400, 401, 422]],
+  ['GET', '/api/v1/admin/usuarios', undefined, [401, 403]]
+];
+for (const [method, path, body, expectedStatuses] of securityChecks) {
+  try {
+    const response = await fetch(base + path, {
+      method,
+      headers: body === undefined ? {} : {'Content-Type': 'application/json'},
+      ...(body === undefined ? {} : {body}),
+      signal: AbortSignal.timeout(10000)
+    });
+    const ok = expectedStatuses.includes(response.status);
+    console.log((ok ? 'PASS' : 'FAIL') + ' ' + method + ' ' + path +
+      ' - HTTP ' + response.status + ' (esperado: ' + expectedStatuses.join('/') + ')');
+    if (!ok) failures++;
+  } catch (error) {
+    failures++;
+    console.log('FAIL ' + method + ' ' + path + ' - ' + (error.message || String(error)));
+  }
+}
+
 for (const [method, path, authenticated, validate] of checks) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10000);
