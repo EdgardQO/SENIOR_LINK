@@ -13,7 +13,12 @@ const checks = [
     ['GET', '/api/v1/admin/usuarios', true, Array.isArray],
     ['GET', '/api/v1/admin/instituciones', true, Array.isArray],
     ['GET', '/api/v1/admin/promociones', true, Array.isArray],
-    ['GET', '/api/v1/admin/reservas', true, Array.isArray]
+    ['GET', '/api/v1/admin/reservas', true, Array.isArray],
+    ['GET', '/api/v1/admin/usuarios?rol=ACOMPANANTE', true, Array.isArray],
+    ['GET', '/api/v1/admin/usuarios?rol=ADULTO_MAYOR', true, Array.isArray],
+    ['GET', '/api/v1/admin/usuarios?rol=FAMILIAR', true, Array.isArray],
+    ['GET', '/api/v1/admin/usuarios?rol=SOPORTE', true, Array.isArray],
+    ['GET', '/api/v1/admin/usuarios?rol=ADMINISTRADOR', true, Array.isArray]
   ] : [])
 ];
 let failures = 0;
