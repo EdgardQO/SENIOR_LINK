@@ -694,13 +694,19 @@ g('registerForm')?.addEventListener('submit', async event => {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
     });
     const contentType = response.headers.get('content-type') || '';
-    const data = contentType.includes('application/json')
-      ? await response.json().catch(() => ({}))
-      : {};
+    const responseText = await response.text();
+    let data = {};
+    if (contentType.includes('application/json')) {
+      try { data = JSON.parse(responseText); } catch { /* Respuesta no válida */ }
+    }
     if (!response.ok) {
       const detail = [data.detail, data.message, data.error, data.title]
         .find(value => typeof value === 'string' && value.trim());
-      const message = response.status === 409
+      const message = response.status === 403
+        ? responseText.includes('Invalid CORS request')
+          ? 'La API rechazó el origen de la solicitud (CORS, HTTP 403). Reinicia el backend y comprueba el proxy /api.'
+          : 'La API rechazó el registro (HTTP 403). Revisa Spring Security, CORS y el destino del proxy /api.'
+        : response.status === 409
         ? 'El DNI o el correo electrónico ya están registrados.'
         : response.status === 502 || response.status === 503 || response.status === 504
           ? 'La API no está disponible (HTTP ' + response.status + '). Revisa el backend y el proxy.'
@@ -709,7 +715,7 @@ g('registerForm')?.addEventListener('submit', async event => {
             : response.status === 404
               ? 'No existe la ruta de registro (HTTP 404). Verifica el despliegue del backend.'
               : (detail || 'El registro fue rechazado (HTTP ' + response.status + ').');
-      console.error('[SeniorLink registro] HTTP', response.status, { endpoint: '/api/v1/auth/registro', error: detail || null });
+      console.error('[SeniorLink registro] HTTP', response.status, { endpoint: '/api/v1/auth/registro', contentType, error: detail || (responseText.includes('Invalid CORS request') ? 'Invalid CORS request' : null) });
       throw new Error(message);
     }
     window.location.assign('/login?registro=ok');
