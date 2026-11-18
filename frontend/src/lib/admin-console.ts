@@ -53,6 +53,8 @@ function field(key: string,label: string,type = 'text',required = false): HTMLLa
   const input = document.createElement('input');
   input.name = key; input.type = type; input.className = 'admin-filter'; input.required = required;
   if (type === 'number') { input.step = 'any'; input.min = '0'; }
+  if (key === 'ruc') { input.required = true; input.inputMode = 'numeric'; input.pattern = '[0-9]{11}'; input.maxLength = 11; }
+  if (key === 'nombre') input.required = true;
   l.appendChild(input); return l;
 }
 function values(form: HTMLFormElement): AnyRecord {
@@ -117,7 +119,7 @@ function ensureEditorStyles() {
   document.head.appendChild(style);
 }
 function formBox(root: HTMLElement, title: string, fields: Array<[string,string,string]>,
-                 defaults: AnyRecord, onSave: (data: AnyRecord) => Promise<void>) {
+                 defaults: AnyRecord, onSave: (data: AnyRecord) => Promise<void>, readonlyKeys: string[] = []) {
   ensureEditorStyles();
   document.querySelector<HTMLElement>('#admin-modal-overlay')?.remove();
   const overlay=node('div','','admin-modal-overlay');
@@ -141,6 +143,10 @@ function formBox(root: HTMLElement, title: string, fields: Array<[string,string,
   for(const [key,label,type] of fields)fieldGrid.appendChild(field(key,label,type));
   form.appendChild(fieldGrid);
   fill(form,defaults);
+  for (const key of readonlyKeys) {
+    const input = Array.from(form.querySelectorAll<HTMLInputElement>('input')).find(el=>el.name===key);
+    if(input){input.readOnly=true;input.style.background='#f0f6f3';input.style.cursor='not-allowed';}
+  }
   const error=node('p','','admin-modal-error');
   error.setAttribute('role','alert');error.hidden=true;
   const actions=node('div','','admin-modal-actions');
@@ -651,7 +657,7 @@ async function institutionsModule(root:HTMLElement){
       const a=document.createElement('td');
       a.append(action('Editar',()=>formBox(root,'Editar institución',fields,r,async data=>{
         await adminRequest('/instituciones/'+r.ruc,{method:'PUT',body:JSON.stringify(data)});await refresh();
-      })));
+      },['ruc'])));
       a.append(action('Eliminar',async()=>{
         if(!confirm('¿Eliminar institución '+r.nombre+'?'))return;
         try{await adminRequest('/instituciones/'+r.ruc,{method:'DELETE'});await refresh();}
