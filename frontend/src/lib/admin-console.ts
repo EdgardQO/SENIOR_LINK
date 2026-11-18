@@ -38,6 +38,18 @@ function status(root: HTMLElement, message: string, error = false) {
 }
 function field(key: string,label: string,type = 'text',required = false): HTMLLabelElement {
   const l = document.createElement('label'); l.textContent = label;
+  if (type.startsWith('select:')) {
+    const options: Record<string,Array<[string,string]>> = {
+      reserva: [['PENDIENTE_PAGO','Pendiente de pago'],['CONFIRMADA','Confirmada'],['EN_PROGRESO','En progreso'],['COMPLETADA','Completada'],['CANCELADA','Cancelada']],
+      descuento: [['PORCENTAJE','Porcentaje'],['MONTO_FIJO','Monto fijo']]
+    };
+    const select = document.createElement('select');
+    select.name = key; select.className = 'admin-filter'; select.required = true;
+    for (const [value,text] of options[type.slice(7)] ?? []) {
+      const option = document.createElement('option'); option.value = value; option.textContent = text; select.append(option);
+    }
+    l.appendChild(select); return l;
+  }
   const input = document.createElement('input');
   input.name = key; input.type = type; input.className = 'admin-filter'; input.required = required;
   if (type === 'number') { input.step = 'any'; input.min = '0'; }
@@ -620,7 +632,7 @@ async function reservationsModule(root:HTMLElement){
       const a=document.createElement('td');
       a.append(action('Ver',()=>window.alert('Reserva #'+r.id+'\nCliente: '+r.clienteNombre+'\nAcompañante: '+r.acompananteNombre+'\nDirección: '+r.direccionEncuentro+'\nEstado: '+r.estado)));
       a.append(action('Cambiar estado',()=>{
-        formBox(root,'Actualizar reserva #'+r.id,[['estado','Estado: PENDIENTE_PAGO, CONFIRMADA, EN_PROGRESO, COMPLETADA, CANCELADA','text'],['motivo','Motivo','text']],{estado:r.estado.replaceAll(' ','_')},async data=>{
+        formBox(root,'Actualizar reserva #'+r.id,[['estado','Estado de reserva','select:reserva'],['motivo','Motivo','text']],{estado:r.estado.replaceAll(' ','_')},async data=>{
           await adminRequest('/reservas/'+r.id+'/estado',{method:'PATCH',body:JSON.stringify(data)});
           await refresh();
         });
@@ -655,14 +667,29 @@ async function institutionsModule(root:HTMLElement){
 async function promotionsModule(root:HTMLElement){
   const fields:Array<[string,string,string]>=[
     ['codigoCupon','Código de cupón','text'],['descripcion','Descripción','text'],
-    ['tipo','Tipo: PORCENTAJE o MONTO_FIJO','text'],['valor','Valor','number'],
+    ['tipo','Tipo de descuento','select:descuento'],['valor','Valor','number'],
     ['montoMinimoOrden','Monto mínimo','number'],['montoMaximoDescuento','Descuento máximo (opcional)','number'],
     ['limiteUsos','Límite de usos (opcional)','number'],['validoDesde','Válido desde','datetime-local'],
     ['validoHasta','Válido hasta','datetime-local']
   ];
-  const save=async(id:string|undefined,data:AnyRecord)=>{
-    for(const key of ['validoDesde','validoHasta'])if(data[key])data[key]=new Date(data[key]).toISOString();
-    data.estaActivo=true;
+  const toLocalInput=(value:unknown):string=>{
+    if(!value)return '';
+    const date=new Date(String(value));
+    if(Number.isNaN(date.getTime()))return '';
+    const local=new Date(date.getTime()-date.getTimezoneOffset()*60000);
+    return local.toISOString().slice(0,16);
+  };
+  const save=async(id:string|undefined,data:AnyRecord,original?:AnyRecord)=>{
+    for(const key of ['validoDesde','validoHasta']){
+      if(data[key]){
+        const date=new Date(String(data[key]));
+        if(Number.isNaN(date.getTime()))throw new Error('Revisa las fechas de vigencia.');
+        data[key]=date.toISOString();
+      }
+    }
+    if(!data.validoDesde||!data.validoHasta)throw new Error('Debes indicar las fechas de vigencia.');
+    if(!id)data.estaActivo=true;
+    else data.estaActivo=original?.estaActivo??true;
     await adminRequest('/promociones'+(id?'/'+id:''),{method:id?'PUT':'POST',body:JSON.stringify(data)});
   };
   const refresh=async()=>{
@@ -674,8 +701,8 @@ async function promotionsModule(root:HTMLElement){
       const a=document.createElement('td');
       a.append(action('Editar',()=>{
         const defaults={...r};
-        for(const key of ['validoDesde','validoHasta'])defaults[key]=String(r[key]||'').slice(0,16);
-        formBox(root,'Editar promoción',fields,defaults,async data=>{await save(r.id,data);await refresh();});
+        for(const key of ['validoDesde','validoHasta'])defaults[key]=toLocalInput(r[key]);
+        formBox(root,'Editar promoción',fields,defaults,async data=>{await save(r.id,data,r);await refresh();});
       }));
       if(r.estaActivo)a.append(action('Desactivar',async()=>{
         if(!confirm('¿Desactivar el cupón '+r.codigoCupon+'?'))return;
