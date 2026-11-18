@@ -8,7 +8,13 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
     server: {
-      allowedHosts: ['.trycloudflare.com']
+      allowedHosts: ['.trycloudflare.com'],
+      proxy: {
+        '/api': {
+          target: process.env.API_PROXY_TARGET || 'http://localhost:8080',
+          changeOrigin: true
+        }
+      }
     }
   }
 });
