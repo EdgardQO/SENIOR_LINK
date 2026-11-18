@@ -3,6 +3,7 @@ package com.seniorlink.api.controller;
 import com.seniorlink.api.dto.InstitucionAliadaDTO;
 import com.seniorlink.api.service.AcompananteInstitucionService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,12 +28,14 @@ public class AcompananteInstitucionController {
         return ResponseEntity.ok(service.obtenerPorAcompanante(dni));
     }
 
+    @PreAuthorize("hasRole('ADMINISTRADOR') or #dni == authentication.name")
     @PutMapping("/acompanantes/{dni}/institucion/{ruc}")
     public ResponseEntity<Void> asignarInstitucion(@PathVariable String dni, @PathVariable String ruc) {
         service.asignarInstitucion(dni, ruc);
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("hasRole('ADMINISTRADOR') or #dni == authentication.name")
     @DeleteMapping("/acompanantes/{dni}/institucion")
     public ResponseEntity<Void> quitarInstitucion(@PathVariable String dni) {
         service.quitarInstitucion(dni);
