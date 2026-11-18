@@ -693,10 +693,23 @@ g('registerForm')?.addEventListener('submit', async event => {
     const response = await fetch(apiUrl + '/api/v1/auth/registro', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
     });
-    const data = await response.json().catch(() => ({}));
+    const contentType = response.headers.get('content-type') || '';
+    const data = contentType.includes('application/json')
+      ? await response.json().catch(() => ({}))
+      : {};
     if (!response.ok) {
-      const detail = data.detail || data.message || data.error || '';
-      const message = response.status === 409 ? 'El DNI o el correo electrónico ya están registrados.' : (typeof detail === 'string' && detail ? detail : 'No se pudo completar el registro.');
+      const detail = [data.detail, data.message, data.error, data.title]
+        .find(value => typeof value === 'string' && value.trim());
+      const message = response.status === 409
+        ? 'El DNI o el correo electrónico ya están registrados.'
+        : response.status === 502 || response.status === 503 || response.status === 504
+          ? 'La API no está disponible (HTTP ' + response.status + '). Revisa el backend y el proxy.'
+          : response.status >= 500
+            ? 'Error interno del servidor (HTTP ' + response.status + '). Revisa los registros de Spring Boot.'
+            : response.status === 404
+              ? 'No existe la ruta de registro (HTTP 404). Verifica el despliegue del backend.'
+              : (detail || 'El registro fue rechazado (HTTP ' + response.status + ').');
+      console.error('[SeniorLink registro] HTTP', response.status, { endpoint: '/api/v1/auth/registro', error: detail || null });
       throw new Error(message);
     }
     window.location.assign('/login?registro=ok');
