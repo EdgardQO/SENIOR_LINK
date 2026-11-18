@@ -30,7 +30,7 @@ Para seguridad, los puertos 4321 (Astro) y 8080 (API) se publican solo en `127.0
 ssh -i "$env:USERPROFILE\.ssh\id_ed25519" -L 4321:127.0.0.1:4321 -L 8080:127.0.0.1:8080 adminvps@179.66.150.160
 ```
 
-Mientras mantengas ese túnel abierto, visita http://localhost:4321 en Windows. No hace falta abrir puertos UFW adicionales. Cuando tengas un dominio, configuraremos Caddy, HTTPS, CORS y `PUBLIC_API_URL` del build de Astro.
+Mientras mantengas ese túnel abierto, visita http://localhost:4321 en Windows. No hace falta abrir puertos UFW adicionales. El frontend usa `/api` en el mismo origen por defecto; Nginx dirige esas solicitudes a `backend:8080` dentro de la red Docker. No hace falta abrir el puerto 8080 a Internet. Si necesitas un host externo para la API, configura `PUBLIC_API_URL` explícitamente y ajusta CORS.
 
 Si el puerto 4321 o 8080 está ocupado en Windows, libera el puerto o modifica conjuntamente los puertos locales del túnel, la URL del frontend y CORS. El valor `PUBLIC_API_URL` queda integrado en el build de Astro.
 
