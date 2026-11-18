@@ -6,7 +6,8 @@ export const ROLE_PATHS = Object.freeze({
   SOPORTE: '/soporte',
   FAMILIAR: '/familiar'
 });
-export const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080';
+// Same-origin API: Astro proxies locally; Nginx proxies in deployment.
+export const API_URL = (import.meta.env.PUBLIC_API_URL || '').replace(/\/$/, '');
 
 function fromStorage(storage) {
   try {
