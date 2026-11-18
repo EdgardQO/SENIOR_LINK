@@ -7,19 +7,27 @@ export async function adminRequest<T = any>(path: string, options: RequestInit =
     throw new Error('Sesión administrativa requerida.');
   }
 
-  const response = await fetch(API_URL + '/api/v1/admin' + path, {
+  let response: Response;
+  try {
+    response = await fetch(API_URL + '/api/v1/admin' + path, {
     ...options,
     headers: {
       ...(options.body ? { 'Content-Type': 'application/json' } : {}),
       Authorization: 'Bearer ' + session.accessToken,
       ...options.headers
     }
-  });
+    });
+  } catch {
+    throw new Error('No se pudo conectar con la API. Verifica que Spring Boot y el proxy /api estén disponibles.');
+  }
 
-  if (response.status === 401 || response.status === 403) {
+  if (response.status === 401) {
     clearSession();
     window.location.replace('/login');
-    throw new Error('Tu sesión no tiene permisos de administración.');
+    throw new Error('La sesión expiró. Vuelve a iniciar sesión.');
+  }
+  if (response.status === 403) {
+    throw new Error('No tienes permiso para realizar esta operación.');
   }
 
   if (!response.ok) {
