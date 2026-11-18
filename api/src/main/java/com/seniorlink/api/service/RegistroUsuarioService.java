@@ -98,7 +98,9 @@ public class RegistroUsuarioService {
         usuario.setTelefono(telefono);
         usuario.setRol(rol);
         usuario.setEstaActivo(true);
-        usuarioRepository.save(usuario);
+        // Flush the parent before persisting a profile that shares its PK via @MapsId.
+        // Hibernate 7 may otherwise detect a transient Usuario during transaction flush.
+        usuarioRepository.saveAndFlush(usuario);
 
         switch (rolSolicitado) {
             case "ADULTO_MAYOR" -> crearAdultoMayor(usuario, dto.adultoMayor());
