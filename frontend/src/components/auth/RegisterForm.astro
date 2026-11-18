@@ -536,7 +536,7 @@ fieldset.roles legend {
 }
 </style>
 
-<script is:inline define:vars={{ apiUrl: import.meta.env.PUBLIC_API_URL || 'http://localhost:8080' }}>
+<script is:inline define:vars={{ apiUrl: (import.meta.env.PUBLIC_API_URL || '').replace(/\/$/, '') }}>
 const g = id => document.getElementById(id);
 const val = id => g(id).value.trim();
 const digits = v => v.replace(/\D/g, '');
@@ -609,7 +609,7 @@ async function validarRucInstitucion() {
   try {
     await cargarInstituciones();
     if (id !== consultaRucId || ruc !== val('aRuc')) return;
-    const institucion = instituciones.find(item => item.ruc === ruc);
+    const institucion = instituciones.find(item => String(item.ruc) === ruc);
     if (!institucion) {
       estadoInstitucion('Este RUC no está registrado como institución aliada en SeniorLink.', 'error');
       return;
@@ -620,7 +620,7 @@ async function validarRucInstitucion() {
   } catch (error) {
     if (id !== consultaRucId) return;
     institucionesError = true;
-    estadoInstitucion('No se pudo verificar el RUC. Comprueba que la API esté disponible.', 'error');
+    estadoInstitucion(error instanceof Error ? error.message : 'No se pudo verificar el RUC. Comprueba la conexión con la API.', 'error');
   }
 }
 let debounceRuc;
