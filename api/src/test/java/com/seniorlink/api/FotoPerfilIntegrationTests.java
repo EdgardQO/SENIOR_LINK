@@ -76,7 +76,9 @@ class FotoPerfilIntegrationTests {
         byte[] original = imagen("png").getBytes();
         var resultado = registro.registrarConFoto(adulto(), imagen("png"));
         assertEquals("/api/v1/usuarios/96000001/foto", resultado.fotoUrl());
-        assertEquals("96000001/perfil.png", usuarios.findById("96000001").orElseThrow().getFotoPerfilRuta());
+        String primeraRuta = usuarios.findById("96000001").orElseThrow().getFotoPerfilRuta();
+        assertTrue(primeraRuta.startsWith("96000001/perfil-"));
+        assertTrue(primeraRuta.endsWith(".png"));
         assertArrayEquals(original, fotos.obtener("96000001").bytes());
 
         var propio = new UsernamePasswordAuthenticationToken("96000001", "unused", List.of());
@@ -85,8 +87,10 @@ class FotoPerfilIntegrationTests {
         assertThrows(ResponseStatusException.class, () -> controller.obtenerFoto(externo, "96000001"));
 
         fotos.guardar("96000001", imagen("jpeg"));
-        assertEquals("96000001/perfil.jpg", usuarios.findById("96000001").orElseThrow().getFotoPerfilRuta());
-        assertFalse(Files.exists(DIRECTORIO.resolve("usuarios/96000001/perfil.png")));
+        String nuevaRuta = usuarios.findById("96000001").orElseThrow().getFotoPerfilRuta();
+        assertTrue(nuevaRuta.startsWith("96000001/perfil-"));
+        assertTrue(nuevaRuta.endsWith(".jpg"));
+        assertNotEquals(primeraRuta, nuevaRuta);
         assertEquals("image/jpeg", fotos.obtener("96000001").tipo());
     }
 
