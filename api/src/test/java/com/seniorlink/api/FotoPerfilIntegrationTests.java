@@ -122,6 +122,42 @@ class FotoPerfilIntegrationTests {
         assertEquals(200, controller.obtenerFoto(otroUsuario, "96000002").getStatusCode().value());
     }
 
+    @Test
+    void fotosReservaSoloParticipantesAutorizados() throws IOException {
+        registro.registrarConFoto(adulto(), imagen("png"));
+        registro.registrarConFoto(acompanante(), imagen("png"));
+        registro.registrarConFoto(new RegistroUsuarioDTO("96000003","Carlos","Prueba",
+            "carlos.photo@seniorlink.test","DemoPhotoPassword2026!",null,"FAMILIAR",
+            null,new RegistroUsuarioDTO.Familiar(null,null),null),imagen("png"));
+        registro.registrarConFoto(new RegistroUsuarioDTO("96000004","Otro","Prueba",
+            "otro.photo@seniorlink.test","DemoPhotoPassword2026!",null,"FAMILIAR",
+            null,new RegistroUsuarioDTO.Familiar(null,null),null),imagen("png"));
+        var acomp=usuarios.findById("96000002").orElseThrow();
+        acomp.revisarFoto("VERIFICADO","96000001",null);
+        usuarios.saveAndFlush(acomp);
+        var vinculo=reservas.solicitarVinculo("96000003","96000001",(short)13);
+        reservas.responderVinculo("96000001",vinculo.id(),true);
+        var horarios=new java.util.ArrayList<ReservaLocalService.Horario>();
+        for(short d=1;d<=7;d++) horarios.add(new ReservaLocalService.Horario(d,
+            java.time.LocalTime.of(8,0),java.time.LocalTime.of(20,0)));
+        reservas.guardarDisponibilidad("96000002",horarios);
+        var lima=java.time.ZoneId.of("America/Lima");
+        var inicio=LocalDate.now(lima).plusDays(3).atTime(9,0).atZone(lima).toOffsetDateTime();
+        var reserva=reservas.crear("96000003",new ReservaLocalService.NuevaReserva(
+            "96000001","96000002",reservas.servicios().getFirst().getId(),
+            inicio,inicio.plusHours(2),"Lima","Prueba"));
+        assertNotNull(reserva.adultoMayorFotoUrl());
+        assertNotNull(reserva.acompananteFotoUrl());
+        assertNotNull(reserva.solicitanteFotoUrl());
+        assertEquals("Carlos Prueba",reserva.solicitanteNombre());
+        assertDoesNotThrow(()->reservas.autorizarFotoParticipante("96000002",reserva.id(),"96000001"));
+        assertDoesNotThrow(()->reservas.autorizarFotoParticipante("96000002",reserva.id(),"96000003"));
+        assertDoesNotThrow(()->reservas.autorizarFotoParticipante("96000001",reserva.id(),"96000002"));
+        assertDoesNotThrow(()->reservas.autorizarFotoParticipante("96000003",reserva.id(),"96000002"));
+        assertThrows(ResponseStatusException.class,()->reservas.autorizarFotoParticipante("96000004",reserva.id(),"96000001"));
+        assertThrows(ResponseStatusException.class,()->reservas.autorizarFotoParticipante("96000002",reserva.id(),"96000004"));
+    }
+
     @AfterAll
     static void limpiar() throws IOException {
         if (!Files.exists(DIRECTORIO)) return;
