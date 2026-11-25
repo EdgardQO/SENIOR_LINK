@@ -82,7 +82,7 @@ public class ReservaLocalService {
   String solicitanteDni,String acompananteDni,String acompananteNombre,
   OffsetDateTime inicio,OffsetDateTime fin,OffsetDateTime venceAceptacionEn,
   OffsetDateTime vencePagoEn,BigDecimal montoTotal,BigDecimal tarifaHora,String direccion,
-  String solicitanteNombre,String adultoMayorFotoUrl,String acompananteFotoUrl,String solicitanteFotoUrl){}
+  String solicitanteNombre,String adultoMayorFotoUrl,String acompananteFotoUrl,String solicitanteFotoUrl,OpinionVista valoracion){}
  public record AcompananteVista(String dni,String nombre,BigDecimal tarifaHora,String carrera,
   Integer ciclo,String biografia,String institucion,BigDecimal promedioCalificacion,
   Integer totalCalificaciones,String fotoUrl,List<OpinionVista> resenas){}
@@ -136,7 +136,7 @@ public class ReservaLocalService {
    acomp.getDni(),acomp.getNombres()+" "+acomp.getApellidos(),
    r.getFechaHoraInicio(),r.getFechaHoraFin(),r.getVenceAceptacionEn(),
    r.getVencePagoEn(),r.getMontoTotal(),r.getTarifaPorHora(),r.getDireccionEncuentro(),
-   solicitante.getNombres()+" "+solicitante.getApellidos(),fotoUrl(r,a),fotoUrl(r,acomp),fotoUrl(r,solicitante));
+   solicitante.getNombres()+" "+solicitante.getApellidos(),fotoUrl(r,a),fotoUrl(r,acomp),fotoUrl(r,solicitante),opinionReserva(r.getId()));
  }
  private String fotoUrl(Reserva r,Usuario u){
   return u.getFotoPerfilRuta()==null?null:"/api/v1/reservas/"+r.getId()+"/participantes/"+u.getDni()+"/foto";
@@ -294,6 +294,12 @@ public class ReservaLocalService {
   }
  }
  @Transactional(readOnly=true)
+ public OpinionVista opinionReserva(Long id){
+  return valoraciones.findByReservaId(id)
+   .map(v->new OpinionVista(v.getPuntuacion(),v.getComentario(),v.getCreadoEn()))
+   .orElseGet(()->resenas.findByReservaId(id)
+    .map(v->new OpinionVista(v.getCalificacion(),v.getComentario(),v.getCreadoEn())).orElse(null));
+ }
  public List<OpinionVista> opiniones(String dni){
   Map<Long,OpinionVista> porReserva=new LinkedHashMap<>();
   for(Valoracion v:valoraciones.resenasDeReservas(dni,EstadoReserva.COMPLETADA))
