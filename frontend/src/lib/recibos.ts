@@ -1,6 +1,6 @@
 import {apiPagoLocal,horaLocal,importe} from './local-api';
 
-export type Recibo={referencia:string,reservaId:number,estado:string,monto:number|string,moneda:string,fecha:string|null,metodo:string|null,ultimosCuatro:string|null};
+export type Recibo={referencia:string,reservaId:number,estado:string,monto:number|string,moneda:string,fecha:string|null,metodo:string|null,ultimosCuatro:string|null;acompanante?:string;adultoMayor?:string;jornadas?:{inicio:string;fin:string}[];totalHoras?:number|string};
 export async function consultarRecibos():Promise<Recibo[]>{
  return (import.meta.env.DEV || import.meta.env.PUBLIC_PAGOS_SIMULADOS === 'true') ? await apiPagoLocal('/recibos') : [];
 }
@@ -26,6 +26,14 @@ export function abrirRecibo(r:Recibo){
  campo('fecha',horaLocal(r.fecha));campo('referencia',r.referencia||'—');
  campo('metodo',r.metodo&&r.ultimosCuatro?(r.metodo==='DEBITO'?'Débito':'Crédito')+' · •••• '+r.ultimosCuatro:'Pago registrado');
  modal.querySelector<HTMLElement>('.sl-recibo-resumen')!.dataset.reembolsado=String(reembolso);
+ if(r.jornadas?.length){
+  const dl=modal.querySelector('dl')!;
+  const campoExtra=(etiqueta:string,valor:string)=>{const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=etiqueta;dd.textContent=valor;dl.append(dt,dd);};
+  if(r.acompanante)campoExtra('Acompañante',r.acompanante);
+  if(r.adultoMayor)campoExtra('Adulto mayor',r.adultoMayor);
+  if(r.totalHoras!=null)campoExtra('Horas contratadas',String(r.totalHoras));
+  r.jornadas.forEach((j,i)=>campoExtra('Jornada '+(i+1),horaLocal(j.inicio)+' — '+horaLocal(j.fin)));
+ }
  const foco=document.activeElement as HTMLElement|null;
  const scroll=document.body.style.overflow;
  modal.querySelectorAll<HTMLButtonElement>('[data-cerrar]').forEach(b=>b.addEventListener('click',()=>modal.close()));

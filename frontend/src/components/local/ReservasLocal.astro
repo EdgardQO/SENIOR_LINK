@@ -7,8 +7,8 @@ const historial=modo!=='solicitar';
 ---
 <section class="local-card" data-reservas-rol={rol} data-reservas-modo={modo}>
  <h2>{solicitar?'Solicitar acompañamiento':cliente?'Mis reservas':rol==='ACOMPANANTE'?'Solicitudes y agenda':'Reservas registradas'}</h2>
- {modo==='solicitar' && <p>Completa los datos para enviar una nueva solicitud. <a href="/familiar/mis-reservas">Consultar mis reservas</a>.</p>}
- {modo==='historial' && <p>Consulta el estado de tus servicios, pagos, recibos y valoraciones. <a href="/familiar/reservas">Solicitar una reserva</a>.</p>}
+ {modo==='solicitar' && <p>Completa los datos para enviar una nueva solicitud. <a href={rol==='FAMILIAR'?'/familiar/mis-reservas':'/adulto-mayor/mis-reservas'}>Consultar mis reservas</a>.</p>}
+ {modo==='historial' && <p>Consulta el estado de tus servicios, pagos, recibos y valoraciones. <a href={rol==='FAMILIAR'?'/familiar/reservas':'/adulto-mayor/reservas'}>Solicitar una reserva</a>.</p>}
  {solicitar && <form id="reserva-local-form" class="local-form">
   {rol==='FAMILIAR' && <label>Adulto mayor autorizado<select name="adultoMayorDni" id="reserva-local-adulto" required><option value="">Selecciona un adulto autorizado</option></select></label>}
   <div class="companion-picker" id="reserva-local-picker">
@@ -38,8 +38,10 @@ const historial=modo!=='solicitar';
     <p id="reserva-local-horarios">Consultando disponibilidad...</p>
   </section>
   <label>Servicio<select name="servicioId" id="reserva-local-servicio" required><option value="">Selecciona un servicio</option></select></label>
-  <label>Inicio<input name="inicio" type="datetime-local" required/></label>
-  <label>Fin<input name="fin" type="datetime-local" required/></label>
+  <label>Modalidad<select id="reserva-modalidad"><option value="uno">Reserva de un solo día</option><option value="varios">Reserva de varios días</option></select></label>
+  <section id="reserva-jornadas" class="jornadas"></section>
+  <button id="agregar-jornada" type="button" hidden>Agregar jornada</button>
+  <p id="reserva-cotizacion" role="status" aria-live="polite"></p>
   <label>Dirección de encuentro<input name="direccion" maxlength="1000" required/></label>
   <label>Indicaciones adicionales<textarea name="indicaciones" rows="2"></textarea></label>
   <button type="submit">Enviar solicitud</button>
@@ -121,6 +123,8 @@ const historial=modo!=='solicitar';
  :global(.reserva-persona [hidden]){display:none!important}
  :global(.reserva-persona small){display:block;color:#496b60;font-size:12px}
  :global(.reserva-persona strong){display:block;overflow-wrap:anywhere}
+ :global(.jornada-form){display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;padding:12px;border:1px solid #d7e9e2;border-radius:12px;background:#f5fbf8;margin:8px 0}
+ :global(.jornada-form p){grid-column:1/-1;margin:0;color:#087a70}
  </style>
 <script>
  import {apiLocal,apiPagoLocal,horaLocal,importe,sesionRequerida} from '../../lib/local-api';
@@ -163,7 +167,7 @@ const historial=modo!=='solicitar';
    const f=new FormData(filtros);const q=normalizarAgenda(f.get('busqueda')).split(/\s+/).filter(Boolean);
    const especifico=String(f.get('estado')||'');const desde=String(f.get('desde')||'');const hasta=String(f.get('hasta')||'');const orden=String(f.get('orden')||'');
    for(const tab of tabs){const g=tab.dataset.agendaGrupo||'TODAS';tab.setAttribute('aria-pressed',String(g===grupo));const c=tab.querySelector('.agenda-count');if(c)c.textContent=String(todas.filter(b=>coincideGrupo(b,g)).length);}
-   bookings=bookings.filter(b=>{const texto=normalizarAgenda([b.id,b.adultoMayorNombre,b.acompananteNombre,b.solicitanteNombre,b.direccion,b.estado.replaceAll('_',' ')].join(' '));const fecha=fechaClave(b.inicio);return coincideGrupo(b,grupo)&&(!especifico||b.estado===especifico)&&q.every(t=>texto.includes(t))&&(!desde||fecha>=desde)&&(!hasta||fecha<=hasta);});
+   bookings=bookings.filter(b=>{const texto=normalizarAgenda([b.id,b.adultoMayorNombre,b.acompananteNombre,b.solicitanteNombre,b.direccion,b.estado.replaceAll('_',' ')].join(' '));const fechas=(b.jornadas?.length?b.jornadas:[b]).map((j:any)=>fechaClave(j.inicio));return coincideGrupo(b,grupo)&&(!especifico||b.estado===especifico)&&q.every(t=>texto.includes(t))&&fechas.some((fecha:string)=>(!desde||fecha>=desde)&&(!hasta||fecha<=hasta));});
    bookings.sort((a,b)=>{if(orden==='mayor')return Number(b.montoTotal)-Number(a.montoTotal);if(orden==='menor')return Number(a.montoTotal)-Number(b.montoTotal);return orden==='proximas'?Date.parse(a.inicio)-Date.parse(b.inicio):Date.parse(b.inicio)-Date.parse(a.inicio);});
    if(resultadosAgenda)resultadosAgenda.textContent=bookings.length+' de '+todas.length+' reservas'+(desde&&hasta&&desde>hasta?' · El rango de fechas es inválido.':'');
   }
@@ -192,11 +196,17 @@ const historial=modo!=='solicitar';
       (rol==='ACOMPANANTE'||rol==='ADULTO_MAYOR'||rol==='ADMINISTRADOR'))
     participante(b.solicitanteDni,b.solicitanteNombre,'Familiar solicitante',Boolean(b.solicitanteFotoUrl));
    div.append(personas);
-   div.append(nuevo('p',horaLocal(b.inicio)+' — '+horaLocal(b.fin)+' · '+importe(b.montoTotal)));
+   const js:any[]=b.jornadas||[];
+    div.append(nuevo('p',js.length?js.length+' jornadas · '+b.totalHoras+' horas · '+importe(b.montoTotal):horaLocal(b.inicio)+' — '+horaLocal(b.fin)+' · '+importe(b.montoTotal)));
+    if(js.length){div.append(nuevo('p',js.filter(j=>j.estado==='COMPLETADA').length+' de '+js.length+' jornadas completadas'));
+     const proxima=js.find(j=>j.estado==='PROGRAMADA'&&Date.parse(j.inicio)>Date.now());
+     if(proxima)div.append(nuevo('p','Próxima jornada: '+horaLocal(proxima.inicio)));
+     for(const j of js)div.append(nuevo('p',horaLocal(j.inicio)+' — '+horaLocal(j.fin)+' · '+j.estado.replaceAll('_',' ')));
+    }
    if(b.direccion)div.append(nuevo('p','Lugar de encuentro: '+b.direccion));
    const acciones=document.createElement('div');acciones.className='local-actions';
    const recibo=reciboDeReserva(recibos,b.id);
-   if(recibo)acciones.append(botonRecibo(recibo));
+   if(recibo)acciones.append(botonRecibo({...recibo,acompanante:b.acompananteNombre,adultoMayor:b.adultoMayorNombre,jornadas:js.length?js:[b],totalHoras:b.totalHoras}));
    const accion=(nombre:string,ruta:string)=>{
     const btn=nuevo('button',nombre) as HTMLButtonElement;btn.type='button';
     btn.addEventListener('click',async()=>{
@@ -207,10 +217,16 @@ const historial=modo!=='solicitar';
    };
    if(rol==='ACOMPANANTE'){
     if(b.estado==='PENDIENTE_ACEPTACION'){accion('Aceptar','aceptar');accion('Rechazar','rechazar');}
-    if(b.estado==='CONFIRMADA')accion('Iniciar','iniciar');
-    if(b.estado==='EN_PROGRESO')accion('Finalizar','finalizar');
+    if(!js.length&&b.estado==='CONFIRMADA')accion('Iniciar','iniciar');
+    if(!js.length&&b.estado==='EN_PROGRESO')accion('Finalizar','finalizar');
    }
-   if((rol==='ADULTO_MAYOR'||rol==='FAMILIAR')&&b.estado==='PENDIENTE_CONFIRMACION')accion('Confirmar servicio','confirmar');
+   if(!js.length&&(rol==='ADULTO_MAYOR'||rol==='FAMILIAR')&&b.estado==='PENDIENTE_CONFIRMACION')accion('Confirmar servicio','confirmar');
+    if(['CONFIRMADA','EN_PROGRESO','PENDIENTE_CONFIRMACION'].includes(b.estado))js.forEach((j,i)=>{
+     const ruta='jornadas/'+j.id+'/';
+     if(rol==='ACOMPANANTE'&&j.estado==='PROGRAMADA')accion('Iniciar jornada '+(i+1),ruta+'iniciar');
+     if(rol==='ACOMPANANTE'&&j.estado==='EN_PROGRESO')accion('Finalizar jornada '+(i+1),ruta+'finalizar');
+     if((rol==='ADULTO_MAYOR'||rol==='FAMILIAR')&&j.estado==='PENDIENTE_CONFIRMACION')accion('Confirmar jornada '+(i+1),ruta+'confirmar');
+    });
    if(['PENDIENTE_ACEPTACION','PENDIENTE_PAGO','CONFIRMADA','EN_PROGRESO','PENDIENTE_CONFIRMACION'].includes(b.estado) && rol!=='ADMINISTRADOR')
     accion('Cancelar reserva','cancelar');
    if((import.meta.env.DEV || import.meta.env.PUBLIC_PAGOS_SIMULADOS === 'true') && rol==='ADMINISTRADOR' && (b.estado==='CANCELADA'||b.estado==='EN_DISPUTA')){
@@ -314,6 +330,59 @@ const historial=modo!=='solicitar';
  }
  const form=root.querySelector<HTMLFormElement>('#reserva-local-form');
  if(form){
+  const modalidad=form.querySelector<HTMLSelectElement>('#reserva-modalidad')!;
+  const filas=form.querySelector<HTMLElement>('#reserva-jornadas')!;
+  const agregar=form.querySelector<HTMLButtonElement>('#agregar-jornada')!;
+  const cotizacion=form.querySelector<HTMLElement>('#reserva-cotizacion')!;
+  let tarifa=0,config:any=null,version=0;
+  const dniAcomp=()=>form.querySelector<HTMLInputElement>('#reserva-local-acompanante')!.value;
+  const leer=()=>Array.from(filas.querySelectorAll<HTMLElement>('.jornada-form')).map(f=>{
+   const fecha=f.querySelector<HTMLInputElement>('[data-fecha]')!.value;
+   const i=f.querySelector<HTMLInputElement>('[data-inicio]')!.value,fin=f.querySelector<HTMLInputElement>('[data-fin]')!.value;
+   return {fecha,inicio:fecha+'T'+i+':00-05:00',fin:fecha+'T'+fin+':00-05:00',fila:f};
+  });
+  async function calcular(comprobar=true){
+   const actual=++version,js=leer(),dni=dniAcomp();
+   let minutos=0;let valido=true;const fechas=new Set<string>();
+   const minimo=Math.max(1,Number(config?.minutosDuracionMinima??30)),maximo=Math.min(480,Number(config?.minutosDuracionMaxima??480));
+   let horarios:any[]=[],errorDisponibilidad=false;
+   if(comprobar&&dni)try{horarios=await apiLocal('/acompanantes/'+encodeURIComponent(dni)+'/disponibilidad');}catch{errorDisponibilidad=true;}
+   if(actual!==version)return false;
+   for(const j of js){
+    const m=(Date.parse(j.fin)-Date.parse(j.inicio))/60000;const aviso=j.fila.querySelector('p')!;
+    let error='';
+    if(!Number.isFinite(m)||!j.fecha||m<minimo||m>maximo)error='Completa una jornada válida de '+minimo+' a '+maximo+' minutos.';
+    else if(Date.parse(j.inicio)<Date.now()+3600000)error='Se requiere una hora de anticipación.';
+    else if(fechas.has(j.fecha))error='Fecha duplicada.';
+    fechas.add(j.fecha);
+    if(!error&&comprobar&&dni){
+     const d=new Date(j.fecha+'T12:00:00-05:00').getUTCDay()||7;
+     if(errorDisponibilidad)error='No se pudo consultar la disponibilidad.';
+     else if(!horarios.some(h=>h.diaSemana===d&&j.inicio.slice(11,16)>=h.horaInicio.slice(0,5)&&j.fin.slice(11,16)<=h.horaFin.slice(0,5)))error='Fuera del horario semanal.';
+     else try{const ocupados=await apiLocal('/acompanantes/'+encodeURIComponent(dni)+'/ocupacion?'+new URLSearchParams({inicio:j.fecha+'T00:00:00-05:00',fin:j.fecha+'T23:59:59-05:00'}));
+      if(ocupados.some((o:any)=>Date.parse(o.inicio)<Date.parse(j.fin)&&Date.parse(o.fin)>Date.parse(j.inicio)))error='Horario ocupado o bloqueado.';
+     }catch{error='No se pudo verificar la ocupación.';}
+    }
+    if(actual!==version)return false;
+    if(error){valido=false;aviso.textContent=error;}else{minutos+=m;aviso.textContent=(m/60).toFixed(2)+' h · '+importe(tarifa*m/60)+(comprobar&&dni?' · Disponible':'');}
+   }
+   const horas=Math.round(minutos/60*100)/100,subtotal=Math.round(tarifa*horas*100)/100,comision=Math.round(subtotal*Number(config?.porcentajeComision??0))/100;
+   cotizacion.textContent=js.length+' jornadas · '+horas.toFixed(2)+' h · Subtotal '+importe(subtotal)+' · '+(config?'Comisión '+importe(comision)+' · Total '+importe(subtotal+comision):'Comisión pendiente de consulta');
+   return valido&&Boolean(dni);
+  }
+  function nuevaFila(){
+   const f=document.createElement('div');f.className='jornada-form';
+   f.innerHTML='<label>Fecha<input type="date" data-fecha required></label><label>Inicio (Lima)<input type="time" data-inicio required></label><label>Fin (Lima)<input type="time" data-fin required></label><button type="button" data-quitar>Eliminar</button><p aria-live="polite"></p>';
+   f.querySelector<HTMLButtonElement>('[data-quitar]')!.onclick=()=>{if(filas.children.length>1){f.remove();void calcular();}};
+   filas.append(f);f.addEventListener('change',()=>void calcular());actualizarBotones();
+  }
+  function actualizarBotones(){agregar.hidden=modalidad.value==='uno';filas.querySelectorAll<HTMLButtonElement>('[data-quitar]').forEach(b=>b.hidden=modalidad.value==='uno');}
+  modalidad.onchange=()=>{if(modalidad.value==='uno')while(filas.children.length>1)filas.lastElementChild?.remove();else if(filas.children.length===1)nuevaFila();actualizarBotones();void calcular();};
+  agregar.onclick=()=>{if(filas.children.length<365)nuevaFila();};
+  nuevaFila();
+  form.addEventListener('reset',()=>queueMicrotask(()=>{filas.replaceChildren();nuevaFila();void calcular();}));
+  void apiLocal('/parametros-reserva').then(c=>{config=c;void calcular();}).catch(()=>{cotizacion.textContent='No se pudo consultar la comisión.';});
+
   (async()=>{
    const [personas,servicios]=await Promise.all([apiLocal('/acompanantes'),apiLocal('/servicios')]);
    type Persona={dni:string,nombre:string,carrera?:string,institucion?:string,tarifaHora:number};
@@ -421,6 +490,7 @@ const historial=modo!=='solicitar';
     resenas.open=false;cargadas=false;cargando=false;resenasLista.replaceChildren();
     const x=personas.find((persona:any)=>persona.dni===acomp.value);
     limpiarFoto(foto);
+    tarifa=Number(x?.tarifaHora||0);void calcular();
     if(!x){ficha.hidden=true;return;}
     ficha.hidden=false;
     campo('reserva-local-nombre',x.nombre);
@@ -462,15 +532,16 @@ const historial=modo!=='solicitar';
   form.addEventListener('submit',async ev=>{
    ev.preventDefault();const fd=new FormData(form);
    if(!fd.get('acompananteDni')){const input=form.querySelector<HTMLInputElement>('#reserva-local-buscar');input?.setCustomValidity('Selecciona un acompañante de la lista.');input?.reportValidity();return;}
-   const inicio=new Date(String(fd.get('inicio'))),fin=new Date(String(fd.get('fin')));
-   if(!Number.isFinite(inicio.getTime())||!Number.isFinite(fin.getTime())){estado.textContent='Fechas inválidas';return;}
+   if(modalidad.value==='varios'&&filas.children.length<2){estado.textContent='Agrega al menos dos jornadas.';return;}
+   if(!await calcular()){estado.textContent='Revisa las jornadas y su disponibilidad.';return;}
+   const jornadas=leer().map(({inicio,fin})=>({inicio,fin}));
    try{estado.textContent='Registrando solicitud…';
     await apiLocal('/reservas',{method:'POST',body:JSON.stringify({
      adultoMayorDni:rol==='FAMILIAR'?String(fd.get('adultoMayorDni')):session.dni,
      acompananteDni:String(fd.get('acompananteDni')),servicioId:Number(fd.get('servicioId')),
-     inicio:inicio.toISOString(),fin:fin.toISOString(),
+     inicio:jornadas[0].inicio,fin:jornadas[0].fin,jornadas,
      direccion:String(fd.get('direccion')),indicaciones:String(fd.get('indicaciones')||'')
-    })});form.reset();estado.textContent='Solicitud enviada al acompañante.';if(modo==='solicitar'){const enlace=document.createElement('a');enlace.href='/familiar/mis-reservas';enlace.textContent=' Ver mis reservas';estado.append(enlace);}else await refrescar();
+    })});form.reset();estado.textContent='Solicitud enviada al acompañante.';if(modo==='solicitar'){const enlace=document.createElement('a');enlace.href=rol==='FAMILIAR'?'/familiar/mis-reservas':'/adulto-mayor/mis-reservas';enlace.textContent=' Ver mis reservas';estado.append(enlace);}else await refrescar();
    }catch(e){estado.textContent=e instanceof Error?e.message:String(e);}
   });
  }
