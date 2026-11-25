@@ -307,7 +307,8 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
     const seleccion=consulta,dni=acomp.value;cargando=true;
     resenasLista.replaceChildren(nuevo('p','Cargando reseñas…'));
     try{
-     const datos=await apiLocal('/acompanantes/'+encodeURIComponent(dni)+'/resenas');
+     const perfil=personas.find((p:any)=>p.dni===dni);
+     const datos=Array.isArray(perfil?.resenas)?perfil.resenas:await apiLocal('/acompanantes/'+encodeURIComponent(dni)+'/resenas');
      if(seleccion!==consulta)return;
      resenasLista.replaceChildren();
      if(!datos.length)resenasLista.append(nuevo('p','Este acompañante aún no tiene reseñas.'));
