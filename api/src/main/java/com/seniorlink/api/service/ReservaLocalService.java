@@ -177,14 +177,7 @@ public class ReservaLocalService {
    solicitante.getNombres()+" "+solicitante.getApellidos(),fotoUrl(r,a),fotoUrl(r,acomp),fotoUrl(r,solicitante),opinionReserva(r.getId()),r.getJornadas().stream().map(j->new JornadaVista(j.getId(),j.getFechaHoraInicio(),j.getFechaHoraFin(),j.getEstado())).toList(),r.getTotalHoras(),r.getSubtotal(),r.getComisionPlataforma());
  }
  public record ContactoWhatsapp(boolean autorizadoPorMi,boolean autorizadoPorOtro,boolean telefonoPropioValido,boolean activo,String url,String destinatarioNombre,String destinatarioRol){}
- private String normalizarWhatsapp(String raw){
-  if(raw==null||!raw.trim().matches("[+0-9 ()-]+"))return null;
-  String n=raw.replaceAll("[^0-9]","");
-  if(n.matches("9[0-9]{8}"))return "51"+n;
-  if(n.matches("519[0-9]{8}"))return n;
-  if(raw.trim().startsWith("+")&&n.matches("[1-9][0-9]{7,14}"))return n;
-  return null;
- }
+ private String normalizarWhatsapp(String raw){return UsuarioService.normalizarTelefono(raw);}
  private Usuario solicitanteWhatsapp(Reserva r){return r.getSolicitante()==null?r.getCliente():r.getSolicitante();}
  private boolean contactoAcompanante(String dni,Reserva r){
   Usuario u=actor(dni);

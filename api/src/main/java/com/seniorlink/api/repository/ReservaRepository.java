@@ -55,5 +55,11 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
     List<Reserva> reservasAdultoEnDia(@Param("dni") String dni,@Param("inicio") OffsetDateTime inicio,
       @Param("fin") OffsetDateTime fin,@Param("excluir") Long excluir,@Param("estados") Collection<EstadoReserva> estados);
 
+    @Modifying
+    @Query(value="update reservas set whatsapp_acompanante_autorizado=false where acompanante_dni=:dni",nativeQuery=true)
+    int revocarWhatsappAcompanante(@Param("dni") String dni);
+    @Modifying
+    @Query(value="update reservas set whatsapp_solicitante_autorizado=false where solicitante_dni=:dni or (solicitante_dni is null and cliente_dni=:dni)",nativeQuery=true)
+    int revocarWhatsappSolicitante(@Param("dni") String dni);
     List<Reserva> findByEstadoActual(EstadoReserva estadoActual);
 }

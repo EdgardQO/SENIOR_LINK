@@ -21,6 +21,7 @@ public class UsuarioService {
     private final PerfilSoporteRepository soporteRepository;
     private final PerfilAdminRepository adminRepository;
     private final ParentescoRepository parentescoRepository;
+    private final ReservaRepository reservaRepository;
 
     public UsuarioService(
             UsuarioRepository usuarioRepository,
@@ -29,7 +30,7 @@ public class UsuarioService {
             PerfilAcompananteRepository acompananteRepository,
             PerfilSoporteRepository soporteRepository,
             PerfilAdminRepository adminRepository,
-            ParentescoRepository parentescoRepository) {
+            ParentescoRepository parentescoRepository, ReservaRepository reservaRepository) {
         this.usuarioRepository = usuarioRepository;
         this.adultoMayorRepository = adultoMayorRepository;
         this.familiarRepository = familiarRepository;
@@ -37,6 +38,7 @@ public class UsuarioService {
         this.soporteRepository = soporteRepository;
         this.adminRepository = adminRepository;
         this.parentescoRepository = parentescoRepository;
+        this.reservaRepository = reservaRepository;
     }
 
     @Transactional(readOnly = true)
@@ -76,7 +78,11 @@ public class UsuarioService {
         }
         if (solicitud.nombres() != null) usuario.setNombres(solicitud.nombres().trim());
         if (solicitud.apellidos() != null) usuario.setApellidos(solicitud.apellidos().trim());
-        if (solicitud.telefono() != null) usuario.setTelefono(solicitud.telefono().trim());
+        if (solicitud.telefono() != null) {
+            String anterior = usuario.getTelefono();
+            usuario.setTelefono(solicitud.telefono().trim());
+            if (!java.util.Objects.equals(anterior, usuario.getTelefono())) revocarContacto(dni);
+        }
         if (solicitud.estaActivo() != null) usuario.setEstaActivo(solicitud.estaActivo());
 
         // Los perfiles son opcionales y solo se modifican si existen para ese usuario.
@@ -148,6 +154,53 @@ public class UsuarioService {
         usuario.setActualizadoEn(OffsetDateTime.now());
         usuarioRepository.save(usuario);
         return construirDetalle(usuario);
+    }
+
+    public static String normalizarTelefono(String raw) {
+        if (raw == null) return null;
+        String t = raw.trim();
+        if (!t.matches("[+0-9 ()-]+") || t.indexOf('+', 1) >= 0) return null;
+        String n = t.replaceAll("[^0-9]", "");
+        if (n.matches("9[0-9]{8}")) return "51" + n;
+        if (n.matches("519[0-9]{8}")) return n;
+        if (t.startsWith("00") && n.startsWith("00")) {
+            n = n.substring(2);
+            if (n.startsWith("51")) return n.matches("519[0-9]{8}") ? n : null;
+            return n.matches("[1-9][0-9]{7,14}") ? n : null;
+        }
+        if (t.startsWith("+") && !n.startsWith("51") && n.matches("[1-9][0-9]{7,14}")) return n;
+        return null;
+    }
+
+    @Transactional
+    public UsuarioDetalleDTO actualizarContactoPropio(String dni, String telefono, String telefonoAlternativo) {
+        Usuario usuario = buscarUsuario(dni);
+        if (!Boolean.TRUE.equals(usuario.getEstaActivo()))
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cuenta inactiva");
+        if (normalizarTelefono(telefono) == null)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ingresa un celular peruano de nueve dígitos o un número internacional válido");
+        String valor = "+" + normalizarTelefono(telefono);
+        if (!java.util.Objects.equals(usuario.getTelefono(), valor)) {
+            usuario.setTelefono(valor);
+            revocarContacto(dni);
+        }
+        if (telefonoAlternativo != null) {
+            if (!"FAMILIAR".equals(usuario.getRol().getNombre()))
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo el familiar puede actualizar su teléfono alternativo");
+            PerfilFamiliar p = familiarRepository.findById(dni).orElseThrow(() -> perfilNoExiste("familiar"));
+            String alternativo = telefonoAlternativo.trim();
+            if (!alternativo.isEmpty() && normalizarTelefono(alternativo) == null)
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Teléfono alternativo inválido");
+            p.setTelefonoAlternativo(alternativo.isEmpty() ? null : "+" + normalizarTelefono(alternativo));
+        }
+        usuario.setActualizadoEn(OffsetDateTime.now());
+        usuarioRepository.save(usuario);
+        return construirDetalle(usuario);
+    }
+
+    private void revocarContacto(String dni) {
+        reservaRepository.revocarWhatsappAcompanante(dni);
+        reservaRepository.revocarWhatsappSolicitante(dni);
     }
 
     private Usuario buscarUsuario(String dni) {

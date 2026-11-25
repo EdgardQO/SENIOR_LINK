@@ -33,6 +33,13 @@ public class UsuarioController {
         this.usuarios = usuarios;
     }
 
+    public record ContactoPropio(String telefono, String telefonoAlternativo) {}
+    @PreAuthorize("hasAnyRole('ACOMPANANTE','FAMILIAR','ADULTO_MAYOR')")
+    @PutMapping("/me/contacto")
+    public ResponseEntity<UsuarioDetalleDTO> actualizarContacto(Authentication auth, @RequestBody ContactoPropio input) {
+        return ResponseEntity.ok(usuarioService.actualizarContactoPropio(auth.getName(), input.telefono(), input.telefonoAlternativo()));
+    }
+
     @PutMapping(value = "/me/foto", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UsuarioDTO> actualizarFoto(Authentication auth, @RequestPart("foto") MultipartFile foto) {
         fotos.guardar(auth.getName(), foto);
