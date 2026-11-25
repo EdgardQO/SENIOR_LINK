@@ -314,7 +314,11 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
       item.append(encabezado,nuevo('p',v.comentario||'Valoración sin comentario.'));resenasLista.append(item);
      }
      cargadas=true;
-    }catch(e){if(seleccion===consulta)resenasLista.replaceChildren(nuevo('p','No se pudieron cargar las reseñas. Cierra y vuelve a abrir esta sección para reintentar.'));}
+    }catch(e){if(seleccion===consulta){
+     const detalle=e instanceof Error?e.message:String(e);
+     resenasLista.replaceChildren(nuevo('p','No se pudieron cargar las reseñas: '+detalle));
+     console.error('Error al consultar reseñas del acompañante',e);
+    }}
     finally{if(seleccion===consulta)cargando=false;}
    });
    acomp.addEventListener('change',async()=>{
