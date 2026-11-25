@@ -1,22 +1,20 @@
-<section class="local-card">
- <header class="pay-heading"><div><div class="pay-brand">SeniorLink <span>Pay</span></div><h2>Métodos de pago</h2></div><span class="pay-tag">Entorno de pruebas</span></header>
- <p class="pay-help">Gestiona tus tarjetas registradas. Utiliza únicamente los datos del catálogo de pruebas.</p>
- <div class="local-payment-grid"><section class="local-payment-panel"><h3>Agregar tarjeta</h3>
- <div class="local-card-preview" aria-hidden="true"><span>SeniorLink Pay</span><strong id="preview-number">•••• •••• •••• ••••</strong><div><span id="preview-name">TITULAR DE LA TARJETA</span><span id="preview-expiry">MM / AAAA</span></div></div>
+<section class="pay-workspace">
+ <header class="pay-heading"><div class="pay-brand"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="3"/><path d="M3 10h18m-6 5h3M5 5l12-3"/></svg> SeniorLink Pay</div><p>Gestiona tus tarjetas y selecciona un método al pagar tus reservas.</p><span class="pay-tag">Entorno de pruebas</span></header>
+ <div class="local-payment-grid">
+ <section class="local-card local-payment-panel"><h2>Tarjetas guardadas</h2><p>Tus métodos disponibles para realizar pagos.</p><div id="demo-card-list" class="local-list"></div></section>
+ <section class="local-card local-payment-panel"><h2>Agregar nueva tarjeta</h2><p>Registra una tarjeta existente del catálogo de pruebas.</p>
+ <div class="local-card-preview" aria-hidden="true"><span>SeniorLink Pay · Pruebas</span><strong id="preview-number">•••• •••• •••• ••••</strong><div><span id="preview-name">TITULAR DE LA TARJETA</span><span id="preview-expiry">MM / AAAA</span></div></div>
  <form id="demo-card-form" class="local-form">
-  <label>Nombre del titular<input name="nombreTitular" type="text" maxlength="150" required autocomplete="off"/></label>
-  <label>Identificador de tarjeta<input name="numeroDemo" type="text" placeholder="DEMO-00000000" pattern="DEMO-[0-9]{8}" maxlength="13" required autocomplete="off" aria-describedby="tarjeta-numero-info"/></label><small id="tarjeta-numero-info">Introduce el identificador de una tarjeta registrada en el catálogo de pruebas.</small>
+  <label>Nombre del titular<input name="nombreTitular" type="text" placeholder="Nombre del titular registrado" maxlength="150" required autocomplete="off"/></label>
+  <label>Identificador de tarjeta<input name="numeroDemo" type="text" placeholder="DEMO-00000000" pattern="DEMO-[0-9]{8}" maxlength="13" required autocomplete="off" aria-describedby="tarjeta-numero-info"/></label><small id="tarjeta-numero-info">No ingreses información bancaria real.</small>
   <label>Tipo de tarjeta<select name="tipo"><option value="DEBITO">Débito</option><option value="CREDITO">Crédito</option></select></label>
-  <label>Mes de vencimiento<input name="mesVencimiento" type="number" min="1" max="12" placeholder="MM" required/></label>
-  <label>Año de vencimiento<input name="anioVencimiento" type="number" min="2026" max="2199" placeholder="AAAA" required/></label>
-  <label>Código de seguridad<input name="cvv" type="password" inputmode="numeric" pattern="[0-9]{3,4}" maxlength="4" autocomplete="off" required/></label>
-  <button type="submit">Validar y guardar tarjeta</button>
- </form>
- <p id="demo-card-status" role="status" aria-live="polite"></p>
- </section><section class="local-payment-panel"><h3>Tarjetas guardadas</h3><div id="demo-card-list" class="local-list"></div></section></div>
+  <div class="pay-fields"><label>Mes<input name="mesVencimiento" type="number" min="1" max="12" placeholder="MM" required/></label><label>Año<input name="anioVencimiento" type="number" min="2026" max="2199" placeholder="AAAA" required/></label><label>CVV de prueba<input name="cvv" type="password" inputmode="numeric" pattern="[0-9]{3,4}" maxlength="4" autocomplete="off" required placeholder="•••"/></label></div>
+  <button type="submit">Registrar tarjeta</button>
+ </form><p id="demo-card-status" role="status" aria-live="polite"></p></section></div>
+ <footer class="pay-safety"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m12 3 8 3v6c0 5-5 8-8 10-3-2-8-5-8-10V6zM8 12l3 3 5-6"/></svg><strong>Datos protegidos</strong><span>Las tarjetas se vinculan mediante tokens y se muestran enmascaradas. Solo operaciones de prueba.</span></footer>
 </section>
 <style>
-.pay-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}.pay-brand{font-size:23px;font-weight:750;letter-spacing:-.7px;color:#173d35;margin-bottom:8px}.pay-brand span{color:#087a70}.pay-tag{font-size:12px;color:#52665f;border:1px solid #dce8e3;border-radius:6px;padding:5px 9px}.pay-help{font-size:14px;margin:0 0 24px}.local-card-preview{background:linear-gradient(135deg,#173d35,#087a70);border:1px solid #12695d;box-shadow:0 8px 22px #173d351f}.local-form button{background:#087a70}.local-form button:hover{background:#065e56}#tarjeta-numero-info{color:#52665f;font-size:12px}
+.pay-workspace{display:grid;gap:16px}.pay-heading,.pay-safety{display:flex;align-items:center;gap:18px;flex-wrap:wrap;background:#e9f7f1;border:1px solid #d5ebe1;padding:18px 20px;border-radius:14px}.pay-brand{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:750;color:#173d35}.pay-brand svg,.pay-safety svg{color:#087a70;flex-shrink:0}.pay-heading p{flex:1;min-width:180px;color:#405d55;margin:0;font-size:13px}.pay-tag{font-size:12px;color:#12634a;background:#d7f1e0;border-radius:7px;padding:6px 10px}.pay-workspace .local-card{margin:0}.pay-workspace .local-payment-grid{gap:16px;align-items:stretch}.pay-workspace .local-card-preview{max-width:none;min-height:120px;gap:16px;margin:16px 0;background:linear-gradient(135deg,#173d35,#087a70)}.pay-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.pay-safety span{flex:1;min-width:160px;color:#405d55;font-size:12px}#tarjeta-numero-info{color:#52665f;font-size:12px}.pay-workspace :global(.pay-saved){display:flex;align-items:center;gap:12px;background:#eef8f4}.pay-workspace :global(.pay-card-mark){border:1px solid #d5e7df;background:white;color:#087a70;padding:9px;border-radius:8px;font-weight:700;font-size:11px}.pay-workspace :global(.pay-card-info){flex:1;min-width:110px}.pay-workspace :global(.pay-card-info small){display:block;margin-top:5px;color:#52665f}.pay-workspace :global(.pay-remove){background:#fff;color:#405d55;border:1px solid #cbdad5;font-size:12px}.pay-workspace :global(.pay-remove:hover){background:#e4f0eb;color:#173d35}@media(max-width:480px){.pay-fields{grid-template-columns:1fr 1fr}.pay-fields label:last-child{grid-column:1/-1}}
 </style>
 <script>
  import {apiPagoLocal} from '../../lib/local-api';
@@ -31,14 +29,14 @@
   list.replaceChildren();
   if(!datos.length){list.textContent='Todavía no has guardado tarjetas.';return;}
   for(const item of datos){
-   const row=document.createElement('div');row.className='local-item';
-   const span=document.createElement('span');
-   span.textContent=(item.tipo==='DEBITO'?'Débito':'Crédito')+' · '+item.numeroEnmascarado+' · Vence '+item.mesVencimiento+'/'+item.anioVencimiento;
-   const btn=document.createElement('button');btn.type='button';btn.textContent='Quitar';
+   const row=document.createElement('div');row.className='local-item pay-saved';
+   const marca=document.createElement('span');marca.className='pay-card-mark';marca.textContent='TARJETA';
+   const span=document.createElement('div');span.className='pay-card-info';const titulo=document.createElement('strong');titulo.textContent=(item.tipo==='DEBITO'?'Débito':'Crédito')+' · '+item.numeroEnmascarado;const vence=document.createElement('small');vence.textContent='Vence '+item.mesVencimiento+'/'+item.anioVencimiento;span.append(titulo,vence);
+   const btn=document.createElement('button');btn.type='button';btn.className='pay-remove';btn.textContent='Quitar';
    btn.addEventListener('click',async()=>{
     if(!confirm('¿Quitar este método de pago?'))return;
     try{await apiPagoLocal('/metodos-pago/'+item.id,{method:'DELETE'});await cargar();}catch(e){estado.textContent=String(e);}
-   });row.append(span,btn);list.append(row);
+   });row.append(marca,span,btn);list.append(row);
   }
  };
  form.addEventListener('submit',async e=>{
