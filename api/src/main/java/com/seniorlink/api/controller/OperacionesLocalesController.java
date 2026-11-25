@@ -20,8 +20,9 @@ import java.util.*;
 public class OperacionesLocalesController {
  private final ReservaLocalService reservas;
  private final PasarelaLocalService pagos;
- public OperacionesLocalesController(ReservaLocalService reservas,PasarelaLocalService pagos){
-  this.reservas=reservas;this.pagos=pagos;
+ private final PostServicioLocalService postServicio;
+ public OperacionesLocalesController(ReservaLocalService reservas,PasarelaLocalService pagos,PostServicioLocalService postServicio){
+  this.reservas=reservas;this.pagos=pagos;this.postServicio=postServicio;
  }
  @GetMapping("/servicios")
  public List<Servicio> servicios(){return reservas.servicios();}
@@ -113,4 +114,40 @@ public class OperacionesLocalesController {
  public PasarelaLocalService.Resultado reembolsar(Authentication auth,@PathVariable Long id){
   return pagos.reembolsar(auth.getName(),id);
  }
+ public record IncidenciaInput(String descripcion){}
+ @GetMapping("/incidencias")
+ public List<PostServicioLocalService.IncidenciaVista> incidencias(Authentication auth){
+  return postServicio.incidencias(auth.getName());
+ }
+ @PostMapping("/reservas/{id}/incidencias")
+ @PreAuthorize("hasAnyRole('ACOMPANANTE','ADULTO_MAYOR','FAMILIAR')")
+ public PostServicioLocalService.IncidenciaVista reportar(Authentication auth,@PathVariable Long id,
+  @RequestBody IncidenciaInput input){
+  return postServicio.reportar(auth.getName(),id,input.descripcion());
+ }
+ public record ResolverIncidencia(String resolucion){}
+ @PostMapping("/incidencias/{id}/resolver")
+ @PreAuthorize("hasAnyRole('SOPORTE','ADMINISTRADOR')")
+ public PostServicioLocalService.IncidenciaVista resolver(Authentication auth,@PathVariable Long id,
+  @RequestBody ResolverIncidencia input){
+  return postServicio.resolver(auth.getName(),id,input.resolucion());
+ }
+ @GetMapping("/liquidaciones")
+ @PreAuthorize("hasAnyRole('ADMINISTRADOR','ACOMPANANTE')")
+ public List<PostServicioLocalService.LiquidacionVista> liquidaciones(Authentication auth){
+  return postServicio.liquidaciones(auth.getName());
+ }
+ @PostMapping("/liquidaciones/{reservaId}")
+ @PreAuthorize("hasRole('ADMINISTRADOR')")
+ public PostServicioLocalService.LiquidacionVista liquidar(Authentication auth,@PathVariable Long reservaId){
+  return postServicio.liquidar(auth.getName(),reservaId);
+ }
+ public record ValoracionInput(short puntuacion,String comentario){}
+ @PostMapping("/reservas/{id}/valorar")
+ @PreAuthorize("hasAnyRole('ADULTO_MAYOR','FAMILIAR')")
+ public PostServicioLocalService.ValoracionVista valorar(Authentication auth,@PathVariable Long id,
+  @RequestBody ValoracionInput input){
+  return postServicio.valorar(auth.getName(),id,input.puntuacion(),input.comentario());
+ }
+
 }
