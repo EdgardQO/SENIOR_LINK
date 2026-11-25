@@ -30,6 +30,7 @@ const pasos=rol==='ACOMPANANTE'?[
   </li>)}</ol>
   <p class="reserva-guia-aviso">La disponibilidad se confirma al aceptar la solicitud. No realices pagos fuera de SeniorLink.</p>
  </section>}
+ {cliente && historial && <section class="reserva-guia" aria-label="Guía de seguimiento"><span class="guia-eyebrow">GUÍA DE SEGUIMIENTO</span><h3>Gestiona tus reservas con confianza</h3><ol class="reserva-guia-pasos">{[['01','Revisa el estado','Consulta el siguiente paso de cada contratación.'],['02','Confirma el pago','Realiza el pago únicamente dentro de SeniorLink.'],['03','Coordina el servicio','Consulta las opciones de contacto y las jornadas programadas.'],['04','Confirma y valora','Revisa cada jornada finalizada y consulta tu recibo.']].map(([n,t,d])=><li><div class="reserva-guia-iconos"><span>{n}</span></div><strong>{t}</strong><p>{d}</p></li>)}</ol><p class="reserva-guia-aviso">Si necesitas ayuda, utiliza los canales de soporte de SeniorLink.</p></section>}
  {solicitar && <form id="reserva-local-form" class="local-form">
   {rol==='FAMILIAR' && <label>Adulto mayor autorizado<select name="adultoMayorDni" id="reserva-local-adulto" required><option value="">Selecciona un adulto autorizado</option></select></label>}
   <div class="companion-picker" id="reserva-local-picker">
@@ -161,6 +162,10 @@ const pasos=rol==='ACOMPANANTE'?[
  :global(.reserva-contacto){margin:12px 0;padding:14px;border:1px solid #d5ebe1;background:#f5fbf8;border-radius:12px;color:#174e42}
  :global(.reserva-contacto p){font-size:13px;line-height:1.5;margin:8px 0}
  :global(.reserva-wa){display:inline-flex;align-items:center;padding:10px 14px;border-radius:8px;background:#087a70;color:white;text-decoration:none;font-weight:600}
+ :global(.contacto-autorizaciones){display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin:10px 0}
+ :global(.contacto-autorizacion){display:grid;gap:4px;border:1px solid #dce8e3;border-radius:9px;padding:10px;background:#fff;font-size:12px}
+ :global(.contacto-autorizacion[data-ok="true"] span){color:#087a70;font-weight:700}
+ :global(.contacto-autorizacion[data-ok="false"] span){color:#755d20;font-weight:600}
  </style>
 <script>
  import {apiLocal,apiPagoLocal,horaLocal,importe,sesionRequerida} from '../../lib/local-api';
@@ -254,12 +259,14 @@ const pasos=rol==='ACOMPANANTE'?[
     const destino=nuevo('p','Destinatario: '+(rol==='ACOMPANANTE'?b.solicitanteNombre:b.acompananteNombre));
     const detalle=nuevo('p','Consultando autorización de contacto…');detalle.setAttribute('role','status');
     const controles=document.createElement('div');controles.className='local-actions';
-    contacto.append(titulo,destino,detalle,controles);div.append(contacto);
+    const autorizaciones=document.createElement('div');autorizaciones.className='contacto-autorizaciones';
+    contacto.append(titulo,destino,autorizaciones,detalle,controles);div.append(contacto);
     const ruta='/reservas/'+b.id+'/whatsapp';
     let consultando=false;
     const avisoConsulta=nuevo('small','');avisoConsulta.setAttribute('role','status');contacto.append(avisoConsulta);
     const mostrar=(v:any)=>{
-     controles.replaceChildren();
+     controles.replaceChildren();autorizaciones.replaceChildren();
+     for(const [label,ok] of [['Tu autorización',v.autorizadoPorMi],['Autorización del otro participante',v.autorizadoPorOtro]] as const){const item=document.createElement('div');item.className='contacto-autorizacion';item.dataset.ok=String(Boolean(ok));item.append(nuevo('strong',label),nuevo('span',ok?'Autorizada':'Pendiente'));autorizaciones.append(item);}
      if(v.destinatarioNombre)destino.textContent='Destinatario: '+v.destinatarioNombre+' · '+({FAMILIAR:'Familiar',ADULTO_MAYOR:'Adulto mayor',ACOMPANANTE:'Acompañante'} as Record<string,string>)[v.destinatarioRol];
      if(!v.activo){detalle.textContent='Contacto no disponible para esta contratación.';return;}
      if(v.url){
