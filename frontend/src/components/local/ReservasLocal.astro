@@ -168,7 +168,7 @@ const pasos=rol==='ACOMPANANTE'?[
  :global(.contacto-autorizacion[data-ok="false"] span){color:#755d20;font-weight:600}
  </style>
 <script>
- import {apiLocal,apiPagoLocal,horaLocal,importe,sesionRequerida} from '../../lib/local-api';
+ import {apiLocal,apiPagoLocal,horaLocal,importe,sesionRequerida,simulacionDisponible} from '../../lib/local-api';
  import {consultarRecibos,reciboDeReserva,abrirRecibo,botonRecibo,type Recibo} from '../../lib/recibos';
  import {mostrarFotoProtegida,limpiarFoto} from '../../lib/profile-photo';
  const root=document.querySelector<HTMLElement>('[data-reservas-rol]')!;
@@ -177,6 +177,7 @@ const pasos=rol==='ACOMPANANTE'?[
  const estado=root.querySelector<HTMLElement>('#reserva-local-status')!;
  const contenedor=root.querySelector<HTMLElement>('#reserva-local-list')!;
  const session=sesionRequerida();
+ let pagosSimulados=false;
  const nuevo=(tag:string,texto:string)=>{const e=document.createElement(tag);e.textContent=texto;return e;};
  const filtros=root.querySelector<HTMLFormElement>('#agenda-filtros-form');
  const tabs=Array.from(root.querySelectorAll<HTMLButtonElement>('[data-agenda-grupo]'));
@@ -193,11 +194,12 @@ const pasos=rol==='ACOMPANANTE'?[
  const fechaLima=(v:string)=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Lima',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(v)).filter(x=>x.type!=='literal').reduce((a,x)=>({...a,[x.type]:x.value}),{} as Record<string,string>);
  const fechaClave=(v:string)=>{if(!v||!Number.isFinite(Date.parse(v)))return '';const p=fechaLima(v);return p.year+'-'+p.month+'-'+p.day;};
  const refrescar=async()=>{
+  try{pagosSimulados=await simulacionDisponible();}catch{pagosSimulados=false;}
   if(modo==='solicitar')return;
   todas=await apiLocal('/reservas');
   medios=[];errorMedios=false;
   if(rol==='ADULTO_MAYOR'||rol==='FAMILIAR'){
-   try{if((import.meta.env.DEV || import.meta.env.PUBLIC_PAGOS_SIMULADOS === 'true'))medios=await apiPagoLocal('/metodos-pago');}catch(e){errorMedios=true;console.error('Error al consultar métodos de pago',e);}
+   try{if(pagosSimulados)medios=await apiPagoLocal('/metodos-pago');}catch(e){errorMedios=true;console.error('Error al consultar métodos de pago',e);}
   }
   try{await cargarRecibos();}catch(e){console.error('No se pudieron consultar recibos',e);}
   renderReservas();
@@ -323,7 +325,7 @@ const pasos=rol==='ACOMPANANTE'?[
     });
    if(['PENDIENTE_ACEPTACION','PENDIENTE_PAGO','CONFIRMADA','EN_PROGRESO','PENDIENTE_CONFIRMACION'].includes(b.estado) && rol!=='ADMINISTRADOR')
     accion('Cancelar reserva','cancelar');
-   if((import.meta.env.DEV || import.meta.env.PUBLIC_PAGOS_SIMULADOS === 'true') && rol==='ADMINISTRADOR' && (b.estado==='CANCELADA'||b.estado==='EN_DISPUTA')){
+   if(pagosSimulados && rol==='ADMINISTRADOR' && (b.estado==='CANCELADA'||b.estado==='EN_DISPUTA')){
     const refund=nuevo('button','Reembolsar pago') as HTMLButtonElement;
     refund.addEventListener('click',async()=>{
      if(!confirm('¿Registrar el reembolso de esta reserva?'))return;
@@ -332,10 +334,10 @@ const pasos=rol==='ACOMPANANTE'?[
      }catch(e){estado.textContent=e instanceof Error?e.message:String(e);}
     });acciones.append(refund);
    }
-   if((rol==='ADULTO_MAYOR'||rol==='FAMILIAR')&&b.estado==='PENDIENTE_PAGO'&&!(import.meta.env.DEV || import.meta.env.PUBLIC_PAGOS_SIMULADOS === 'true')){
+   if((rol==='ADULTO_MAYOR'||rol==='FAMILIAR')&&b.estado==='PENDIENTE_PAGO'&&!pagosSimulados){
     acciones.append(nuevo('p','Pago en línea no disponible en este entorno. No introduzcas datos de tarjetas.'));
    }
-   if((rol==='ADULTO_MAYOR'||rol==='FAMILIAR')&&b.estado==='PENDIENTE_PAGO'&&(import.meta.env.DEV || import.meta.env.PUBLIC_PAGOS_SIMULADOS === 'true')){
+   if((rol==='ADULTO_MAYOR'||rol==='FAMILIAR')&&b.estado==='PENDIENTE_PAGO'&&pagosSimulados){
     const pago=document.createElement('form');pago.className='local-form local-checkout';
     const titulo=nuevo('h3','SeniorLink Pay · Resumen del pago');
     const total=nuevo('strong',importe(b.montoTotal));total.className='checkout-total';

@@ -17,7 +17,7 @@
 .pay-workspace{display:grid;gap:16px}.pay-heading,.pay-safety{display:flex;align-items:center;gap:18px;flex-wrap:wrap;background:#e9f7f1;border:1px solid #d5ebe1;padding:18px 20px;border-radius:14px}.pay-brand{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:750;color:#173d35}.pay-brand svg,.pay-safety svg{color:#087a70;flex-shrink:0}.pay-heading p{flex:1;min-width:180px;color:#405d55;margin:0;font-size:13px}.pay-tag{font-size:12px;color:#12634a;background:#d7f1e0;border-radius:7px;padding:6px 10px}.pay-workspace .local-card{margin:0}.pay-workspace .local-payment-grid{gap:16px;align-items:stretch}.pay-workspace .local-card-preview{max-width:none;min-height:120px;gap:16px;margin:16px 0;background:linear-gradient(135deg,#173d35,#087a70)}.pay-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.pay-safety span{flex:1;min-width:160px;color:#405d55;font-size:12px}#tarjeta-numero-info{color:#52665f;font-size:12px}.pay-workspace :global(.pay-saved){display:flex;align-items:center;gap:12px;background:#eef8f4}.pay-workspace :global(.pay-card-mark){border:1px solid #d5e7df;background:white;color:#087a70;padding:9px;border-radius:8px;font-weight:700;font-size:11px}.pay-workspace :global(.pay-card-info){flex:1;min-width:110px}.pay-workspace :global(.pay-card-info small){display:block;margin-top:5px;color:#52665f}.pay-workspace :global(.pay-remove){background:#fff;color:#405d55;border:1px solid #cbdad5;font-size:12px}.pay-workspace :global(.pay-remove:hover){background:#e4f0eb;color:#173d35}@media(max-width:480px){.pay-fields{grid-template-columns:1fr 1fr}.pay-fields label:last-child{grid-column:1/-1}}
 </style>
 <script>
- import {apiPagoLocal} from '../../lib/local-api';
+ import {apiPagoLocal,simulacionDisponible} from '../../lib/local-api';
  const form=document.querySelector<HTMLFormElement>('#demo-card-form')!;
  const list=document.querySelector<HTMLElement>('#demo-card-list')!;
  const estado=document.querySelector<HTMLElement>('#demo-card-status')!;
@@ -52,9 +52,14 @@
    form.reset();preview();estado.textContent='Tarjeta guardada correctamente.';await cargar();
   }catch(err){estado.textContent=err instanceof Error?err.message:String(err);}finally{(form.elements.namedItem('cvv') as HTMLInputElement).value='';submit.disabled=false;}
  });
- if(!(import.meta.env.DEV || import.meta.env.PUBLIC_PAGOS_SIMULADOS === 'true')){
-  form.querySelectorAll('input,select,button').forEach(el=>(el as HTMLInputElement).disabled=true);
-  estado.textContent='Los métodos de pago simulados solo están disponibles en localhost. No se admiten tarjetas desde este servidor.';
-  list.textContent='No hay gestión de tarjetas de prueba en este entorno.';
- }else cargar().catch(e=>estado.textContent=String(e));
+ async function iniciar(){
+  const controles=Array.from(form.querySelectorAll<HTMLInputElement|HTMLSelectElement|HTMLButtonElement>('input,select,button'));
+  controles.forEach(el=>el.disabled=true);
+  estado.textContent='Consultando disponibilidad de pagos de prueba…';
+  try{
+   if(!await simulacionDisponible()){estado.textContent='Los pagos de prueba están deshabilitados en este entorno. No introduzcas datos bancarios.';list.textContent='Sin gestión de métodos de prueba.';return;}
+   await cargar();controles.forEach(el=>el.disabled=false);estado.textContent='';
+  }catch(e){estado.textContent='No se pudo consultar la configuración de pagos. Recarga la página para reintentar.';}
+ }
+ void iniciar();
 </script>

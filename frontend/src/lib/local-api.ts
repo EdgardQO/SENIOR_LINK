@@ -42,3 +42,8 @@ export function importe(value: number|string|null|undefined){
 export function texto(element: Element|null,value: unknown){
  if(element)element.textContent=String(value??'');
 }
+
+export async function simulacionDisponible():Promise<boolean>{
+ const datos=await apiLocal('/capacidades');
+ return datos?.pagosSimulados===true;
+}
