@@ -13,7 +13,7 @@ import java.util.UUID;
 public class Tarjeta {
  @Id @GeneratedValue(strategy=GenerationType.IDENTITY) private Long id;
  @Column(name="titular_dni",nullable=false,length=8) private String titularDni;
- @Column(name="numero_tarjeta",nullable=false,unique=true,length=19) private String numeroTarjeta;
+ @com.fasterxml.jackson.annotation.JsonIgnore @Column(name="numero_tarjeta",nullable=false,unique=true,length=19) private String numeroTarjeta;
  @Column(nullable=false,length=150) private String nombreTitular;
  @Column(nullable=false) private Short mesVencimiento;
  @Column(nullable=false) private Short anioVencimiento;
