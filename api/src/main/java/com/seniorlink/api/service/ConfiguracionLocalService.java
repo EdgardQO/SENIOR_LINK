@@ -16,9 +16,22 @@ public class ConfiguracionLocalService {
   int minutosDuracionMinima,int minutosDuracionMaxima,int minutosInicioAnticipado,
   int horasConfirmacionAutomatica,BigDecimal tarifaMinimaHora,
   BigDecimal tarifaMaximaHora,BigDecimal porcentajeComision){}
+ // Los valores predeterminados se basan en InicializadorLocal, con anticipación de 60 minutos.
+ // No se modifica la base de datos al consultar una configuración ausente.
+ public static ConfiguracionReservas valoresPredeterminados(){
+  ConfiguracionReservas c=new ConfiguracionReservas();
+  c.setId((short)1);c.setMinutosAceptacion(60);c.setMinutosPago(30);
+  c.setMinutosAnticipacion(60);c.setMinutosDuracionMinima(60);
+  c.setMinutosDuracionMaxima(480);c.setMinutosInicioAnticipado(15);
+  c.setHorasConfirmacionAutomatica(48);
+  c.setTarifaMinimaHora(new BigDecimal("10.00"));
+  c.setTarifaMaximaHora(new BigDecimal("50.00"));
+  c.setPorcentajeComision(new BigDecimal("10.00"));
+  return c;
+ }
+ @Transactional(readOnly=true)
  public Parametros obtener(){
-  ConfiguracionReservas c=repositorio.findById((short)1)
-   .orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Configuración no encontrada"));
+  ConfiguracionReservas c=repositorio.findById((short)1).orElseGet(ConfiguracionLocalService::valoresPredeterminados);
   return new Parametros(c.getMinutosAceptacion(),c.getMinutosPago(),c.getMinutosAnticipacion(),
    c.getMinutosDuracionMinima(),c.getMinutosDuracionMaxima(),
    c.getMinutosInicioAnticipado(),c.getHorasConfirmacionAutomatica(),
@@ -40,7 +53,7 @@ public class ConfiguracionLocalService {
    p.porcentajeComision().compareTo(BigDecimal.ZERO)<0||
    p.porcentajeComision().compareTo(new BigDecimal("30"))>0)
    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Parámetros de reservas fuera de rango");
-  ConfiguracionReservas c=repositorio.findById((short)1).orElseThrow();
+  ConfiguracionReservas c=repositorio.findById((short)1).orElseGet(ConfiguracionLocalService::valoresPredeterminados);
   c.setMinutosAceptacion(p.minutosAceptacion());c.setMinutosPago(p.minutosPago());
   c.setMinutosAnticipacion(p.minutosAnticipacion());
   c.setMinutosDuracionMinima(p.minutosDuracionMinima());

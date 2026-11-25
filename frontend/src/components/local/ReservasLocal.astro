@@ -338,7 +338,8 @@ const historial=modo!=='solicitar';
   const filas=form.querySelector<HTMLElement>('#reserva-jornadas')!;
   const agregar=form.querySelector<HTMLButtonElement>('#agregar-jornada')!;
   const cotizacion=form.querySelector<HTMLElement>('#reserva-cotizacion')!;
-  let tarifa=0,config:any=null,version=0;
+  let tarifa=0,config:any=null,version=0, errorConfig="";
+  let consultandoConfig=false;
   const dniAcomp=()=>form.querySelector<HTMLInputElement>('#reserva-local-acompanante')!.value;
   const leer=()=>Array.from(filas.querySelectorAll<HTMLElement>('.jornada-form')).map(f=>{
    const fecha=f.querySelector<HTMLInputElement>('[data-fecha]')!.value;
@@ -405,7 +406,8 @@ const historial=modo!=='solicitar';
     if(error){valido=false;aviso.textContent=error;}else{minutos+=m;aviso.textContent='Horario libre · '+(m/60).toFixed(2)+' h · '+importe(tarifa*m/60);}
    }
    const horas=Math.round(minutos/60*100)/100,subtotal=Math.round(tarifa*horas*100)/100,comision=Math.round(subtotal*Number(config?.porcentajeComision??0))/100;
-   cotizacion.textContent=js.length+(js.length===1?' jornada':' jornadas')+' · '+horas.toFixed(2)+' h · Subtotal '+importe(subtotal)+' · '+(config?'Comisión '+importe(comision)+' · Total '+importe(subtotal+comision):'No se pudo obtener la comisión. Recarga la página.');
+   cotizacion.textContent=js.length+(js.length===1?' jornada':' jornadas')+' · '+horas.toFixed(2)+' h · Subtotal '+importe(subtotal)+' · '+(config?'Comisión '+importe(comision)+' · Total '+importe(subtotal+comision):(consultandoConfig?'Consultando comisión…':'No se pudo obtener la comisión: '+(errorConfig||'sin respuesta')));
+   if(!config&&!consultandoConfig){const retry=document.createElement('button');retry.type='button';retry.textContent='Reintentar consulta';retry.addEventListener('click',()=>void cargarConfig());cotizacion.append(' ',retry);}
    const listo=valido&&Boolean(dni)&&Boolean(config)&&(modalidad.value==='uno'||js.length>=2);
    enviar.disabled=!listo||enviando;
    return listo;
@@ -422,7 +424,18 @@ const historial=modo!=='solicitar';
   agregar.onclick=()=>{if(filas.children.length<365){nuevaFila();void calcular();}};
   nuevaFila();enviar.disabled=true;
   form.addEventListener('reset',()=>queueMicrotask(()=>{filas.replaceChildren();nuevaFila();void calcular();}));
-  void apiLocal('/parametros-reserva').then(c=>{config=c;void calcular();}).catch(()=>{cotizacion.textContent='No se pudo consultar la comisión.';});
+  async function cargarConfig(){
+   if(consultandoConfig)return;
+   consultandoConfig=true;errorConfig='';
+   cotizacion.textContent='Consultando comisión de plataforma…';
+   try{
+    const datos=await apiLocal('/parametros-reserva');
+    if(datos?.porcentajeComision==null||!Number.isFinite(Number(datos.porcentajeComision)))throw new Error('Respuesta de configuración incompleta');
+    config=datos;
+   }catch(e){config=null;errorConfig=e instanceof Error?e.message:String(e);}
+   finally{consultandoConfig=false;void calcular();}
+  }
+  void cargarConfig();
 
   (async()=>{
    const [personas,servicios]=await Promise.all([apiLocal('/acompanantes'),apiLocal('/servicios')]);

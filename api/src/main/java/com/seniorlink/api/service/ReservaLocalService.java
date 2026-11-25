@@ -139,7 +139,7 @@ public class ReservaLocalService {
  }
  private String rol(Usuario u){return u.getRol().getNombre();}
  private ConfiguracionReservas cfg(){return configuraciones.findById((short)1)
-  .orElseThrow(()->bad("Configuración de reservas no disponible"));}
+  .orElseGet(ConfiguracionLocalService::valoresPredeterminados);}
  private Reserva buscar(Long id){return reservas.findById(id)
   .orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Reserva no encontrada"));}
  private Reserva bloquear(Long id){return reservas.bloquear(id)
