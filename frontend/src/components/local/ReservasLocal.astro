@@ -56,9 +56,32 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
   <p id="agenda-resultados" role="status" aria-live="polite">Cargando solicitudes…</p>
  </section>}
  <div id="reserva-local-list" class="local-list"></div>
+ {cliente && <dialog id="recibo-modal" class="recibo-modal" aria-labelledby="recibo-titulo">
+  <div class="recibo-header"><div><small>SENIORLINK</small><h2 id="recibo-titulo">Recibo de pago</h2></div><button type="button" class="recibo-cerrar" data-recibo-cerrar aria-label="Cerrar recibo">×</button></div>
+  <div class="recibo-contenido">
+   <div class="recibo-resumen"><svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg><strong id="recibo-estado"></strong><span id="recibo-total"></span></div>
+   <dl class="recibo-detalles"><dt>Reserva</dt><dd id="recibo-reserva"></dd><dt>Fecha de operación</dt><dd id="recibo-fecha"></dd><dt>Método de pago</dt><dd id="recibo-metodo"></dd><dt>Referencia</dt><dd id="recibo-referencia"></dd></dl>
+   <p class="recibo-aviso">Simulación local. Sin cargos reales. No es un comprobante fiscal.</p>
+  </div>
+  <div class="recibo-footer"><button type="button" class="recibo-exportar" disabled title="Exportación no disponible" aria-label="Exportar a PDF, próximamente"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 16v4h16v-4"/></svg>Exportar a PDF</button><button type="button" class="recibo-listo" data-recibo-cerrar>Cerrar</button></div>
+ </dialog>}
  {cliente && <p>Para pagar, registra una tarjeta en <a href={rol==='FAMILIAR'?'/familiar/metodos-pago':'/adulto-mayor/metodos-pago'}>Mis métodos de pago</a>.</p>}
 </section>
 <style>
+ .recibo-modal{position:fixed;inset:0;margin:auto;width:min(480px,calc(100% - 28px));max-height:85dvh;border:1px solid #d5e5df;border-radius:18px;padding:0;background:white;color:#173d35;overflow:auto;box-shadow:0 18px 70px #102f3550}
+ .recibo-modal::backdrop{background:#102f3570}
+ .recibo-header,.recibo-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 22px}
+ .recibo-header{border-bottom:1px solid #e4eee9}.recibo-header h2{margin:4px 0 0!important}.recibo-header small{color:#087a70;font-weight:700;letter-spacing:.12em}
+ .recibo-cerrar{font:inherit;font-size:26px;background:transparent;color:#405d55;border:0;border-radius:8px;cursor:pointer;width:40px;height:40px}
+ .recibo-contenido{padding:22px}.recibo-resumen{display:grid;justify-items:center;gap:10px;padding:18px;background:#edf8f3;border-radius:12px;color:#087a70}
+ .recibo-resumen[data-reembolsado=true]{background:#eef2f5;color:#405d55}.recibo-resumen span{font-size:30px;font-weight:700}
+ .recibo-detalles{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:14px 12px;margin:22px 0;font-size:13px}
+ .recibo-detalles dt{color:#52665f}.recibo-detalles dd{margin:0;text-align:right;font-weight:600;overflow-wrap:anywhere}
+ .recibo-aviso{font-size:12px;margin:0}.recibo-footer{border-top:1px solid #e4eee9;flex-wrap:wrap}
+ .recibo-footer button{display:inline-flex;justify-content:center;align-items:center;gap:8px;min-height:44px;padding:10px 15px;border-radius:9px;font:inherit;font-weight:600}
+ .recibo-exportar{border:1px solid #cbdad5;background:#f3f7f5;color:#60746c;cursor:not-allowed}.recibo-listo{border:0;background:#087a70;color:white;cursor:pointer}
+ @media(max-width:420px){.recibo-header,.recibo-footer,.recibo-contenido{padding:15px}.recibo-footer button{flex:1 1 auto}}
+
  .agenda-filtros{display:grid;gap:14px;margin:16px 0}
  .agenda-tabs{display:flex;flex-wrap:wrap;gap:8px}
  .agenda-tabs button{display:inline-flex;align-items:center;gap:8px;border:1px solid #d5e5df;background:#fff;color:#355e53;border-radius:9px;padding:10px 12px;font:inherit;font-size:13px;cursor:pointer}
@@ -129,6 +152,26 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
  let todas:any[]=[];
  let medios:any[]=[];
  let errorMedios=false;
+ type Recibo={referencia:string,reservaId:number,estado:string,monto:number|string,moneda:string,fecha:string,metodo:string,ultimosCuatro:string};
+ let recibos:Recibo[]=[];
+ const modal=root.querySelector<HTMLDialogElement>('#recibo-modal');
+ let focoRecibo:HTMLElement|null=null;
+ let scrollRecibo='';
+ function abrirRecibo(r:Recibo){
+  if(!modal)return;
+  const campo=(id:string,v:string)=>{const el=modal.querySelector('#recibo-'+id);if(el)el.textContent=v;};
+  const reembolsado=r.estado==='REEMBOLSADO';
+  campo('estado',reembolsado?'Pago reembolsado':'Pago aprobado');
+  campo('total',importe(r.monto));campo('reserva','#'+r.reservaId);campo('fecha',horaLocal(r.fecha));
+  campo('metodo',(r.metodo==='DEBITO'?'Débito':'Crédito')+' · •••• '+r.ultimosCuatro);campo('referencia',r.referencia);
+  modal.querySelector<HTMLElement>('.recibo-resumen')!.dataset.reembolsado=String(reembolsado);
+  if(!modal.open){focoRecibo=document.activeElement as HTMLElement;scrollRecibo=document.body.style.overflow;modal.showModal();document.body.style.overflow='hidden';}
+ }
+ modal?.querySelectorAll<HTMLButtonElement>('[data-recibo-cerrar]').forEach(b=>b.addEventListener('click',()=>modal.close()));
+ modal?.addEventListener('click',e=>{if(e.target===modal){const b=modal.getBoundingClientRect();if(e.clientX<b.left||e.clientX>b.right||e.clientY<b.top||e.clientY>b.bottom)modal.close();}});
+ modal?.addEventListener('close',()=>{document.body.style.overflow=scrollRecibo;if(focoRecibo?.isConnected)focoRecibo.focus();});
+ async function cargarRecibos(){if(modal)recibos=await apiLocal('/recibos');}
+
  const grupos:Record<string,string[]>={PENDIENTES:['PENDIENTE_ACEPTACION','PENDIENTE_PAGO','PENDIENTE_CONFIRMACION'],ACTIVAS:['CONFIRMADA','EN_PROGRESO']};
  const coincideGrupo=(b:any,g:string)=>g==='TODAS'||(grupos[g]||[g]).includes(b.estado);
  const normalizarAgenda=(v:unknown)=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
@@ -140,6 +183,7 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
   if(rol==='ADULTO_MAYOR'||rol==='FAMILIAR'){
    try{medios=await apiLocal('/metodos-pago');}catch(e){errorMedios=true;console.error('Error al consultar métodos de pago',e);}
   }
+  try{await cargarRecibos();}catch(e){console.error('No se pudieron consultar recibos',e);}
   renderReservas();
  };
  const renderReservas=()=>{
@@ -180,6 +224,8 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
    div.append(nuevo('p',horaLocal(b.inicio)+' — '+horaLocal(b.fin)+' · '+importe(b.montoTotal)));
    if(b.direccion)div.append(nuevo('p','Lugar de encuentro: '+b.direccion));
    const acciones=document.createElement('div');acciones.className='local-actions';
+   const recibo=recibos.find(r=>r.reservaId===Number(b.id));
+   if(modal&&recibo){const ver=nuevo('button','Ver recibo') as HTMLButtonElement;ver.type='button';ver.setAttribute('aria-haspopup','dialog');ver.addEventListener('click',()=>abrirRecibo(recibo));acciones.append(ver);}
    const accion=(nombre:string,ruta:string)=>{
     const btn=nuevo('button',nombre) as HTMLButtonElement;btn.type='button';
     btn.addEventListener('click',async()=>{
@@ -233,7 +279,7 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
        metodoId:sel.value,claveIdempotencia:clave,cvv:cvv.value
       })});
       cvv.value='';
-      if(res.estado==='APROBADO'){estado.textContent='Operación aprobada en entorno local. Reserva confirmada. Referencia: '+res.transaccionId;await refrescar();}
+      if(res.estado==='APROBADO'){estado.textContent='Pago aprobado. Reserva confirmada.';try{await refrescar();const r=recibos.find(x=>x.referencia===res.transaccionId);if(r)abrirRecibo(r);else estado.textContent='Pago aprobado. El recibo todavía no está disponible; actualiza la página.';}catch{estado.textContent='Pago aprobado. Actualiza la página para consultar el recibo.';}}
       else{const razones:Record<string,string>={FONDOS_INSUFICIENTES:'Fondos insuficientes en el entorno local.',CVV_INVALIDO:'Código de seguridad incorrecto.',TARJETA_INACTIVA:'Método de pago inactivo.',TARJETA_VENCIDA:'Método de pago vencido.'};mensaje.textContent=razones[res.codigo]||'No se pudo completar el pago.';clave=crypto.randomUUID();}
      }catch(e){mensaje.textContent=e instanceof Error?e.message:String(e);}
      finally{enviando=false;btn.disabled=false;sel.disabled=false;cvv.disabled=false;}
