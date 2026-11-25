@@ -8,6 +8,8 @@ interface Props {
   description: string;
 }
 const { role, label, description } = Astro.props;
+const roleHomes: Record<string,string> = {ADMINISTRADOR:'/admin',ADULTO_MAYOR:'/adulto-mayor',FAMILIAR:'/familiar',ACOMPANANTE:'/acompanante',SOPORTE:'/soporte'};
+const roleHome = roleHomes[role] || '/';
 const adminSection = role === 'ADMINISTRADOR' && Astro.url.pathname !== '/admin';
 const sectionNames: Record<string,string> = {
   '/admin/usuarios':'Usuarios',
@@ -38,7 +40,7 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
   <div id="app-shell" hidden>
     <header class="panel-header">
       <div class="panel-brand">
-        <a href={role === 'ADMINISTRADOR' ? '/admin' : '/'} class="panel-logo" aria-label="SeniorLink — inicio">
+        <a href={roleHome} class="panel-logo" aria-label="SeniorLink — inicio">
           <img src="/LOGO/LOGO.png" alt="" class="panel-brand-image" loading="eager" decoding="async" />
           <span class="panel-brand-name">SeniorLink</span>
         </a>
@@ -107,8 +109,8 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
           <a class="sidebar-link" href="/admin/incidencias"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 21h20L12 3zM12 9v4m0 4h.01"/></svg><span>Incidencias</span></a>
         </>}
         {role === 'SOPORTE' && <a class="sidebar-link" href="/soporte/incidencias"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 21h20L12 3zM12 9v4m0 4h.01"/></svg><span>Gestionar incidencias</span></a>}
-        {role !== "ADMINISTRADOR" && <a class="sidebar-link" href="#inicio"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M9 21v-8h6v8"/></svg><span>Inicio</span></a>}
-        <a class="sidebar-link" href={role === "ADMINISTRADOR" ? "/admin/mi-perfil" : "#mi-perfil"}><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Mi perfil</span></a>
+        {role !== "ADMINISTRADOR" && <a class="sidebar-link" href={roleHome}><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M9 21v-8h6v8"/></svg><span>Inicio</span></a>}
+        <a class="sidebar-link" href={role === "ADMINISTRADOR" ? "/admin/mi-perfil" : roleHome + "#mi-perfil"}><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Mi perfil</span></a>
         {role === 'ADMINISTRADOR' ? (
           <>
             <a class="sidebar-link" href="/admin"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>Dashboard</span></a>
@@ -123,7 +125,7 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
             <a class="sidebar-link" href="/admin/promociones"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="2"/><circle cx="18" cy="18" r="2"/><path d="M4 20 20 4"/></svg><span>Promociones</span></a>
           </>
         ) : (
-          <a class="sidebar-link" href="#herramientas"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 7a5 5 0 0 0-6 6L3 18l3 3 5-5a5 5 0 0 0 6-6l-3 3-3-3z"/></svg><span>Herramientas</span></a>
+          <a class="sidebar-link" href={roleHome + "#herramientas"}><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 7a5 5 0 0 0-6 6L3 18l3 3 5-5a5 5 0 0 0 6-6l-3 3-3-3z"/></svg><span>Herramientas</span></a>
         )}
         
       </aside>
@@ -234,13 +236,21 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
     restoreButton?.addEventListener('click',()=>{layout?.classList.remove('is-collapsed');localStorage.setItem(desktopStorageKey,'false');syncMenu();});
     compactSearch?.addEventListener('click',()=>{layout?.classList.remove('is-collapsed');localStorage.setItem(desktopStorageKey,'false');syncMenu();showSearch();});
     mobileQuery.addEventListener('change',()=>{sidebar?.classList.remove('is-open');syncMenu();});
-    const currentPath=window.location.pathname.replace(/\/$/,'') || '/';
-    sidebarLinks.forEach(link=>{
-      const href=link.getAttribute('href');
-      link.classList.remove('selected');link.removeAttribute('aria-current');
-      if(href && href.startsWith('/') && href===currentPath){link.classList.add('selected');link.setAttribute('aria-current','page');}
-      link.addEventListener('click',()=>{if(mobileQuery.matches){sidebar?.classList.remove('is-open');syncMenu();}});
-    });
+    function actualizarSeleccion(){
+      const currentPath=window.location.pathname.replace(/\/$/,'') || '/';
+      const hash=window.location.hash;
+      const existeAncla=sidebarLinks.some(link=>{const url=new URL(link.href,window.location.href);return url.pathname.replace(/\/$/,'')===currentPath && Boolean(url.hash) && url.hash===hash;});
+      sidebarLinks.forEach(link=>{
+        const url=new URL(link.href,window.location.href);
+        const ruta=url.pathname.replace(/\/$/,'') || '/';
+        const activa=ruta===currentPath && (existeAncla?url.hash===hash:!url.hash);
+        link.classList.toggle('selected',activa);
+        if(activa)link.setAttribute('aria-current',url.hash?'location':'page');else link.removeAttribute('aria-current');
+      });
+    }
+    actualizarSeleccion();
+    window.addEventListener('hashchange',actualizarSeleccion);
+    sidebarLinks.forEach(link=>link.addEventListener('click',()=>{if(mobileQuery.matches){sidebar?.classList.remove('is-open');syncMenu();}}));
     document.addEventListener('keydown',event=>{
       if(event.key==='Escape'){
         if(searchBox && !searchBox.hidden && document.activeElement===searchInput)hideSearch();
@@ -282,6 +292,7 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
         loading.hidden = true;
         document.dispatchEvent(new CustomEvent('seniorlink:profile', { detail: data }));
         document.documentElement.dataset.profileReady = 'true';
+        if(window.location.hash){const id=window.location.hash.slice(1);requestAnimationFrame(()=>document.getElementById(id)?.scrollIntoView({block:'start'}));}
       } catch (error: unknown) {
         const status = error instanceof Error && 'status' in error
           ? (error as Error & { status: number }).status
@@ -306,6 +317,7 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
   *,*::before,*::after { box-sizing:border-box; }
   .role-app { margin:0; background:#f7faf9; font:14px Lexend,system-ui,sans-serif; color:#15302e; }
   .role-app [hidden] {display:none!important}
+  .role-app #mi-perfil,.role-app #herramientas,.role-app #inicio{scroll-margin-top:96px;}
   .panel-header {position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;height:76px;background:#fff;border-bottom:1px solid #e3eeeb;padding:0 32px;}
   .panel-logo {display:flex;align-items:center;text-decoration:none;color:#182f2d;font-size:23px;font-weight:700;letter-spacing:-.8px;}
   .panel-logo span:last-child {color:#0d9488;}
