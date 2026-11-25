@@ -17,9 +17,9 @@ public class PersonalInternoController {
         this.servicio = servicio;
     }
 
-    @PostMapping
+    @PostMapping(consumes = "multipart/form-data")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
-    public ResponseEntity<UsuarioDTO> crear(@RequestBody CrearPersonalInternoDTO solicitud) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(servicio.crear(solicitud));
+    public ResponseEntity<UsuarioDTO> crear(@RequestPart("datos") CrearPersonalInternoDTO solicitud, @RequestPart("foto") org.springframework.web.multipart.MultipartFile foto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(servicio.crearConFoto(solicitud, foto));
     }
 }
