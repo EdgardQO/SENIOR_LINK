@@ -80,6 +80,12 @@ public class OperacionesLocalesController {
   @PathVariable String accion){
   return reservas.accion(auth.getName(),id,accion.toUpperCase(Locale.ROOT));
  }
+ @PostMapping("/reservas/{id}/jornadas/{jornadaId}/{accion:iniciar|finalizar|confirmar}")
+ public ReservaLocalService.ReservaVista cambiarJornada(Authentication auth,@PathVariable Long id,@PathVariable Long jornadaId,@PathVariable String accion){
+  return reservas.accionJornada(auth.getName(),id,jornadaId,accion.toUpperCase(Locale.ROOT));
+ }
+ @GetMapping("/parametros-reserva")
+ public ConfiguracionLocalService.Parametros parametrosReserva(){return configuracion.obtener();}
  @GetMapping("/vinculos")
  @PreAuthorize("hasAnyRole('ADULTO_MAYOR','FAMILIAR')")
  public List<ReservaLocalService.VinculoVista> vinculos(Authentication auth){

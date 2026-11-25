@@ -202,6 +202,7 @@ public class PasarelaLocalService {
   Reserva r=motor.bloquearParaAgenda(reservaId);
   if(r.getEstadoActual()!=EstadoReserva.CANCELADA && r.getEstadoActual()!=EstadoReserva.EN_DISPUTA)
    throw new ResponseStatusException(HttpStatus.CONFLICT,"El reembolso requiere cancelación o disputa");
+  if(r.getInicioRealEn()!=null||r.getJornadas().stream().anyMatch(j->j.getInicioRealEn()!=null))throw new ResponseStatusException(HttpStatus.CONFLICT,"Servicio iniciado: requiere evaluación manual del importe a reembolsar");
   Transaccion tr=transacciones.findAll().stream().filter(x->x.getReservaId().equals(reservaId)&&
    ("APROBADO".equals(x.getEstado())||"REEMBOLSADO".equals(x.getEstado()))).findFirst()
    .orElseThrow(()->bad("No existe un cobro aprobado"));

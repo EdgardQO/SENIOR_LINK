@@ -43,7 +43,7 @@ public class Reserva {
     @Column(name = "fecha_hora_fin", nullable = false)
     private OffsetDateTime fechaHoraFin;
 
-    @Column(name = "total_horas", nullable = false, precision = 4, scale = 2)
+    @Column(name = "total_horas", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalHoras;
 
     @Column(name = "tarifa_por_hora", nullable = false, precision = 10, scale = 2)
@@ -79,6 +79,14 @@ public class Reserva {
 
     @Column(name = "actualizado_en", nullable = false)
     private OffsetDateTime actualizadoEn = OffsetDateTime.now();
+
+    @OneToMany(mappedBy="reserva",cascade=CascadeType.ALL)
+    @OrderBy("fechaHoraInicio ASC")
+    private List<ReservaJornada> jornadas=new ArrayList<>();
+    public List<ReservaJornada> getJornadas(){return jornadas;}
+    public void agregarJornada(OffsetDateTime inicio,OffsetDateTime fin){
+        jornadas.add(new ReservaJornada(this,inicio,fin));
+    }
 
     public void agregarServicio(Servicio servicio, BigDecimal horas) {
         ReservaServicio item = new ReservaServicio();

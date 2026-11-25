@@ -21,7 +21,7 @@ public class ReservaServicio {
     @JoinColumn(name = "servicio_id", nullable = false)
     private Servicio servicio;
 
-    @Column(name = "horas", nullable = false, precision = 4, scale = 2)
+    @Column(name = "horas", nullable = false, precision = 10, scale = 2)
     private BigDecimal horas;
 
     public Long getId() { return id; }

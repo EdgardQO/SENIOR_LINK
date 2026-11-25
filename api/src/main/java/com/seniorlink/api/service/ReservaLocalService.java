@@ -17,9 +17,16 @@ public class ReservaLocalService {
  private static final ZoneId LIMA=ZoneId.of("America/Lima");
  private static final Set<EstadoReserva> FIRMES=EnumSet.of(EstadoReserva.CONFIRMADA,EstadoReserva.EN_PROGRESO);
  public record IntervaloOcupado(OffsetDateTime inicio,OffsetDateTime fin){}
+ private List<IntervaloOcupado> intervalos(Reserva r,boolean soloActivas){
+  if(r.getJornadas().isEmpty())return List.of(new IntervaloOcupado(r.getFechaHoraInicio(),r.getFechaHoraFin()));
+  return r.getJornadas().stream().filter(j->!soloActivas||Set.of("PROGRAMADA","EN_PROGRESO").contains(j.getEstado()))
+   .filter(j->!Set.of("CANCELADA","EXPIRADA").contains(j.getEstado()))
+   .map(j->new IntervaloOcupado(j.getFechaHoraInicio(),j.getFechaHoraFin())).toList();
+ }
+ private boolean cruza(IntervaloOcupado j,OffsetDateTime i,OffsetDateTime f){return j.inicio().isBefore(f)&&j.fin().isAfter(i);}
  private List<Reserva> ocupacion(String dni,OffsetDateTime inicio,OffsetDateTime fin,Long excluir){
   return reservas.ocupacion(dni,inicio,fin,excluir==null?-1L:excluir,OffsetDateTime.now(),FIRMES,
-   EstadoReserva.PENDIENTE_PAGO,EstadoReserva.EN_DISPUTA,EstadoReserva.COMPLETADA,EstadoReserva.CANCELADA);
+   EstadoReserva.PENDIENTE_PAGO,EstadoReserva.EN_DISPUTA,EstadoReserva.COMPLETADA,EstadoReserva.CANCELADA).stream().filter(r->intervalos(r,true).stream().anyMatch(j->cruza(j,inicio,fin))).toList();
  }
  private OffsetDateTime antesDe(OffsetDateTime limite,OffsetDateTime inicio){
   return limite.isBefore(inicio)?limite:inicio;
@@ -43,10 +50,13 @@ public class ReservaLocalService {
    EstadoReserva.CONFIRMADA,EstadoReserva.EN_PROGRESO,EstadoReserva.PENDIENTE_CONFIRMACION,EstadoReserva.COMPLETADA,EstadoReserva.EN_DISPUTA);
   for(Reserva r:reservas.reservasAdultoEnDia(dni,desde,hasta,excluir==null?-1L:excluir,estados)){
    if(plazoVencido(r,ahora))continue;
-   OffsetDateTime ri=r.getFechaHoraInicio(),rf=r.getFechaHoraFin();
+   for(IntervaloOcupado j:intervalos(r,false)){
+   if(!cruza(j,desde,hasta))continue;
+   OffsetDateTime ri=j.inicio(),rf=j.fin();
    if(ri.isBefore(fin)&&rf.isAfter(inicio))
     throw new ResponseStatusException(HttpStatus.CONFLICT,"El adulto mayor ya tiene otra reserva en ese horario");
    duracion=duracion.plus(Duration.between(ri.isBefore(desde)?desde:ri,rf.isAfter(hasta)?hasta:rf));
+   }
   }
   if(duracion.compareTo(Duration.ofHours(8))>0)
    throw new ResponseStatusException(HttpStatus.CONFLICT,"El adulto mayor supera las ocho horas acumuladas de acompañamiento del día "+i.toLocalDate());
@@ -73,7 +83,7 @@ public class ReservaLocalService {
   Usuario u=usuarios.findById(dni).orElseThrow(()->bad("Acompañante no encontrado"));
   if(!"ACOMPANANTE".equals(rol(u))||!Boolean.TRUE.equals(u.getEstaActivo())||!u.isFotoVerificada())throw no();
   List<IntervaloOcupado> resultado=new ArrayList<>();
-  ocupacion(dni,inicio,fin,null).forEach(r->resultado.add(new IntervaloOcupado(r.getFechaHoraInicio(),r.getFechaHoraFin())));
+  ocupacion(dni,inicio,fin,null).forEach(r->intervalos(r,true).stream().filter(j->cruza(j,inicio,fin)).forEach(resultado::add));
   bloqueos.findByAcompananteDni(dni).stream().filter(b->b.getFechaHoraInicio().isBefore(fin)&&b.getFechaHoraFin().isAfter(inicio))
    .forEach(b->resultado.add(new IntervaloOcupado(b.getFechaHoraInicio(),b.getFechaHoraFin())));
   return resultado.stream().sorted(Comparator.comparing(IntervaloOcupado::inicio)).toList();
@@ -100,13 +110,17 @@ public class ReservaLocalService {
   this.servicios=servicios;this.configuraciones=configuraciones;this.vinculos=vinculos;this.parentescos=parentescos;
   this.horarios=horarios;this.bloqueos=bloqueos;this.historial=historial;this.valoraciones=valoraciones;this.resenas=resenas;
  }
+ public record JornadaInput(OffsetDateTime inicio,OffsetDateTime fin){}
+ public record JornadaVista(Long id,OffsetDateTime inicio,OffsetDateTime fin,String estado){}
  public record NuevaReserva(String adultoMayorDni,String acompananteDni,Long servicioId,
-  OffsetDateTime inicio,OffsetDateTime fin,String direccion,String indicaciones){}
+  OffsetDateTime inicio,OffsetDateTime fin,String direccion,String indicaciones,List<JornadaInput> jornadas){
+  public NuevaReserva(String a,String b,Long c,OffsetDateTime i,OffsetDateTime f,String d,String e){this(a,b,c,i,f,d,e,null);}
+ }
  public record ReservaVista(Long id,String estado,String adultoMayorDni,String adultoMayorNombre,
   String solicitanteDni,String acompananteDni,String acompananteNombre,
   OffsetDateTime inicio,OffsetDateTime fin,OffsetDateTime venceAceptacionEn,
   OffsetDateTime vencePagoEn,BigDecimal montoTotal,BigDecimal tarifaHora,String direccion,
-  String solicitanteNombre,String adultoMayorFotoUrl,String acompananteFotoUrl,String solicitanteFotoUrl,OpinionVista valoracion){}
+  String solicitanteNombre,String adultoMayorFotoUrl,String acompananteFotoUrl,String solicitanteFotoUrl,OpinionVista valoracion,List<JornadaVista> jornadas,BigDecimal totalHoras,BigDecimal subtotal,BigDecimal comision){}
  public record AcompananteVista(String dni,String nombre,BigDecimal tarifaHora,String carrera,
   Integer ciclo,String biografia,String institucion,BigDecimal promedioCalificacion,
   Integer totalCalificaciones,String fotoUrl,List<OpinionVista> resenas){}
@@ -160,7 +174,7 @@ public class ReservaLocalService {
    acomp.getDni(),acomp.getNombres()+" "+acomp.getApellidos(),
    r.getFechaHoraInicio(),r.getFechaHoraFin(),r.getVenceAceptacionEn(),
    r.getVencePagoEn(),r.getMontoTotal(),r.getTarifaPorHora(),r.getDireccionEncuentro(),
-   solicitante.getNombres()+" "+solicitante.getApellidos(),fotoUrl(r,a),fotoUrl(r,acomp),fotoUrl(r,solicitante),opinionReserva(r.getId()));
+   solicitante.getNombres()+" "+solicitante.getApellidos(),fotoUrl(r,a),fotoUrl(r,acomp),fotoUrl(r,solicitante),opinionReserva(r.getId()),r.getJornadas().stream().map(j->new JornadaVista(j.getId(),j.getFechaHoraInicio(),j.getFechaHoraFin(),j.getEstado())).toList(),r.getTotalHoras(),r.getSubtotal(),r.getComisionPlataforma());
  }
  private String fotoUrl(Reserva r,Usuario u){
   return u.getFotoPerfilRuta()==null?null:"/api/v1/reservas/"+r.getId()+"/participantes/"+u.getDni()+"/foto";
@@ -179,6 +193,8 @@ public class ReservaLocalService {
   throw no();
  }
  public void cambiar(Reserva r,EstadoReserva e,String motivo,Usuario usuario){
+  if(Set.of(EstadoReserva.CANCELADA,EstadoReserva.EXPIRADA,EstadoReserva.RECHAZADA).contains(e))
+   r.getJornadas().stream().filter(j->"PROGRAMADA".equals(j.getEstado())||"EN_PROGRESO".equals(j.getEstado())).forEach(j->j.setEstado(e==EstadoReserva.EXPIRADA?"EXPIRADA":"CANCELADA"));
   r.setEstadoActual(e);r.setActualizadoEn(OffsetDateTime.now());reservas.save(r);
   HistorialEstadoReserva h=new HistorialEstadoReserva();
   h.setReserva(r);h.setEstado(e);h.setMotivoODetalle(motivo);h.setCambiadoPor(usuario);historial.save(h);
@@ -200,7 +216,7 @@ public class ReservaLocalService {
  }
  public ReservaVista crear(String dni,NuevaReserva input){
   Usuario solicitante=actor(dni);
-  if(input==null||input.inicio()==null||input.fin()==null||input.servicioId()==null
+  if(input==null||input.servicioId()==null
    ||input.adultoMayorDni()==null||input.acompananteDni()==null||input.direccion()==null
    ||input.direccion().isBlank()||input.direccion().length()>1000)throw bad("Datos de reserva incompletos");
   Usuario adulto=usuarios.findById(input.adultoMayorDni()).orElseThrow(()->bad("Adulto mayor inexistente"));
@@ -214,16 +230,22 @@ public class ReservaLocalService {
   Usuario acomp=usuarios.bloquear(input.acompananteDni()).orElseThrow(()->bad("Acompañante no encontrado"));
   if(!"ACOMPANANTE".equals(rol(acomp))||!Boolean.TRUE.equals(acomp.getEstaActivo())||!acomp.isFotoVerificada())throw bad("Acompañante no disponible");
   ConfiguracionReservas c=cfg();
-  long minutos=Duration.between(input.inicio().toInstant(),input.fin().toInstant()).toMinutes();
-  if(minutos<c.getMinutosDuracionMinima()||minutos>Math.min(480,c.getMinutosDuracionMaxima())||
-   Duration.between(input.inicio().toInstant(),input.fin().toInstant()).toSeconds()!=minutos*60)
-   throw bad("La duración debe estar entre "+c.getMinutosDuracionMinima()+" y "+Math.min(480,c.getMinutosDuracionMaxima())+" minutos por jornada");
-  if(Duration.between(Instant.now(),input.inicio().toInstant()).toMinutes()<60)
-   throw bad("La reserva requiere al menos 1 hora de anticipación");
-  if(!input.inicio().isAfter(OffsetDateTime.now()))throw bad("La reserva debe comenzar en el futuro");
+  List<JornadaInput> jornadas=input.jornadas()==null||input.jornadas().isEmpty()?new ArrayList<>(List.of(new JornadaInput(input.inicio(),input.fin()))):new ArrayList<>(input.jornadas());
+  if(jornadas.size()>365||jornadas.stream().anyMatch(j->j==null||j.inicio()==null||j.fin()==null))throw bad("Jornadas inválidas (máximo 365)");
+  jornadas.sort(Comparator.comparing(JornadaInput::inicio));
   bloquearAdulto(adulto.getDni());
-  validarHorario(acomp.getDni(),input.inicio(),input.fin(),null);
-  validarLimiteAdulto(adulto.getDni(),input.inicio(),input.fin(),null);
+  long minutos=0;
+  Set<LocalDate> fechas=new HashSet<>();
+  for(JornadaInput j:jornadas){
+   long m=Duration.between(j.inicio(),j.fin()).toMinutes();
+   if(m<c.getMinutosDuracionMinima()||m>Math.min(480,c.getMinutosDuracionMaxima())||!Duration.between(j.inicio(),j.fin()).equals(Duration.ofMinutes(m)))throw bad("Duración inválida por jornada");
+   if(j.inicio().isBefore(OffsetDateTime.now().plusMinutes(60)))throw bad("La reserva requiere al menos 1 hora de anticipación");
+   if(!fechas.add(j.inicio().atZoneSameInstant(LIMA).toLocalDate()))throw bad("No repitas fechas dentro de la misma contratación");
+   validarHorario(acomp.getDni(),j.inicio(),j.fin(),null);
+   validarLimiteAdulto(adulto.getDni(),j.inicio(),j.fin(),null);
+   minutos+=m;
+  }
+  OffsetDateTime primero=jornadas.getFirst().inicio(),ultimo=jornadas.getLast().fin();
   PerfilAcompanante perfil=perfiles.findById(acomp.getDni()).orElseThrow(()->bad("Perfil incompleto"));
   BigDecimal tarifa=perfil.getTarifaActualPorHora();
   if(tarifa==null||tarifa.compareTo(c.getTarifaMinimaHora())<0||tarifa.compareTo(c.getTarifaMaximaHora())>0)
@@ -235,11 +257,12 @@ public class ReservaLocalService {
   BigDecimal comision=subtotal.multiply(c.getPorcentajeComision()).divide(BigDecimal.valueOf(100),2,RoundingMode.HALF_UP);
   Reserva r=new Reserva();
   r.setCliente(adulto);r.setAdultoMayor(adulto);r.setSolicitante(solicitante);
-  r.setAcompanante(acomp);r.setFechaHoraInicio(input.inicio());r.setFechaHoraFin(input.fin());
+  r.setAcompanante(acomp);r.setFechaHoraInicio(primero);r.setFechaHoraFin(ultimo);
+  if(jornadas.size()>1)jornadas.forEach(j->r.agregarJornada(j.inicio(),j.fin()));
   r.setTarifaPorHora(tarifa);r.setTotalHoras(horas);r.setSubtotal(subtotal);
   r.setMontoDescuento(BigDecimal.ZERO);r.setComisionPlataforma(comision);
   r.setMontoTotal(subtotal.add(comision));r.setDireccionEncuentro(input.direccion().trim());
-  r.setIndicacionesAdicionales(input.indicaciones());r.setVenceAceptacionEn(antesDe(OffsetDateTime.now().plusMinutes(c.getMinutosAceptacion()),input.inicio()));
+  r.setIndicacionesAdicionales(input.indicaciones());r.setVenceAceptacionEn(antesDe(OffsetDateTime.now().plusMinutes(c.getMinutosAceptacion()),primero));
   r.setEstadoActual(EstadoReserva.PENDIENTE_ACEPTACION);
   r.agregarServicio(servicio,horas);
   reservas.saveAndFlush(r);cambiar(r,EstadoReserva.PENDIENTE_ACEPTACION,"Solicitud creada",solicitante);
@@ -261,6 +284,7 @@ public class ReservaLocalService {
   Usuario u=actor(dni),rActor=u;
   Reserva r=bloquearParaAgenda(id);expirar(r);
   OffsetDateTime ahora=OffsetDateTime.now();
+  if(!r.getJornadas().isEmpty()&&Set.of("INICIAR","FINALIZAR","CONFIRMAR").contains(accion))throw bad("Selecciona una jornada individual");
   if(accion.equals("ACEPTAR")||accion.equals("RECHAZAR")){
    if(!dni.equals(r.getAcompanante().getDni()))throw no();
    if(r.getEstadoActual()!=EstadoReserva.PENDIENTE_ACEPTACION)throw new ResponseStatusException(HttpStatus.CONFLICT,"La solicitud no está pendiente");
@@ -269,8 +293,10 @@ public class ReservaLocalService {
     if(!r.getFechaHoraInicio().isAfter(ahora))throw new ResponseStatusException(HttpStatus.CONFLICT,"El horario solicitado ya comenzó");
     String adulto=r.getAdultoMayor()!=null?r.getAdultoMayor().getDni():r.getCliente().getDni();
     bloquearAdulto(adulto);
-    validarHorario(dni,r.getFechaHoraInicio(),r.getFechaHoraFin(),r.getId());
-    validarLimiteAdulto(adulto,r.getFechaHoraInicio(),r.getFechaHoraFin(),r.getId());
+    for(IntervaloOcupado j:intervalos(r,false)){
+     validarHorario(dni,j.inicio(),j.fin(),r.getId());
+     validarLimiteAdulto(adulto,j.inicio(),j.fin(),r.getId());
+    }
     r.setAceptadoEn(ahora);r.setVencePagoEn(antesDe(ahora.plusMinutes(cfg().getMinutosPago()),r.getFechaHoraInicio()));
     cambiar(r,EstadoReserva.PENDIENTE_PAGO,"Aceptada, pendiente de pago",rActor);}
   }else if(accion.equals("INICIAR")){
@@ -309,11 +335,53 @@ public class ReservaLocalService {
   }else throw bad("Acción desconocida");
   return vista(r);
  }
+ public ReservaVista accionJornada(String dni,Long id,Long jornadaId,String accion){
+  Usuario u=actor(dni);Reserva r=bloquearParaAgenda(id);
+  if(!Set.of(EstadoReserva.CONFIRMADA,EstadoReserva.EN_PROGRESO,EstadoReserva.PENDIENTE_CONFIRMACION).contains(r.getEstadoActual()))throw bad("La contratación no está activa");
+  ReservaJornada j=r.getJornadas().stream().filter(x->x.getId().equals(jornadaId)).findFirst().orElseThrow(()->bad("Jornada inexistente"));
+  OffsetDateTime ahora=OffsetDateTime.now();
+  if("INICIAR".equals(accion)){
+   if(!dni.equals(r.getAcompanante().getDni()))throw no();
+   if(!"PROGRAMADA".equals(j.getEstado())||ahora.isBefore(j.getFechaHoraInicio().minusMinutes(cfg().getMinutosInicioAnticipado()))||!ahora.isBefore(j.getFechaHoraFin()))throw bad("No se puede iniciar esta jornada en este momento");
+   if(r.getJornadas().stream().anyMatch(x->"EN_PROGRESO".equals(x.getEstado()))||reservas.existeOtroEnEstado(dni,id,EstadoReserva.EN_PROGRESO))throw bad("Finaliza primero el servicio en progreso");
+   if(ahora.isBefore(j.getFechaHoraInicio())&&!ocupacion(dni,ahora,j.getFechaHoraInicio(),id).isEmpty())throw bad("Inicio anticipado incompatible con otro servicio");
+   j.iniciar(ahora);if(r.getInicioRealEn()==null)r.setInicioRealEn(ahora);
+  }else if("FINALIZAR".equals(accion)){
+   if(!dni.equals(r.getAcompanante().getDni()))throw no();
+   if(!"EN_PROGRESO".equals(j.getEstado()))throw bad("La jornada no está en progreso");
+   j.finalizar(ahora);
+  }else if("CONFIRMAR".equals(accion)){
+   if(!puedePagar(dni,r)&&!("FAMILIAR".equals(rol(u))&&permisoFamiliar(dni,r.getCliente().getDni(),"GESTIONAR")))throw no();
+   if(!"PENDIENTE_CONFIRMACION".equals(j.getEstado()))throw bad("La jornada no espera confirmación");
+   j.confirmar(ahora);
+  }else throw bad("Acción desconocida");
+  actualizarEstadoJornadas(r,ahora,u);
+  return vista(r);
+ }
+ private void actualizarEstadoJornadas(Reserva r,OffsetDateTime ahora,Usuario u){
+  List<ReservaJornada> js=r.getJornadas();
+  EstadoReserva e;
+  if(js.stream().allMatch(j->"COMPLETADA".equals(j.getEstado()))){
+   e=EstadoReserva.COMPLETADA;r.setConfirmadoEn(ahora);
+  }else if(js.stream().anyMatch(j->"EN_PROGRESO".equals(j.getEstado())))e=EstadoReserva.EN_PROGRESO;
+  else if(js.stream().anyMatch(j->"PROGRAMADA".equals(j.getEstado())))e=EstadoReserva.CONFIRMADA;
+  else e=EstadoReserva.PENDIENTE_CONFIRMACION;
+  if(js.stream().allMatch(j->j.getFinRealEn()!=null))r.setFinRealEn(js.stream().map(ReservaJornada::getFinRealEn).max(Comparator.naturalOrder()).orElse(ahora));
+  if(r.getEstadoActual()!=e)cambiar(r,e,"Actualización de jornadas",u);else reservas.save(r);
+ }
  public void procesarPlazos(){
   OffsetDateTime ahora=OffsetDateTime.now();
-  for(Long id:reservas.idsPorEstados(EnumSet.of(EstadoReserva.PENDIENTE_ACEPTACION,EstadoReserva.PENDIENTE_PAGO,EstadoReserva.PENDIENTE_CONFIRMACION))){
+  for(Long id:reservas.idsPorEstados(EnumSet.of(EstadoReserva.PENDIENTE_ACEPTACION,EstadoReserva.PENDIENTE_PAGO,EstadoReserva.PENDIENTE_CONFIRMACION,EstadoReserva.CONFIRMADA,EstadoReserva.EN_PROGRESO))){
     Reserva r=bloquear(id);
     expirar(r);
+    if(!r.getJornadas().isEmpty()){
+     if(Set.of(EstadoReserva.CONFIRMADA,EstadoReserva.EN_PROGRESO,EstadoReserva.PENDIENTE_CONFIRMACION).contains(r.getEstadoActual())){
+      boolean cambio=false;
+      for(ReservaJornada j:r.getJornadas())if("PENDIENTE_CONFIRMACION".equals(j.getEstado())&&j.getFinRealEn()!=null&&!ahora.isBefore(j.getFinRealEn().plusHours(cfg().getHorasConfirmacionAutomatica()))){j.confirmar(ahora);cambio=true;}
+      if(cambio)actualizarEstadoJornadas(r,ahora,null);
+     }
+     continue;
+    }
     if(r.getEstadoActual()==EstadoReserva.PENDIENTE_CONFIRMACION &&
        r.getFinRealEn()!=null &&
        !ahora.isBefore(r.getFinRealEn().plusHours(cfg().getHorasConfirmacionAutomatica()))){
@@ -361,9 +429,11 @@ public class ReservaLocalService {
    ||h.horaFin()==null||!h.horaFin().isAfter(h.horaInicio()))throw bad("Horario inválido");
   OffsetDateTime ahora=OffsetDateTime.now();
   for(Reserva r:ocupacion(dni,ahora,ahora.plusYears(10),null)){
-   ZonedDateTime i=r.getFechaHoraInicio().atZoneSameInstant(LIMA),f=r.getFechaHoraFin().atZoneSameInstant(LIMA);
+   for(IntervaloOcupado j:intervalos(r,true)){
+   ZonedDateTime i=j.inicio().atZoneSameInstant(LIMA),f=j.fin().atZoneSameInstant(LIMA);
    if(!entrada.stream().anyMatch(h->h.diaSemana()==i.getDayOfWeek().getValue()&&!i.toLocalTime().isBefore(h.horaInicio())&&!f.toLocalTime().isAfter(h.horaFin())))
     throw new ResponseStatusException(HttpStatus.CONFLICT,"No puedes retirar un horario que contiene una reserva aceptada");
+  }
   }
   horarios.deleteByAcompananteDni(dni);horarios.flush();
   Usuario u=usuarios.getReferenceById(dni);
