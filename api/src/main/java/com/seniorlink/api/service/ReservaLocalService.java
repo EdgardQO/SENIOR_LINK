@@ -29,15 +29,17 @@ public class ReservaLocalService {
  private final DisponibilidadAcompananteRepository horarios;
  private final BloqueoDisponibilidadRepository bloqueos;
  private final HistorialEstadoReservaRepository historial;
+ private final ValoracionRepository valoraciones;
+ private final ResenaRepository resenas;
 
  public ReservaLocalService(ReservaRepository reservas,UsuarioRepository usuarios,
   PerfilAcompananteRepository perfiles,ServicioRepository servicios,
   ConfiguracionReservasRepository configuraciones,VinculacionFamiliarAdultoRepository vinculos,
   ParentescoRepository parentescos,DisponibilidadAcompananteRepository horarios,BloqueoDisponibilidadRepository bloqueos,
-  HistorialEstadoReservaRepository historial){
+  HistorialEstadoReservaRepository historial,ValoracionRepository valoraciones,ResenaRepository resenas){
   this.reservas=reservas;this.usuarios=usuarios;this.perfiles=perfiles;
   this.servicios=servicios;this.configuraciones=configuraciones;this.vinculos=vinculos;this.parentescos=parentescos;
-  this.horarios=horarios;this.bloqueos=bloqueos;this.historial=historial;
+  this.horarios=horarios;this.bloqueos=bloqueos;this.historial=historial;this.valoraciones=valoraciones;this.resenas=resenas;
  }
  public record NuevaReserva(String adultoMayorDni,String acompananteDni,Long servicioId,
   OffsetDateTime inicio,OffsetDateTime fin,String direccion,String indicaciones){}
@@ -48,7 +50,8 @@ public class ReservaLocalService {
   String solicitanteNombre,String adultoMayorFotoUrl,String acompananteFotoUrl,String solicitanteFotoUrl){}
  public record AcompananteVista(String dni,String nombre,BigDecimal tarifaHora,String carrera,
   Integer ciclo,String biografia,String institucion,BigDecimal promedioCalificacion,
-  Integer totalCalificaciones,String fotoUrl){}
+  Integer totalCalificaciones,String fotoUrl,List<OpinionVista> resenas){}
+ public record OpinionVista(short puntuacion,String comentario,OffsetDateTime creadoEn){}
  public record Horario(short diaSemana,LocalTime horaInicio,LocalTime horaFin){}
  public record VinculoVista(Long id,String familiarDni,String familiarNombre,
   String adultoMayorDni,String adultoMayorNombre,String estado,
@@ -252,13 +255,27 @@ public class ReservaLocalService {
    }
   }
  }
+ @Transactional(readOnly=true)
+ public List<OpinionVista> opiniones(String dni){
+  Map<Long,OpinionVista> porReserva=new LinkedHashMap<>();
+  for(Valoracion v:valoraciones.resenasDeReservas(dni,EstadoReserva.COMPLETADA))
+   porReserva.put(v.getReserva().getId(),new OpinionVista(v.getPuntuacion(),v.getComentario(),v.getCreadoEn()));
+  for(Resena r:resenas.resenasDeReservas(dni,EstadoReserva.COMPLETADA))
+   porReserva.putIfAbsent(r.getReserva().getId(),new OpinionVista(r.getCalificacion(),r.getComentario(),r.getCreadoEn()));
+  return porReserva.values().stream().sorted(Comparator.comparing(OpinionVista::creadoEn).reversed()).toList();
+ }
+ @Transactional(readOnly=true)
  public List<AcompananteVista> acompanantes(){
-  return perfiles.findAll().stream().filter(p->Boolean.TRUE.equals(p.getUsuario().getEstaActivo()) && p.getUsuario().isFotoVerificada())
-   .map(p->new AcompananteVista(p.getUsuario().getDni(),p.getUsuario().getNombres()+" "+p.getUsuario().getApellidos(),
-    p.getTarifaActualPorHora(),p.getCarrera(),p.getCiclo(),p.getBiografia(),
-    p.getInstitucionAliada()==null?null:p.getInstitucionAliada().getNombre(),
-    p.getPromedioCalificacion(),p.getTotalCalificaciones(),
-    "/api/v1/usuarios/"+p.getUsuario().getDni()+"/foto")).toList();
+  return perfiles.findAll().stream().filter(p->Boolean.TRUE.equals(p.getUsuario().getEstaActivo()) && p.getUsuario().isFotoVerificada() && "ACOMPANANTE".equals(rol(p.getUsuario())))
+   .map(p->{
+    String dni=p.getUsuario().getDni();
+    List<OpinionVista> opiniones=opiniones(dni);
+    BigDecimal promedio=opiniones.isEmpty()?null:BigDecimal.valueOf(opiniones.stream().mapToInt(OpinionVista::puntuacion).sum()).divide(BigDecimal.valueOf(opiniones.size()),2,RoundingMode.HALF_UP);
+    return new AcompananteVista(dni,p.getUsuario().getNombres()+" "+p.getUsuario().getApellidos(),
+     p.getTarifaActualPorHora(),p.getCarrera(),p.getCiclo(),p.getBiografia(),
+     p.getInstitucionAliada()==null?null:p.getInstitucionAliada().getNombre(),
+     promedio,opiniones.size(),"/api/v1/usuarios/"+dni+"/foto",opiniones);
+   }).toList();
  }
  public List<Servicio> servicios(){return servicios.findAll().stream().filter(s->Boolean.TRUE.equals(s.getEstaActivo())).toList();}
  public List<Horario> disponibilidad(String dni){return horarios.findByAcompananteDniAndEstaActivoTrue(dni).stream()
