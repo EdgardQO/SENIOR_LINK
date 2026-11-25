@@ -37,6 +37,7 @@ export function clearSession() {
   window.localStorage.removeItem(AUTH_KEY);
 }
 export function homeForRole(role) { return ROLE_PATHS[role] || '/login'; }
+export function landingForRole(role) { return role === 'FAMILIAR' ? '/familiar/vinculaciones' : homeForRole(role); }
 export function saveSession(data, remember) {
   if (!data?.accessToken || !ROLE_PATHS[data.rolNombre] ||
       !/^\d{8}$/.test(String(data.dni || '')) ||
@@ -50,7 +51,7 @@ export function saveSession(data, remember) {
     rolNombre: data.rolNombre,
     nombres: data.nombres || ''
   }));
-  return homeForRole(data.rolNombre);
+  return landingForRole(data.rolNombre);
 }
 export async function fetchProfile(session) {
   const res = await fetch(API_URL + '/api/v1/usuarios/' + encodeURIComponent(session.dni), {
