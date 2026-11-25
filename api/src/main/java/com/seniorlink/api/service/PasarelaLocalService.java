@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import java.math.*;
-import java.security.SecureRandom;
 import java.time.*;
 import java.util.*;
 
@@ -30,7 +29,6 @@ public class PasarelaLocalService {
  private final PagoRepository pagos;
  private final ReservaLocalService motor;
  private final PasswordEncoder encoder;
- private final SecureRandom aleatorio=new SecureRandom();
  public PasarelaLocalService(UsuarioRepository usuarios,TarjetaRepository tarjetas,
   TokenTarjetaRepository tokens,MetodoPagoRepository metodos,ReservaRepository reservas,
   TransaccionRepository transacciones,MovimientoTarjetaRepository movimientos,
@@ -59,49 +57,50 @@ public class PasarelaLocalService {
   actor(dni);
   return metodos.findByUsuarioDniAndActivoTrue(dni).stream().map(this::vista).toList();
  }
- private String numero(){
-  for(int n=0;n<50;n++){
-   String v=String.format("DEMO-%08d",aleatorio.nextInt(100_000_000));
-   if(!tarjetas.findByNumeroTarjeta(v).isPresent())return v;
-  }
-  throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,"No se pudo generar tarjeta de prueba");
+ private String normalizarTitular(String nombre){
+  return java.text.Normalizer.normalize(nombre.trim(),java.text.Normalizer.Form.NFD)
+   .replaceAll("\\p{M}+","").replaceAll("\\s+"," ").toUpperCase(Locale.ROOT);
  }
  public MetodoVista agregar(String dni,NuevaTarjeta req){
   Usuario u=actor(dni);
-  if(req==null||req.nombreTitular()==null||req.nombreTitular().isBlank()||
-   req.nombreTitular().length()>150||req.tipo()==null||
-   !(req.tipo().equals("DEBITO")||req.tipo().equals("CREDITO"))||
-   req.mesVencimiento()==null||req.anioVencimiento()==null||
-   req.mesVencimiento()<1||req.mesVencimiento()>12||
-   req.cvv()==null||!req.cvv().matches("[0-9]{3,4}"))
-   throw bad("Datos de tarjeta ficticia inválidos");
-  if(YearMonth.of(req.anioVencimiento(),req.mesVencimiento()).isBefore(YearMonth.now(ZoneId.of("America/Lima"))))
-   throw bad("Tarjeta ficticia vencida");
-  String numero=req.numeroDemo()==null||req.numeroDemo().isBlank()?numero():req.numeroDemo().trim();
-  if(!numero.matches("DEMO-[0-9]{8}"))throw bad("Solo se aceptan tarjetas sintéticas DEMO-########");
-  if(tarjetas.findByNumeroTarjeta(numero).isPresent())
-   throw new ResponseStatusException(HttpStatus.CONFLICT,"Tarjeta demo ya registrada");
-  Tarjeta tarjeta=new Tarjeta();
-  tarjeta.setTitularDni(dni);tarjeta.setNombreTitular(req.nombreTitular().trim());
-  tarjeta.setNumeroTarjeta(numero);tarjeta.setCvvHash(encoder.encode(req.cvv()));
-  tarjeta.setMesVencimiento(req.mesVencimiento());tarjeta.setAnioVencimiento(req.anioVencimiento());
-  tarjeta.setTipoTarjeta(req.tipo());tarjeta.setEstado("ACTIVA");
-  // Fondos exclusivamente ficticios y privados de la pasarela.
-  if(req.tipo().equals("DEBITO"))tarjeta.setSaldo(new BigDecimal("500.00"));
-  else tarjeta.setLimiteCredito(new BigDecimal("1000.00"));
-  tarjetas.saveAndFlush(tarjeta);
+  if(req==null||req.numeroDemo()==null||!req.numeroDemo().trim().matches("DEMO-[0-9]{8}")||
+   req.nombreTitular()==null||req.nombreTitular().isBlank()||req.nombreTitular().length()>150||
+   req.tipo()==null||!Set.of("DEBITO","CREDITO").contains(req.tipo())||
+   req.mesVencimiento()==null||req.anioVencimiento()==null||req.mesVencimiento()<1||req.mesVencimiento()>12||
+   req.anioVencimiento()<2026||req.anioVencimiento()>2199||req.cvv()==null||!req.cvv().matches("[0-9]{3,4}"))
+   throw bad("Introduce únicamente los datos de una tarjeta de simulación registrada");
+  Tarjeta tarjeta=tarjetas.bloquearPorNumero(req.numeroDemo().trim()).orElseThrow(()->bad("No se pudo validar la tarjeta"));
+  // El catálogo de la pasarela es independiente de los métodos guardados.
+  if(!dni.equals(tarjeta.getTitularDni())||
+   !normalizarTitular(req.nombreTitular()).equals(normalizarTitular(tarjeta.getNombreTitular()))||
+   !req.tipo().equals(tarjeta.getTipoTarjeta())||
+   !req.mesVencimiento().equals(tarjeta.getMesVencimiento())||
+   !req.anioVencimiento().equals(tarjeta.getAnioVencimiento())||
+   !encoder.matches(req.cvv(),tarjeta.getCvvHash()))
+   throw bad("No se pudo validar la tarjeta");
+  if(!"ACTIVA".equals(tarjeta.getEstado()))throw bad("La tarjeta no está activa");
+  if(YearMonth.of(tarjeta.getAnioVencimiento(),tarjeta.getMesVencimiento()).isBefore(YearMonth.now(ZoneId.of("America/Lima"))))
+   throw bad("La tarjeta está vencida");
+  for(TokenTarjeta existente:tokens.findByTarjetaIdAndActivoTrue(tarjeta.getId())){
+   if(metodos.findByToken(existente.getToken()).filter(MetodoPago::isActivo).isPresent())
+    throw new ResponseStatusException(HttpStatus.CONFLICT,"Esta tarjeta ya está guardada");
+   existente.setActivo(false);tokens.save(existente);
+  }
   UUID token=UUID.randomUUID();
-  TokenTarjeta vínculo=new TokenTarjeta();vínculo.setToken(token);
-  vínculo.setTarjeta(tarjeta);tokens.save(vínculo);
+  TokenTarjeta vinculo=new TokenTarjeta();vinculo.setToken(token);
+  vinculo.setTarjeta(tarjeta);tokens.saveAndFlush(vinculo);
   MetodoPago m=new MetodoPago();m.setUsuario(u);m.setToken(token);
-  m.setUltimosCuatro(numero.substring(numero.length()-4));m.setTipo(req.tipo());
+  String numero=tarjeta.getNumeroTarjeta();
+  m.setUltimosCuatro(numero.substring(numero.length()-4));m.setTipo(tarjeta.getTipoTarjeta());
   metodos.saveAndFlush(m);return vista(m);
  }
  public void quitar(String dni,UUID metodoId){
   actor(dni);
   MetodoPago m=metodos.findByIdAndUsuarioDniAndActivoTrue(metodoId,dni).orElseThrow(this::no);
+  TokenTarjeta vinculo=tokens.findById(m.getToken()).orElseThrow(this::no);
+  tarjetas.bloquear(vinculo.getTarjeta().getId()).orElseThrow(this::no);
   m.setActivo(false);metodos.save(m);
-  tokens.findById(m.getToken()).ifPresent(t->{t.setActivo(false);tokens.save(t);});
+  vinculo.setActivo(false);tokens.save(vinculo);
  }
  public Resultado pagar(String dni,Long reservaId,PagoRequest req){
   actor(dni);
@@ -127,7 +126,8 @@ public class PasarelaLocalService {
    pagos.findByReservaId(reservaId).filter(p->p.getMpEstado()==EstadoPasarelaPago.APROBADO).isPresent())
    throw new ResponseStatusException(HttpStatus.CONFLICT,"Reserva ya pagada");
   Tarjeta t=tarjetas.bloquear(vinculo.getTarjeta().getId()).orElseThrow(this::no);
-  if(!dni.equals(t.getTitularDni()))throw no();
+  if(!dni.equals(t.getTitularDni())||!t.getNumeroTarjeta().matches("DEMO-[0-9]{8}"))throw no();
+  if(r.getMontoTotal()==null||r.getMontoTotal().signum()<=0)throw bad("Importe de reserva inválido");
   String rechazo=null;
   if(!"ACTIVA".equals(t.getEstado()))rechazo="TARJETA_INACTIVA";
   else if(YearMonth.of(t.getAnioVencimiento(),t.getMesVencimiento()).isBefore(YearMonth.now(ZoneId.of("America/Lima"))))
@@ -165,7 +165,7 @@ public class PasarelaLocalService {
  }
  public Resultado reembolsar(String adminDni,Long reservaId){
   Usuario admin=usuarios.findById(adminDni).orElseThrow(this::no);
-  if(!"ADMINISTRADOR".equals(admin.getRol().getNombre()))throw no();
+  if(!Boolean.TRUE.equals(admin.getEstaActivo())||!"ADMINISTRADOR".equals(admin.getRol().getNombre()))throw no();
   Reserva r=motor.bloquearParaAgenda(reservaId);
   if(r.getEstadoActual()!=EstadoReserva.CANCELADA && r.getEstadoActual()!=EstadoReserva.EN_DISPUTA)
    throw new ResponseStatusException(HttpStatus.CONFLICT,"El reembolso requiere cancelación o disputa");
