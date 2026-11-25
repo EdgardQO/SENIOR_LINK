@@ -246,6 +246,10 @@ function createUserModal(root: HTMLElement, initialRole: string, refresh: () => 
     if(key==='correoElectronico')input.autocomplete='email';
     commonGrid.append(element);
   }
+  const photoField=field('foto','Fotografía de perfil obligatoria','file',true);
+  const photoInput=photoField.querySelector('input')!;
+  photoInput.accept='image/jpeg,image/png,image/webp';
+  commonGrid.append(photoField);
   commonSection.append(commonGrid);
   const profileSection=node('section','','admin-create-section');
   const profileHeading=node('h3','03 · Información del perfil');
@@ -335,12 +339,18 @@ function createUserModal(root: HTMLElement, initialRole: string, refresh: () => 
       const profile:AnyRecord={};
       for(const [key] of PROFILE_FIELDS[role])if('profile_'+key in vals)profile[key]=vals['profile_'+key];
       if(role==='ACOMPANANTE'&&vals.profile_institucionRuc)profile.institucionRuc=vals.profile_institucionRuc;
+      const foto=photoInput.files?.[0];
+      if(!foto || foto.size===0 || foto.size>5*1024*1024) throw new Error('Selecciona una fotografía de hasta 5 MB.');
+      const multipart=new FormData();
+      multipart.append('foto',foto);
       if(role==='ADMINISTRADOR'||role==='SOPORTE'){
         Object.assign(data,profile);
-        await adminRequest('/personal',{method:'POST',body:JSON.stringify(data)});
+        multipart.append('datos',new Blob([JSON.stringify(data)],{type:'application/json'}));
+        await adminRequest('/personal',{method:'POST',body:multipart});
       }else{
         data[PROFILE_KEY[role]]=profile;
-        await adminRequest('/usuarios',{method:'POST',body:JSON.stringify(data)});
+        multipart.append('datos',new Blob([JSON.stringify(data)],{type:'application/json'}));
+        await adminRequest('/usuarios',{method:'POST',body:multipart});
       }
       await refresh();
       busy=false;close();status(root,'Cuenta de '+LABELS[role].toLowerCase()+' creada correctamente.');
