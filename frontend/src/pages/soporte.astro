@@ -1,32 +1,49 @@
 ---
 import RoleLayout from '../layouts/RoleLayout.astro';
 ---
-<RoleLayout role="SOPORTE" label="Soporte" description="Accede a tu información de trabajo y al centro de atención.">
-  <section id="herramientas" class="dashboard-grid" aria-label="Herramientas del perfil">
-    <article class="dashboard-card"><span class="card-symbol" aria-hidden="true">◷</span><h3>Mi turno</h3><p>Consulta el turno asignado.</p></article>
-<article class="dashboard-card"><span class="card-symbol" aria-hidden="true">☎</span><h3>Mi extensión</h3><p>Consulta tu extensión telefónica.</p></article>
-<article class="dashboard-card"><span class="card-symbol" aria-hidden="true">▤</span><h3>Incidencias</h3><p>El módulo de tickets estará disponible próximamente.</p></article>
-  </section>
-  <section id="mi-perfil">
-    <div class="section-heading"><h2>Mi información</h2><small>Datos de tu cuenta</small></div>
-    <div class="profile-box">
-      <div class="profile-grid">
-        <div><div class="profile-key">Nombre completo</div><div class="profile-value" data-field="usuario.nombreCompleto">Cargando...</div></div>
-        <div><div class="profile-key">Correo electrónico</div><div class="profile-value" data-field="usuario.correoElectronico">Cargando...</div></div>
-        <div><div class="profile-key">DNI</div><div class="profile-value" data-field="usuario.dni">Cargando...</div></div>
-        <div><div class="profile-key">Teléfono</div><div class="profile-value" data-field="usuario.telefono">Cargando...</div></div>
-        <div><div class="profile-key">Turno</div><div class="profile-value" data-field="soporte.turno">Cargando...</div></div>
-<div><div class="profile-key">Extensión telefónica</div><div class="profile-value" data-field="soporte.extensionTelefonica">Cargando...</div></div>
-<div><div class="profile-key">Casos atendidos</div><div class="profile-value" data-field="soporte.casosAtendidos">Cargando...</div></div>
-      </div>
-      <p class="profile-note">Esta información proviene de tu perfil registrado en SeniorLink.</p>
-    </div>
-  </section>
-  
+<RoleLayout role="SOPORTE" label="Soporte" description="Supervisa las incidencias y consulta tu información de trabajo.">
+ <section class="support-home">
+  <div class="section-heading"><h2>Resumen de incidencias</h2><small>Todos los casos de soporte</small></div>
+  <div class="dashboard-grid">
+   <article class="dashboard-card"><h3>Incidencias abiertas</h3><strong id="support-abiertas">—</strong><a href="/soporte/incidencias?estado=ABIERTA">Revisar casos pendientes</a></article>
+   <article class="dashboard-card"><h3>Incidencias resueltas</h3><strong id="support-resueltas">—</strong><a href="/soporte/incidencias?estado=RESUELTA">Ver casos resueltos</a></article>
+   <article class="dashboard-card"><h3>Total de incidencias</h3><strong id="support-total">—</strong><a href="/soporte/incidencias">Ver todas</a></article>
+  </div>
+  <p id="support-resumen-status" role="status" aria-live="polite"></p>
+  <div class="section-heading"><h2>Información de trabajo</h2></div>
+  <div class="dashboard-grid">
+   <article class="dashboard-card"><h3>Mi turno</h3><p data-field="soporte.turno">Cargando...</p><a href="/soporte/mi-perfil">Consultar perfil</a></article>
+   <article class="dashboard-card"><h3>Extensión telefónica</h3><p data-field="soporte.extensionTelefonica">Cargando...</p><a href="/soporte/mi-perfil">Consultar perfil</a></article>
+  </div>
+  <div class="section-heading"><h2>Incidencias abiertas recientes</h2><a href="/soporte/incidencias?estado=ABIERTA">Gestionar incidencias</a></div>
+  <div id="support-recientes" class="local-list" aria-live="polite">Consultando incidencias…</div>
+ </section>
 </RoleLayout>
+<style>
+.support-home .dashboard-card strong{display:block;color:#087a70;font-size:2rem;margin-top:12px}
+.support-home a{color:#087a70;font-weight:600;text-decoration:underline;text-underline-offset:3px}
+.support-home .dashboard-card a{display:inline-block;margin-top:12px}
+.support-home a:focus-visible{outline:2px solid #087a70;outline-offset:3px}
+</style>
 <script>
-  import { renderProfileFields } from '../lib/profile-fields';
-  document.addEventListener('seniorlink:profile', (event: Event) => {
-    renderProfileFields((event as CustomEvent).detail);
-  }, { once: true });
+ import {apiLocal,horaLocal} from '../lib/local-api';
+ import {renderProfileFields} from '../lib/profile-fields';
+ type Incidencia={id:number,reservaId:number,estado:string,creadoEn:string,descripcion:string};
+ async function resumen(){
+  const list=document.querySelector<HTMLElement>('#support-recientes')!;
+  try{
+   const datos:Incidencia[]=await apiLocal('/incidencias');
+   const abiertas=datos.filter(i=>i.estado==='ABIERTA');
+   document.querySelector('#support-abiertas')!.textContent=String(abiertas.length);
+   document.querySelector('#support-resueltas')!.textContent=String(datos.filter(i=>i.estado==='RESUELTA').length);
+   document.querySelector('#support-total')!.textContent=String(datos.length);
+   list.replaceChildren();
+   const recientes=abiertas.sort((a,b)=>Date.parse(b.creadoEn)-Date.parse(a.creadoEn)).slice(0,5);
+   if(!recientes.length)list.textContent='No hay incidencias abiertas.';
+   for(const i of recientes){const card=document.createElement('article');card.className='local-item';const titulo=document.createElement('strong');titulo.textContent='Incidencia #'+i.id+' · Reserva #'+i.reservaId;const desc=document.createElement('p');desc.textContent=i.descripcion;const fecha=document.createElement('p');fecha.textContent=horaLocal(i.creadoEn);const link=document.createElement('a');link.href='/soporte/incidencias?estado=ABIERTA&buscar='+encodeURIComponent(String(i.id));link.textContent='Revisar incidencia';card.append(titulo,desc,fecha,link);list.append(card);}
+  }catch{document.querySelector('#support-resumen-status')!.textContent='No se pudo consultar el resumen de incidencias.';list.textContent='Incidencias no disponibles.';}
+ }
+ document.addEventListener('seniorlink:profile',(e:Event)=>{renderProfileFields((e as CustomEvent).detail);void resumen();},{once:true});
+ if(window.location.hash==='#mi-perfil')window.location.replace('/soporte/mi-perfil');
+ else if(window.location.hash==='#herramientas')window.history.replaceState(null,'','/soporte');
 </script>
