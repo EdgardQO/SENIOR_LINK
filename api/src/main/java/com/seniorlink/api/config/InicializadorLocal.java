@@ -27,6 +27,20 @@ public class InicializadorLocal implements ApplicationRunner {
     throw new IllegalStateException("Catalogo de roles incompatible: "+i);
    }
   }
+  String[] parentescos={"HIJO/A","NIETO/A","HERMANO/A","SOBRINO/A","CONYUGE","PADRE/MADRE","TIO/A","PRIMO/A","YERNO/NUERA","CUIDADOR/A","AMIGO/A","TUTOR/A","OTRO"};
+  for(short i=1;i<=parentescos.length;i++){
+   if(em.find(Parentesco.class,i)==null){
+    Parentesco p=new Parentesco();p.setId(i);p.setNombre(parentescos[i-1]);em.persist(p);
+   }
+  }
+  if(em.createQuery("select count(s) from Servicio s",Long.class).getSingleResult()==0){
+   for(String nombre:new String[]{"Acompañamiento en casa","Paseos y actividades","Acompañamiento a citas"}){
+    Servicio s=new Servicio();s.setNombre(nombre);s.setDescripcion("Servicio de acompañamiento seguro");em.persist(s);
+   }
+  }
+  if(em.find(InstitucionAliada.class,"20000000001")==null){
+   InstitucionAliada i=new InstitucionAliada();i.setRuc("20000000001");i.setNombre("Institución Demo SeniorLink");i.setDetallesConvenio("Entidad ficticia local");em.persist(i);
+  }
   if(!configuracion.existsById((short)1)) {
    ConfiguracionReservas c=new ConfiguracionReservas();
    c.setId((short)1); c.setMinutosAceptacion(60); c.setMinutosPago(30);
