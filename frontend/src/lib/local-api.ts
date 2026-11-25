@@ -24,6 +24,10 @@ async function consultarApi(base: string, path: string, options: RequestInit = {
  return res.status===204?null:res.json();
 }
 export function apiLocal(path: string, options: RequestInit = {}) {
+ return consultarApi('/api/v1/operaciones', path, options);
+}
+// Exclusivo de pagos de prueba: no se usa para operaciones reales en VPS.
+export function apiPagoLocal(path: string, options: RequestInit = {}) {
  return consultarApi('/api/v1/local', path, options);
 }
 export function apiSegura(path: string, options: RequestInit = {}) {

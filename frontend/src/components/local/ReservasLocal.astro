@@ -119,7 +119,7 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
  :global(.reserva-persona strong){display:block;overflow-wrap:anywhere}
  </style>
 <script>
- import {apiLocal,horaLocal,importe,sesionRequerida} from '../../lib/local-api';
+ import {apiLocal,apiPagoLocal,horaLocal,importe,sesionRequerida} from '../../lib/local-api';
  import {consultarRecibos,reciboDeReserva,abrirRecibo,botonRecibo,type Recibo} from '../../lib/recibos';
  import {mostrarFotoProtegida,limpiarFoto} from '../../lib/profile-photo';
  const root=document.querySelector<HTMLElement>('[data-reservas-rol]')!;
@@ -146,7 +146,7 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
   todas=await apiLocal('/reservas');
   medios=[];errorMedios=false;
   if(rol==='ADULTO_MAYOR'||rol==='FAMILIAR'){
-   try{medios=await apiLocal('/metodos-pago');}catch(e){errorMedios=true;console.error('Error al consultar métodos de pago',e);}
+   try{if(import.meta.env.DEV)medios=await apiPagoLocal('/metodos-pago');}catch(e){errorMedios=true;console.error('Error al consultar métodos de pago',e);}
   }
   try{await cargarRecibos();}catch(e){console.error('No se pudieron consultar recibos',e);}
   renderReservas();
@@ -207,16 +207,19 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
    if((rol==='ADULTO_MAYOR'||rol==='FAMILIAR')&&b.estado==='PENDIENTE_CONFIRMACION')accion('Confirmar servicio','confirmar');
    if(['PENDIENTE_ACEPTACION','PENDIENTE_PAGO','CONFIRMADA','EN_PROGRESO','PENDIENTE_CONFIRMACION'].includes(b.estado) && rol!=='ADMINISTRADOR')
     accion('Cancelar reserva','cancelar');
-   if(rol==='ADMINISTRADOR' && (b.estado==='CANCELADA'||b.estado==='EN_DISPUTA')){
+   if(import.meta.env.DEV && rol==='ADMINISTRADOR' && (b.estado='CANCELADA'||b.estado==='EN_DISPUTA')){
     const refund=nuevo('button','Reembolsar pago') as HTMLButtonElement;
     refund.addEventListener('click',async()=>{
      if(!confirm('¿Registrar el reembolso de esta reserva?'))return;
-     try{const res=await apiLocal('/admin/reservas/'+b.id+'/reembolsar',{method:'POST'});
+     try{const res=await apiPagoLocal('/admin/reservas/'+b.id+'/reembolsar',{method:'POST'});
       estado.textContent='Resultado del reembolso: '+res.estado;await refrescar();
      }catch(e){estado.textContent=e instanceof Error?e.message:String(e);}
     });acciones.append(refund);
    }
-   if((rol==='ADULTO_MAYOR'||rol==='FAMILIAR')&&b.estado==='PENDIENTE_PAGO'){
+   if((rol==='ADULTO_MAYOR'||rol==='FAMILIAR')&&b.estado==='PENDIENTE_PAGO'&&!import.meta.env.DEV){
+    acciones.append(nuevo('p','Pago en línea no disponible en este entorno. No introduzcas datos de tarjetas.'));
+   }
+   if((rol==='ADULTO_MAYOR'||rol==='FAMILIAR')&&b.estado==='PENDIENTE_PAGO'&&import.meta.env.DEV){
     const pago=document.createElement('form');pago.className='local-form local-checkout';
     const titulo=nuevo('h3','SeniorLink Pay · Resumen del pago');
     const total=nuevo('strong',importe(b.montoTotal));total.className='checkout-total';
@@ -240,7 +243,7 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
      enviando=true;btn.disabled=true;sel.disabled=true;cvv.disabled=true;
      try{
       mensaje.textContent='Procesando el pago…';
-      const res=await apiLocal('/reservas/'+b.id+'/pagar',{method:'POST',body:JSON.stringify({
+      const res=await apiPagoLocal('/reservas/'+b.id+'/pagar',{method:'POST',body:JSON.stringify({
        metodoId:sel.value,claveIdempotencia:clave,cvv:cvv.value
       })});
       cvv.value='';

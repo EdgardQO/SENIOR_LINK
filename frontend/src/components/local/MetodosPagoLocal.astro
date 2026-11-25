@@ -19,7 +19,7 @@
 .pay-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}.pay-brand{font-size:23px;font-weight:750;letter-spacing:-.7px;color:#173d35;margin-bottom:8px}.pay-brand span{color:#087a70}.pay-tag{font-size:12px;color:#52665f;border:1px solid #dce8e3;border-radius:6px;padding:5px 9px}.pay-help{font-size:14px;margin:0 0 24px}.local-card-preview{background:linear-gradient(135deg,#173d35,#087a70);border:1px solid #12695d;box-shadow:0 8px 22px #173d351f}.local-form button{background:#087a70}.local-form button:hover{background:#065e56}#tarjeta-numero-info{color:#52665f;font-size:12px}
 </style>
 <script>
- import {apiLocal} from '../../lib/local-api';
+ import {apiPagoLocal} from '../../lib/local-api';
  const form=document.querySelector<HTMLFormElement>('#demo-card-form')!;
  const list=document.querySelector<HTMLElement>('#demo-card-list')!;
  const estado=document.querySelector<HTMLElement>('#demo-card-status')!;
@@ -27,7 +27,7 @@
  const preview=()=>{const fd=new FormData(form);document.querySelector('#preview-name')!.textContent=String(fd.get('nombreTitular')||'TITULAR DE LA TARJETA').toUpperCase();const numero=String(fd.get('numeroDemo')||'');document.querySelector('#preview-number')!.textContent='•••• •••• •••• '+(/^DEMO-[0-9]{8}$/.test(numero)?numero.slice(-4):'••••');document.querySelector('#preview-expiry')!.textContent=String(fd.get('mesVencimiento')||'MM').padStart(2,'0')+' / '+String(fd.get('anioVencimiento')||'AAAA');};
  form.addEventListener('input',preview);
  const cargar=async()=>{
-  const datos=await apiLocal('/metodos-pago');
+  const datos=await apiPagoLocal('/metodos-pago');
   list.replaceChildren();
   if(!datos.length){list.textContent='Todavía no has guardado tarjetas.';return;}
   for(const item of datos){
@@ -37,7 +37,7 @@
    const btn=document.createElement('button');btn.type='button';btn.textContent='Quitar';
    btn.addEventListener('click',async()=>{
     if(!confirm('¿Quitar este método de pago?'))return;
-    try{await apiLocal('/metodos-pago/'+item.id,{method:'DELETE'});await cargar();}catch(e){estado.textContent=String(e);}
+    try{await apiPagoLocal('/metodos-pago/'+item.id,{method:'DELETE'});await cargar();}catch(e){estado.textContent=String(e);}
    });row.append(span,btn);list.append(row);
   }
  };
@@ -45,7 +45,7 @@
   e.preventDefault();if(submit.disabled)return;submit.disabled=true;estado.textContent='Validando tarjeta…';
   const fd=new FormData(form);
   try{
-   await apiLocal('/metodos-pago',{method:'POST',body:JSON.stringify({
+   await apiPagoLocal('/metodos-pago',{method:'POST',body:JSON.stringify({
     nombreTitular:String(fd.get('nombreTitular')),tipo:String(fd.get('tipo')),
     numeroDemo:String(fd.get('numeroDemo')).trim(),
     mesVencimiento:Number(fd.get('mesVencimiento')),
@@ -54,5 +54,9 @@
    form.reset();preview();estado.textContent='Tarjeta guardada correctamente.';await cargar();
   }catch(err){estado.textContent=err instanceof Error?err.message:String(err);}finally{(form.elements.namedItem('cvv') as HTMLInputElement).value='';submit.disabled=false;}
  });
- cargar().catch(e=>estado.textContent=String(e));
+ if(!import.meta.env.DEV){
+  form.querySelectorAll('input,select,button').forEach(el=>(el as HTMLInputElement).disabled=true);
+  estado.textContent='Los métodos de pago simulados solo están disponibles en localhost. No se admiten tarjetas desde este servidor.';
+  list.textContent='No hay gestión de tarjetas de prueba en este entorno.';
+ }else cargar().catch(e=>estado.textContent=String(e));
 </script>

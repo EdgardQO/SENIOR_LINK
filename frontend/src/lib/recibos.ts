@@ -1,8 +1,8 @@
-import {apiLocal,horaLocal,importe} from './local-api';
+import {apiPagoLocal,horaLocal,importe} from './local-api';
 
 export type Recibo={referencia:string,reservaId:number,estado:string,monto:number|string,moneda:string,fecha:string|null,metodo:string|null,ultimosCuatro:string|null};
 export async function consultarRecibos():Promise<Recibo[]>{
- return await apiLocal('/recibos');
+ return import.meta.env.DEV ? await apiPagoLocal('/recibos') : [];
 }
 export function reciboDeReserva(recibos:Recibo[],id:unknown){
  return recibos.find(r=>Number(r.reservaId)===Number(id));
