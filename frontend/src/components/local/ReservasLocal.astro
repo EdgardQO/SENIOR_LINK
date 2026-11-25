@@ -42,7 +42,7 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
  </form>}
  <p id="reserva-local-status" role="status" aria-live="polite"></p>
  <div id="reserva-local-list" class="local-list"></div>
- {cliente && <p>Modo de prueba: para pagar, registra una tarjeta en <a href={rol==='FAMILIAR'?'/familiar/metodos-pago':'/adulto-mayor/metodos-pago'}>Mis métodos de pago</a>.</p>}
+ {cliente && <p>Para pagar, registra una tarjeta en <a href={rol==='FAMILIAR'?'/familiar/metodos-pago':'/adulto-mayor/metodos-pago'}>Mis métodos de pago</a>.</p>}
 </section>
 <style>
  .companion-picker{position:relative;display:grid;gap:5px;min-width:0}
@@ -157,18 +157,18 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
     const pago=document.createElement('form');pago.className='local-form local-checkout';
     const titulo=nuevo('h3','Resumen del pago');
     const total=nuevo('strong',importe(b.montoTotal));total.className='checkout-total';
-    const aviso=nuevo('p','Pasarela local de prueba. No se realizará ningún cargo real.');
+    const aviso=nuevo('p','Entorno local · Sin cargos reales.');
     const mensaje=nuevo('p','');mensaje.setAttribute('role','status');
     const sel=document.createElement('select');sel.required=true;
     const n=document.createElement('option');n.value='';n.textContent='Seleccionar tarjeta';sel.append(n);
     for(const m of medios){const opt=document.createElement('option');opt.value=m.id;opt.textContent=m.tipo+' '+m.numeroEnmascarado;sel.append(opt);}
-    const cvv=document.createElement('input');cvv.type='password';cvv.placeholder='Código de prueba';cvv.required=true;cvv.pattern='[0-9]{3,4}';cvv.maxLength=4;cvv.inputMode='numeric';cvv.autocomplete='off';cvv.setAttribute('aria-label','Código de seguridad de prueba');
-    sel.setAttribute('aria-label','Método de pago de prueba');
+    const cvv=document.createElement('input');cvv.type='password';cvv.placeholder='Código de seguridad';cvv.required=true;cvv.pattern='[0-9]{3,4}';cvv.maxLength=4;cvv.inputMode='numeric';cvv.autocomplete='off';cvv.setAttribute('aria-label','Código de seguridad');
+    sel.setAttribute('aria-label','Método de pago');
     const btn=nuevo('button','Pagar '+importe(b.montoTotal)) as HTMLButtonElement;btn.type='submit';
     let clave=crypto.randomUUID();let enviando=false;
     pago.append(titulo,total,aviso);
     if(errorMedios)pago.append(nuevo('p','No se pudieron consultar tus métodos de pago. Recarga la página para reintentar.'));
-    else if(!medios.length){const enlace=document.createElement('a');enlace.href=rol==='FAMILIAR'?'/familiar/metodos-pago':'/adulto-mayor/metodos-pago';enlace.textContent='Agregar un método de pago de prueba';pago.append(enlace);}
+    else if(!medios.length){const enlace=document.createElement('a');enlace.href=rol==='FAMILIAR'?'/familiar/metodos-pago':'/adulto-mayor/metodos-pago';enlace.textContent='Agregar un método de pago';pago.append(enlace);}
     else pago.append(sel,cvv,btn,mensaje);
     const renovar=()=>{if(!enviando)clave=crypto.randomUUID();};
     sel.addEventListener('change',renovar);cvv.addEventListener('input',renovar);
@@ -176,13 +176,13 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
      ev.preventDefault();if(enviando||!medios.length)return;
      enviando=true;btn.disabled=true;sel.disabled=true;cvv.disabled=true;
      try{
-      mensaje.textContent='Procesando el pago simulado…';
+      mensaje.textContent='Procesando el pago…';
       const res=await apiLocal('/reservas/'+b.id+'/pagar',{method:'POST',body:JSON.stringify({
        metodoId:sel.value,claveIdempotencia:clave,cvv:cvv.value
       })});
       cvv.value='';
-      if(res.estado==='APROBADO'){estado.textContent='Pago simulado aprobado. Reserva confirmada. Referencia: '+res.transaccionId;await refrescar();}
-      else{const razones:Record<string,string>={FONDOS_INSUFICIENTES:'Fondos de prueba insuficientes.',CVV_INVALIDO:'Código de seguridad incorrecto.',TARJETA_INACTIVA:'Método de pago inactivo.',TARJETA_VENCIDA:'Método de pago vencido.'};mensaje.textContent=razones[res.codigo]||'El pago simulado fue rechazado.';clave=crypto.randomUUID();}
+      if(res.estado==='APROBADO'){estado.textContent='Operación aprobada en entorno local. Reserva confirmada. Referencia: '+res.transaccionId;await refrescar();}
+      else{const razones:Record<string,string>={FONDOS_INSUFICIENTES:'Fondos insuficientes en el entorno local.',CVV_INVALIDO:'Código de seguridad incorrecto.',TARJETA_INACTIVA:'Método de pago inactivo.',TARJETA_VENCIDA:'Método de pago vencido.'};mensaje.textContent=razones[res.codigo]||'No se pudo completar el pago.';clave=crypto.randomUUID();}
      }catch(e){mensaje.textContent=e instanceof Error?e.message:String(e);}
      finally{enviando=false;btn.disabled=false;sel.disabled=false;cvv.disabled=false;}
     });acciones.append(pago);
