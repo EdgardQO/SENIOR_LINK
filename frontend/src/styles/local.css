@@ -42,3 +42,20 @@
 .role-app .local-item form{min-width:0;max-width:100%}
 .role-app .local-actions form input,.role-app .local-actions form select{max-width:100%}
 @media(max-width:640px){.role-app .local-card{padding:16px}.role-app .local-item{padding:14px}.role-app .local-actions{align-items:stretch}.role-app .local-actions>a,.role-app .local-actions>button{flex:1 1 auto}}
+
+/* Recibo compartido por las vistas de reserva, pagos e incidencias. */
+.sl-recibo{position:fixed;inset:0;margin:auto;width:min(480px,calc(100% - 28px));max-height:85dvh;border:1px solid #d5e5df;border-radius:18px;padding:0;background:#fff;color:#173d35;overflow:auto;box-shadow:0 18px 70px #102f3550;font:inherit}
+.sl-recibo::backdrop{background:#102f3570}
+.sl-recibo-header,.sl-recibo-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 22px}
+.sl-recibo-header{border-bottom:1px solid #e4eee9}.sl-recibo-header h2{margin:5px 0 0;font-size:18px;font-weight:650}
+.sl-recibo-brand{font-size:20px;font-weight:750;letter-spacing:-.6px}.sl-recibo-brand span{color:#087a70}
+.sl-recibo-x{font:inherit;font-size:26px;background:transparent;color:#405d55;border:0;border-radius:8px;cursor:pointer;width:40px;height:40px}
+.sl-recibo-body{padding:22px}.sl-recibo-resumen{display:grid;justify-items:center;gap:10px;padding:20px 12px;background:#edf8f3;border-radius:12px;color:#087a70;text-align:center}
+.sl-recibo-resumen[data-reembolsado=true]{background:#eef2f5;color:#405d55}.sl-recibo-resumen span{font-size:30px;font-weight:700}
+.sl-recibo dl{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:14px 12px;margin:22px 0;font-size:13px}
+.sl-recibo dt{color:#52665f}.sl-recibo dd{margin:0;text-align:right;font-weight:600;overflow-wrap:anywhere}
+.sl-recibo-aviso{font-size:11px;margin:0;text-align:center;color:#52665f}
+.sl-recibo-footer{border-top:1px solid #e4eee9;flex-wrap:wrap}.sl-recibo-footer button{display:inline-flex;justify-content:center;align-items:center;gap:8px;min-height:44px;padding:10px 15px;border-radius:9px;font:inherit;font-weight:600;font-size:13px}
+.sl-recibo-exportar{border:1px solid #cbdad5;background:#f3f7f5;color:#60746c;cursor:not-allowed}.sl-recibo-cerrar{border:0;background:#087a70;color:white;cursor:pointer}
+.sl-recibo :is(button):focus-visible{outline:2px solid #087a70;outline-offset:3px}
+@media(max-width:420px){.sl-recibo-header,.sl-recibo-footer,.sl-recibo-body{padding:15px}.sl-recibo-footer button{flex:1 1 auto}}
