@@ -32,15 +32,16 @@ public class AdminGestionController {
     private final RegistroUsuarioService registro;
     private final PersonalInternoService personal;
     private final VinculacionFamiliarAdultoRepository vinculaciones;
+    private final ReservaLocalService agenda;
 
     public AdminGestionController(UsuarioRepository usuarios, ReservaRepository reservas,
             InstitucionAliadaRepository instituciones, DescuentoRepository descuentos,
             HistorialEstadoReservaRepository historial, UsuarioService usuarioService,
             RegistroUsuarioService registro, PersonalInternoService personal,
-            VinculacionFamiliarAdultoRepository vinculaciones) {
+            VinculacionFamiliarAdultoRepository vinculaciones, ReservaLocalService agenda) {
         this.usuarios = usuarios; this.reservas = reservas; this.instituciones = instituciones;
         this.descuentos = descuentos; this.historial = historial; this.usuarioService = usuarioService;
-        this.registro = registro; this.personal = personal; this.vinculaciones = vinculaciones;
+        this.registro = registro; this.personal = personal; this.vinculaciones = vinculaciones; this.agenda = agenda;
     }
 
     public record Resumen(long usuarios, long usuariosActivos, long acompanantes,
@@ -189,7 +190,7 @@ public class AdminGestionController {
     @Transactional
     public ReservaAdmin cambiarEstado(@PathVariable Long id, @RequestBody CambiarEstado dto,
                                       Authentication authentication) {
-        Reserva r = buscarReserva(id);
+        Reserva r = agenda.bloquearParaAgenda(id);
         if (dto == null || dto.estado() == null) throw bad("Indica un estado");
         EstadoReserva estado;
         try { estado = EstadoReserva.desdeValor(dto.estado()); }
@@ -197,8 +198,10 @@ public class AdminGestionController {
         if (estado != EstadoReserva.CANCELADA && estado != EstadoReserva.EN_DISPUTA)
             throw bad("La aprobación de pagos y los estados operativos no se asignan manualmente");
         if (r.getEstadoActual() == estado) return ReservaAdmin.of(r);
-        if (r.getEstadoActual() == EstadoReserva.COMPLETADA || r.getEstadoActual() == EstadoReserva.CANCELADA)
+        if (r.getEstadoActual() == EstadoReserva.COMPLETADA || r.getEstadoActual() == EstadoReserva.CANCELADA || r.getEstadoActual()==EstadoReserva.EXPIRADA || r.getEstadoActual()==EstadoReserva.RECHAZADA)
             throw new ResponseStatusException(HttpStatus.CONFLICT, "No se puede modificar una reserva finalizada");
+        if (estado==EstadoReserva.EN_DISPUTA && !EnumSet.of(EstadoReserva.CONFIRMADA,EstadoReserva.EN_PROGRESO,EstadoReserva.PENDIENTE_CONFIRMACION).contains(r.getEstadoActual()))
+            throw new ResponseStatusException(HttpStatus.CONFLICT,"La reserva no permite una disputa");
         r.setEstadoActual(estado);
         r.setActualizadoEn(OffsetDateTime.now());
         HistorialEstadoReserva h = new HistorialEstadoReserva();
