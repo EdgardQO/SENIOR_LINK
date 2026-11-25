@@ -20,13 +20,20 @@ public class OperacionesController {
  private final ReservaLocalService reservas;
  private final PostServicioLocalService postServicio;
  private final ConfiguracionLocalService configuracion;
+ private final RecibosConsultaService recibos;
+ @org.springframework.beans.factory.annotation.Value("${seniorlink.pagos.simulacion-habilitada:false}") private boolean simulacion;
 
- public OperacionesController(ReservaLocalService reservas, PostServicioLocalService postServicio, ConfiguracionLocalService configuracion) {
+ public OperacionesController(ReservaLocalService reservas, PostServicioLocalService postServicio, ConfiguracionLocalService configuracion, RecibosConsultaService recibos) {
    this.reservas=reservas;
    this.postServicio=postServicio;
-   this.configuracion=configuracion;
+   this.configuracion=configuracion;this.recibos=recibos;
  }
 
+ @GetMapping("/capacidades")
+ public Map<String,Boolean> capacidades(){return Map.of("pagosSimulados",simulacion);}
+ @GetMapping("/recibos")
+ @PreAuthorize("hasAnyRole('ADMINISTRADOR','SOPORTE','ACOMPANANTE','ADULTO_MAYOR','FAMILIAR')")
+ public List<RecibosConsultaService.Recibo> recibos(Authentication auth){return recibos.recibos(auth.getName());}
  @GetMapping("/servicios")
  public List<Servicio> servicios(){return reservas.servicios();}
  @GetMapping("/acompanantes")
