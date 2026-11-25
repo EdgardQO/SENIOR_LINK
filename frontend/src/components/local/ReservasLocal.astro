@@ -7,6 +7,8 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
  <h2>{cliente?'Solicitar acompañamiento':rol==='ACOMPANANTE'?'Solicitudes y agenda':'Reservas registradas'}</h2>
  {cliente && <form id="reserva-local-form" class="local-form">
   {rol==='FAMILIAR' && <label>Adulto mayor autorizado<select name="adultoMayorDni" id="reserva-local-adulto" required><option value="">Selecciona un adulto autorizado</option></select></label>}
+  <label>Buscar acompañante<input id="reserva-local-buscar" type="search" placeholder="Nombre, carrera o institución" autocomplete="off" aria-describedby="reserva-local-resultados"/></label>
+  <p id="reserva-local-resultados" role="status" class="local-muted"></p>
   <label>Acompañante<select name="acompananteDni" id="reserva-local-acompanante" required><option value="">Selecciona un acompañante</option></select></label>
   <section id="reserva-local-ficha" class="local-companion-card" aria-live="polite" hidden>
     <div class="local-companion-heading">
@@ -85,6 +87,7 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
     participante(b.solicitanteDni,b.solicitanteNombre,'Familiar solicitante',Boolean(b.solicitanteFotoUrl));
    div.append(personas);
    div.append(nuevo('p',horaLocal(b.inicio)+' — '+horaLocal(b.fin)+' · '+importe(b.montoTotal)));
+   if(b.direccion)div.append(nuevo('p','Lugar de encuentro: '+b.direccion));
    const acciones=document.createElement('div');acciones.className='local-actions';
    const accion=(nombre:string,ruta:string)=>{
     const btn=nuevo('button',nombre) as HTMLButtonElement;btn.type='button';
@@ -112,24 +115,36 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
     });acciones.append(refund);
    }
    if((rol==='ADULTO_MAYOR'||rol==='FAMILIAR')&&b.estado==='PENDIENTE_PAGO'){
-    const pago=document.createElement('form');pago.className='local-form';
+    const pago=document.createElement('form');pago.className='local-form local-checkout';
+    const titulo=nuevo('h3','Resumen del pago');
+    const total=nuevo('strong',importe(b.montoTotal));total.className='checkout-total';
+    const aviso=nuevo('p','Pasarela local de prueba. No se realizará ningún cargo real.');
+    const mensaje=nuevo('p','');mensaje.setAttribute('role','status');
     const sel=document.createElement('select');sel.required=true;
     const n=document.createElement('option');n.value='';n.textContent='Seleccionar tarjeta';sel.append(n);
     for(const m of medios){const opt=document.createElement('option');opt.value=m.id;opt.textContent=m.tipo+' '+m.numeroEnmascarado;sel.append(opt);}
-    const cvv=document.createElement('input');cvv.type='password';cvv.placeholder='CVV';cvv.required=true;cvv.pattern='[0-9]{3,4}';cvv.autocomplete='off';
+    const cvv=document.createElement('input');cvv.type='password';cvv.placeholder='Código de prueba';cvv.required=true;cvv.pattern='[0-9]{3,4}';cvv.maxLength=4;cvv.inputMode='numeric';cvv.autocomplete='off';cvv.setAttribute('aria-label','Código de seguridad de prueba');
+    sel.setAttribute('aria-label','Método de pago de prueba');
     const btn=nuevo('button','Pagar '+importe(b.montoTotal)) as HTMLButtonElement;btn.type='submit';
-    const clave=crypto.randomUUID();
-    pago.append(sel,cvv,btn);
+    let clave=crypto.randomUUID();let enviando=false;
+    pago.append(titulo,total,aviso);
+    if(!medios.length){const enlace=document.createElement('a');enlace.href=rol==='FAMILIAR'?'/familiar/metodos-pago':'/adulto-mayor/metodos-pago';enlace.textContent='Agregar un método de pago de prueba';pago.append(enlace);}
+    else pago.append(sel,cvv,btn,mensaje);
+    const renovar=()=>{if(!enviando)clave=crypto.randomUUID();};
+    sel.addEventListener('change',renovar);cvv.addEventListener('input',renovar);
     pago.addEventListener('submit',async ev=>{
-     ev.preventDefault();
+     ev.preventDefault();if(enviando||!medios.length)return;
+     enviando=true;btn.disabled=true;sel.disabled=true;cvv.disabled=true;
      try{
-      estado.textContent='Procesando el cobro…';
+      mensaje.textContent='Procesando el pago simulado…';
       const res=await apiLocal('/reservas/'+b.id+'/pagar',{method:'POST',body:JSON.stringify({
        metodoId:sel.value,claveIdempotencia:clave,cvv:cvv.value
       })});
-      cvv.value='';estado.textContent=res.estado==='APROBADO'?'Pago aprobado':'Pago rechazado: '+res.codigo;
-      await refrescar();
-     }catch(e){cvv.value='';estado.textContent=e instanceof Error?e.message:String(e);}
+      cvv.value='';
+      if(res.estado==='APROBADO'){estado.textContent='Pago simulado aprobado. Reserva confirmada. Referencia: '+res.transaccionId;await refrescar();}
+      else{const razones:Record<string,string>={FONDOS_INSUFICIENTES:'Fondos de prueba insuficientes.',CVV_INVALIDO:'Código de seguridad incorrecto.',TARJETA_INACTIVA:'Método de pago inactivo.',TARJETA_VENCIDA:'Método de pago vencido.'};mensaje.textContent=razones[res.codigo]||'El pago simulado fue rechazado.';clave=crypto.randomUUID();}
+     }catch(e){mensaje.textContent=e instanceof Error?e.message:String(e);}
+     finally{enviando=false;btn.disabled=false;sel.disabled=false;cvv.disabled=false;}
     });acciones.append(pago);
    }
    if((rol==='ADULTO_MAYOR'||rol==='FAMILIAR') && b.estado==='COMPLETADA'){
@@ -173,7 +188,20 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
   (async()=>{
    const [personas,servicios]=await Promise.all([apiLocal('/acompanantes'),apiLocal('/servicios')]);
    const acomp=form.querySelector<HTMLSelectElement>('#reserva-local-acompanante')!;
-   for(const x of personas){const opt=document.createElement('option');opt.value=x.dni;opt.textContent=x.nombre+' · '+importe(x.tarifaHora)+'/h';acomp.append(opt);}
+   const buscar=form.querySelector<HTMLInputElement>('#reserva-local-buscar')!;
+   const resultados=form.querySelector<HTMLElement>('#reserva-local-resultados')!;
+   const normalizar=(v:unknown)=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+   const filtrar=()=>{
+    const anterior=acomp.value;
+    const q=normalizar(buscar.value).split(/\s+/).filter(Boolean);
+    const coincidencias=personas.filter((x:any)=>q.every(t=>normalizar([x.nombre,x.carrera,x.institucion].join(' ')).includes(t)));
+    acomp.replaceChildren(new Option('Selecciona un acompañante',''));
+    for(const x of coincidencias)acomp.append(new Option(x.nombre+' · '+importe(x.tarifaHora)+'/h',x.dni));
+    acomp.value=coincidencias.some((x:any)=>x.dni===anterior)?anterior:'';
+    resultados.textContent=coincidencias.length?coincidencias.length+' acompañante(s) disponible(s) en el catálogo':'No se encontraron acompañantes con esos criterios.';
+    if(anterior!==acomp.value)acomp.dispatchEvent(new Event('change'));
+   };
+   buscar.addEventListener('input',filtrar);filtrar();
    const ficha=form.querySelector<HTMLElement>('#reserva-local-ficha')!;
    const foto=form.querySelector<HTMLImageElement>('#reserva-local-foto')!;
    const campo=(id:string,valor:string)=>{const e=form.querySelector<HTMLElement>('#'+id);if(e)e.textContent=valor;};
@@ -222,7 +250,7 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
      acompananteDni:String(fd.get('acompananteDni')),servicioId:Number(fd.get('servicioId')),
      inicio:inicio.toISOString(),fin:fin.toISOString(),
      direccion:String(fd.get('direccion')),indicaciones:String(fd.get('indicaciones')||'')
-    })});form.reset();estado.textContent='Solicitud enviada al acompañante.';await refrescar();
+    })});form.reset();form.querySelector('#reserva-local-buscar')?.dispatchEvent(new Event('input'));form.querySelector('#reserva-local-acompanante')?.dispatchEvent(new Event('change'));estado.textContent='Solicitud enviada al acompañante.';await refrescar();
    }catch(e){estado.textContent=e instanceof Error?e.message:String(e);}
   });
  }
