@@ -6,6 +6,7 @@ import com.seniorlink.api.model.entity.Reserva;
 import com.seniorlink.api.model.enums.EstadoReserva;
 import com.seniorlink.api.service.ReservaService;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,6 +14,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/reservas")
+@PreAuthorize("hasRole('ADMINISTRADOR')")
 public class ReservaController {
 
     private final ReservaService reservaService;
