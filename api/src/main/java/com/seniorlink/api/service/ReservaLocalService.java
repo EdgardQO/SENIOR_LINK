@@ -44,7 +44,8 @@ public class ReservaLocalService {
  public record ReservaVista(Long id,String estado,String adultoMayorDni,String adultoMayorNombre,
   String solicitanteDni,String acompananteDni,String acompananteNombre,
   OffsetDateTime inicio,OffsetDateTime fin,OffsetDateTime venceAceptacionEn,
-  OffsetDateTime vencePagoEn,BigDecimal montoTotal,BigDecimal tarifaHora,String direccion){}
+  OffsetDateTime vencePagoEn,BigDecimal montoTotal,BigDecimal tarifaHora,String direccion,
+  String solicitanteNombre,String adultoMayorFotoUrl,String acompananteFotoUrl,String solicitanteFotoUrl){}
  public record AcompananteVista(String dni,String nombre,BigDecimal tarifaHora,String carrera,
   Integer ciclo,String biografia,String institucion,BigDecimal promedioCalificacion,
   Integer totalCalificaciones,String fotoUrl){}
@@ -90,12 +91,30 @@ public class ReservaLocalService {
  public ReservaVista vista(Reserva r){
   Usuario a=r.getAdultoMayor()!=null?r.getAdultoMayor():r.getCliente();
   Usuario acomp=r.getAcompanante();
+  Usuario solicitante=r.getSolicitante()==null?r.getCliente():r.getSolicitante();
   return new ReservaVista(r.getId(),r.getEstadoActual().name(),a.getDni(),
    a.getNombres()+" "+a.getApellidos(),
    r.getSolicitante()==null?r.getCliente().getDni():r.getSolicitante().getDni(),
    acomp.getDni(),acomp.getNombres()+" "+acomp.getApellidos(),
    r.getFechaHoraInicio(),r.getFechaHoraFin(),r.getVenceAceptacionEn(),
-   r.getVencePagoEn(),r.getMontoTotal(),r.getTarifaPorHora(),r.getDireccionEncuentro());
+   r.getVencePagoEn(),r.getMontoTotal(),r.getTarifaPorHora(),r.getDireccionEncuentro(),
+   solicitante.getNombres()+" "+solicitante.getApellidos(),fotoUrl(r,a),fotoUrl(r,acomp),fotoUrl(r,solicitante));
+ }
+ private String fotoUrl(Reserva r,Usuario u){
+  return u.getFotoPerfilRuta()==null?null:"/api/v1/reservas/"+r.getId()+"/participantes/"+u.getDni()+"/foto";
+ }
+ @Transactional(readOnly=true)
+ public void autorizarFotoParticipante(String dni,Long id,String participante){
+  Reserva r=buscar(id);
+  if(!puedeVer(dni,r))throw no();
+  Usuario adulto=r.getAdultoMayor()!=null?r.getAdultoMayor():r.getCliente();
+  Usuario solicitante=r.getSolicitante()!=null?r.getSolicitante():r.getCliente();
+  Usuario acompanante=r.getAcompanante();
+  if(participante.equals(adulto.getDni())||participante.equals(acompanante.getDni()))return;
+  if(participante.equals(solicitante.getDni()) &&
+   (dni.equals(solicitante.getDni())||dni.equals(adulto.getDni())||dni.equals(acompanante.getDni())||
+    "ADMINISTRADOR".equals(rol(actor(dni)))))return;
+  throw no();
  }
  public void cambiar(Reserva r,EstadoReserva e,String motivo,Usuario usuario){
   r.setEstadoActual(e);r.setActualizadoEn(OffsetDateTime.now());reservas.save(r);
