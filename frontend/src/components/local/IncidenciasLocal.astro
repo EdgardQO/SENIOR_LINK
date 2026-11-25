@@ -43,6 +43,11 @@
 :global(.inc-opcion-vacia){padding:12px;color:#527067;font-size:13px}
 .inc-form .inc-reset{background:#e3f1eb;color:#087a70;border:0;border-radius:8px;padding:11px;font:inherit;cursor:pointer}
 .inc-form button:focus-visible,.inc-tabs button:focus-visible{outline:2px solid #087a70;outline-offset:3px}
+:global(.inc-contacto){display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:10px 0}
+:global(.inc-whatsapp){display:inline-flex;align-items:center;gap:8px;border:1px solid #b9e2cf;border-radius:9px;padding:10px 14px;background:#e5f6eb;color:#11643e;text-decoration:none;font-weight:600;font-size:13px}
+:global(.inc-whatsapp:hover){background:#d1efdc}
+:global(.inc-whatsapp:focus-visible){outline:2px solid #087a70;outline-offset:3px}
+:global(.inc-contacto small){color:#527067}
 #inc-resultados{margin:0;color:#527067;font-size:13px}
 @media(max-width:520px){.inc-form{grid-template-columns:1fr}.inc-tabs button{flex:1 1 auto;justify-content:space-between}}
 </style>
@@ -50,7 +55,7 @@
  import {apiLocal,horaLocal} from '../../lib/local-api';
  const list=document.querySelector<HTMLElement>('#incidencia-local-list')!;
  const estado=document.querySelector<HTMLElement>('#incidencia-local-estado')!;
- type Incidencia={id:number,reservaId:number,reportadoPor:string,descripcion:string,estado:string,resolucion?:string,creadoEn:string};
+ type Incidencia={id:number,reservaId:number,reportadoPor:string,descripcion:string,estado:string,resolucion?:string,creadoEn:string,reportanteNombre?:string|null,reportanteTelefono?:string|null};
  const filtros=document.querySelector<HTMLFormElement>('#inc-filtros-form')!;
  const tabs=Array.from(document.querySelectorAll<HTMLButtonElement>('[data-inc-estado]'));
  const resultados=document.querySelector<HTMLElement>('#inc-resultados')!;
@@ -68,7 +73,7 @@
  let seleccionado:number|null=null;
  let sugerencias:Incidencia[]=[];
  let activo=-1;
- const coincideTexto=(i:Incidencia,q:string[])=>{const texto=normalizar([i.id,'#'+i.id,'incidencia #'+i.id,i.reservaId,'#'+i.reservaId,'reserva #'+i.reservaId,i.reportadoPor,i.descripcion,i.resolucion,i.estado].join(' '));return q.every(t=>texto.includes(t));};
+ const coincideTexto=(i:Incidencia,q:string[])=>{const texto=normalizar([i.id,'#'+i.id,'incidencia #'+i.id,i.reservaId,'#'+i.reservaId,'reserva #'+i.reservaId,i.reportadoPor,i.reportanteNombre,i.descripcion,i.resolucion,i.estado].join(' '));return q.every(t=>texto.includes(t));};
  const coincideFiltros=(i:Incidencia)=>{const f=new FormData(filtros);const desde=String(f.get('desde')||''),hasta=String(f.get('hasta')||''),fecha=fechaLima(i.creadoEn);return (grupo==='TODAS'||i.estado===grupo)&&(!desde||fecha>=desde)&&(!hasta||fecha<=hasta)&&(!desde||!hasta||desde<=hasta);};
  function cerrar(){opciones.hidden=true;buscar.setAttribute('aria-expanded','false');toggle.setAttribute('aria-expanded','false');buscar.removeAttribute('aria-activedescendant');activo=-1;}
  function marcar(n:number){activo=n;Array.from(opciones.querySelectorAll<HTMLElement>('[role=option]')).forEach((el,j)=>el.setAttribute('aria-selected',String(j===n)));if(n>=0){const el=opciones.querySelector<HTMLElement>('#inc-opcion-'+n);if(el){buscar.setAttribute('aria-activedescendant',el.id);el.scrollIntoView({block:'nearest'});}}else buscar.removeAttribute('aria-activedescendant');}
@@ -86,6 +91,16 @@
  toggle.addEventListener('click',()=>{if(!opciones.hidden){cerrar();return;}buscar.focus();abrir(true);});
  buscar.addEventListener('keydown',e=>{if(e.key==='Escape'){cerrar();return;}if(e.key==='Tab'){cerrar();return;}if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();if(opciones.hidden)abrir();if(sugerencias.length)marcar(activo<0?(e.key==='ArrowDown'?0:sugerencias.length-1):(activo+(e.key==='ArrowDown'?1:-1)+sugerencias.length)%sugerencias.length);}else if(e.key==='Enter'&&!opciones.hidden&&activo>=0){e.preventDefault();elegir(sugerencias[activo]);}});
  document.addEventListener('pointerdown',e=>{if(!picker.contains(e.target as Node))cerrar();});
+ function numeroWhatsApp(v?:string|null){
+  const raw=String(v??'').trim();
+  if(!raw||!/^\+?[\d\s().-]+$/.test(raw))return null;
+  let n=raw.replace(/\D/g,'');
+  if(raw.startsWith('+'))return /^[1-9]\d{7,14}$/.test(n)?n:null;
+  if(n.startsWith('00')){n=n.slice(2);return /^[1-9]\d{7,14}$/.test(n)?n:null;}
+  if(/^9\d{8}$/.test(n))return '51'+n;
+  if(/^519\d{8}$/.test(n))return n;
+  return null;
+ }
  const cargar=async()=>{datos=await apiLocal('/incidencias');render();if(!opciones.hidden)abrir();};
  const render=()=>{
   const f=new FormData(filtros);const q=normalizar(f.get('buscar')).split(/\s+/).filter(Boolean);
@@ -100,8 +115,17 @@
    const box=document.createElement('article');box.className='local-item local-booking';
    const title=document.createElement('strong');title.textContent='Incidencia #'+i.id+' · reserva #'+i.reservaId+' · '+i.estado;
    const detalle=document.createElement('p');detalle.textContent=i.descripcion;
-   const meta=document.createElement('p');meta.textContent='Reportada por '+i.reportadoPor+' · '+horaLocal(i.creadoEn);
+   const meta=document.createElement('p');meta.textContent='Reportada por '+(i.reportanteNombre?i.reportanteNombre+' · DNI '+i.reportadoPor:i.reportadoPor)+' · '+horaLocal(i.creadoEn);
    box.append(title,detalle,meta);
+   const contacto=document.createElement('div');contacto.className='inc-contacto';
+   const numero=numeroWhatsApp(i.reportanteTelefono);
+   if(numero){
+    const link=document.createElement('a');link.className='inc-whatsapp';link.target='_blank';link.rel='noopener noreferrer';
+    link.href='https://wa.me/'+numero+'?text='+encodeURIComponent('Hola, te contactamos desde el equipo de soporte de SeniorLink por la incidencia #'+i.id+'.');
+    link.textContent='Contactar por WhatsApp';link.setAttribute('aria-label','Contactar por WhatsApp al usuario que reportó la incidencia '+i.id);
+    contacto.append(link);
+   }else{const aviso=document.createElement('small');aviso.textContent='No hay un número de WhatsApp válido registrado.';contacto.append(aviso);}
+   box.append(contacto);
    if(i.resolucion){const p=document.createElement('p');p.textContent='Resolución: '+i.resolucion;box.append(p);}
    if(i.estado==='ABIERTA'){
     const form=document.createElement('form');form.className='local-form';
