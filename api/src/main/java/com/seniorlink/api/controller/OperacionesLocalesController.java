@@ -116,6 +116,9 @@ public class OperacionesLocalesController {
  @ResponseStatus(HttpStatus.NO_CONTENT)
  @PreAuthorize("hasAnyRole('ADULTO_MAYOR','FAMILIAR')")
  public void quitarMetodo(Authentication auth,@PathVariable UUID id){pagos.quitar(auth.getName(),id);}
+ @GetMapping("/recibos")
+ @PreAuthorize("hasAnyRole('ADULTO_MAYOR','FAMILIAR')")
+ public List<PasarelaLocalService.Recibo> recibos(Authentication auth){return pagos.recibos(auth.getName());}
  @PostMapping("/reservas/{id}/pagar")
  @PreAuthorize("hasAnyRole('ADULTO_MAYOR','FAMILIAR')")
  public PasarelaLocalService.Resultado pagar(Authentication auth,@PathVariable Long id,
