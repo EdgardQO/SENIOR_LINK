@@ -7,7 +7,11 @@
    {['Todas','Abiertas','Resueltas'].map((nombre,i)=><button type="button" data-inc-estado={['TODAS','ABIERTA','RESUELTA'][i]} aria-pressed={i===0?'true':'false'}>{nombre} <span class="inc-count">0</span></button>)}
   </div>
   <form id="inc-filtros-form" class="inc-form">
-   <label class="inc-busqueda">Buscar incidencia<input name="buscar" type="search" placeholder="Número de incidencia, reserva, reportante, descripción o resolución" autocomplete="off"/></label>
+   <div class="inc-busqueda" id="inc-picker">
+    <label for="inc-buscar">Buscar incidencia</label>
+    <div class="inc-picker-field"><input id="inc-buscar" name="buscar" type="text" placeholder="Escribe texto, número o selecciona una incidencia" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="inc-opciones"/><button type="button" id="inc-toggle" aria-label="Mostrar incidencias" aria-controls="inc-opciones" aria-expanded="false"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></div>
+    <div id="inc-opciones" class="inc-opciones" role="listbox" aria-label="Incidencias encontradas" hidden></div>
+   </div>
    <label>Desde<input name="desde" type="date"/></label>
    <label>Hasta<input name="hasta" type="date"/></label>
    <label>Ordenar por<select name="orden"><option value="recientes">Más recientes</option><option value="antiguas">Más antiguas</option><option value="pendientes">Abiertas primero</option></select></label>
@@ -26,7 +30,17 @@
 .inc-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:end;background:#f5faf8;border:1px solid #dce8e3;border-radius:12px;padding:16px}
 .inc-form label{display:grid;gap:6px;font-size:13px;color:#355e53;min-width:0}
 .inc-form input,.inc-form select{width:100%;min-width:0;border:1px solid #cbded6;border-radius:8px;background:white;padding:10px;font:inherit;color:#173d35}
-.inc-busqueda{grid-column:1/-1}
+.inc-busqueda{grid-column:1/-1;position:relative;display:grid;gap:6px;min-width:0}
+.inc-picker-field{position:relative}
+.inc-picker-field input{padding-right:48px}
+.inc-picker-field button{position:absolute;right:4px;top:4px;bottom:4px;width:38px;display:grid;place-items:center;padding:0;border:0;border-radius:7px;background:#e8f3ee;color:#087a70;cursor:pointer}
+.inc-opciones{position:absolute;top:100%;left:0;right:0;z-index:40;max-height:320px;overflow:auto;background:white;border:1px solid #cbded6;border-radius:10px;padding:5px;box-shadow:0 8px 24px #163d3520}
+.inc-opciones[hidden]{display:none}
+:global(.inc-opcion){display:grid;gap:4px;padding:11px;border-radius:7px;cursor:pointer;color:#173d35;overflow-wrap:anywhere}
+:global(.inc-opcion[aria-selected=true]),:global(.inc-opcion:hover){background:#e5f4ee}
+:global(.inc-opcion small){color:#527067;font-size:12px}
+:global(.inc-opcion p){margin:0;font-size:13px;white-space:normal}
+:global(.inc-opcion-vacia){padding:12px;color:#527067;font-size:13px}
 .inc-form .inc-reset{background:#e3f1eb;color:#087a70;border:0;border-radius:8px;padding:11px;font:inherit;cursor:pointer}
 .inc-form button:focus-visible,.inc-tabs button:focus-visible{outline:2px solid #087a70;outline-offset:3px}
 #inc-resultados{margin:0;color:#527067;font-size:13px}
@@ -47,12 +61,37 @@
  const borradores=new Map<number,string>();
  const normalizar=(v:unknown)=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
  const fechaLima=(v:string)=>{if(!Number.isFinite(Date.parse(v)))return '';const partes=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Lima',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(v));const p=Object.fromEntries(partes.map(x=>[x.type,x.value]));return p.year+'-'+p.month+'-'+p.day;};
- const cargar=async()=>{datos=await apiLocal('/incidencias');render();};
+ const picker=document.querySelector<HTMLElement>('#inc-picker')!;
+ const buscar=document.querySelector<HTMLInputElement>('#inc-buscar')!;
+ const opciones=document.querySelector<HTMLElement>('#inc-opciones')!;
+ const toggle=document.querySelector<HTMLButtonElement>('#inc-toggle')!;
+ let seleccionado:number|null=null;
+ let sugerencias:Incidencia[]=[];
+ let activo=-1;
+ const coincideTexto=(i:Incidencia,q:string[])=>{const texto=normalizar([i.id,'#'+i.id,'incidencia #'+i.id,i.reservaId,'#'+i.reservaId,'reserva #'+i.reservaId,i.reportadoPor,i.descripcion,i.resolucion,i.estado].join(' '));return q.every(t=>texto.includes(t));};
+ const coincideFiltros=(i:Incidencia)=>{const f=new FormData(filtros);const desde=String(f.get('desde')||''),hasta=String(f.get('hasta')||''),fecha=fechaLima(i.creadoEn);return (grupo==='TODAS'||i.estado===grupo)&&(!desde||fecha>=desde)&&(!hasta||fecha<=hasta)&&(!desde||!hasta||desde<=hasta);};
+ function cerrar(){opciones.hidden=true;buscar.setAttribute('aria-expanded','false');toggle.setAttribute('aria-expanded','false');buscar.removeAttribute('aria-activedescendant');activo=-1;}
+ function marcar(n:number){activo=n;Array.from(opciones.querySelectorAll<HTMLElement>('[role=option]')).forEach((el,j)=>el.setAttribute('aria-selected',String(j===n)));if(n>=0){const el=opciones.querySelector<HTMLElement>('#inc-opcion-'+n);if(el){buscar.setAttribute('aria-activedescendant',el.id);el.scrollIntoView({block:'nearest'});}}else buscar.removeAttribute('aria-activedescendant');}
+ function elegir(i:Incidencia){seleccionado=i.id;buscar.value='Incidencia #'+i.id+' · Reserva #'+i.reservaId;cerrar();render();buscar.focus();}
+ function abrir(mostrarTodas=false){
+  const q=mostrarTodas||seleccionado!==null?[]:normalizar(buscar.value).split(/\s+/).filter(Boolean);
+  sugerencias=datos.filter(i=>coincideFiltros(i)&&coincideTexto(i,q)).sort((a,b)=>Date.parse(b.creadoEn)-Date.parse(a.creadoEn));
+  opciones.replaceChildren();activo=-1;buscar.removeAttribute('aria-activedescendant');
+  if(!sugerencias.length){const vacio=document.createElement('div');vacio.className='inc-opcion-vacia';vacio.textContent='No se encontraron incidencias.';opciones.append(vacio);}
+  sugerencias.forEach((i,n)=>{const el=document.createElement('div');el.id='inc-opcion-'+n;el.className='inc-opcion';el.setAttribute('role','option');el.setAttribute('aria-selected','false');const title=document.createElement('strong');title.textContent='Incidencia #'+i.id+' · Reserva #'+i.reservaId;const meta=document.createElement('small');meta.textContent=i.estado+' · '+horaLocal(i.creadoEn);const desc=document.createElement('p');desc.textContent=i.descripcion.length>140?i.descripcion.slice(0,140)+'…':i.descripcion;el.append(title,meta,desc);el.addEventListener('pointerdown',e=>e.preventDefault());el.addEventListener('click',()=>elegir(i));opciones.append(el);});
+  opciones.hidden=false;buscar.setAttribute('aria-expanded','true');toggle.setAttribute('aria-expanded','true');
+ }
+ buscar.addEventListener('input',()=>{seleccionado=null;abrir();});
+ buscar.addEventListener('focus',()=>{if(seleccionado===null)abrir();});
+ toggle.addEventListener('click',()=>{if(!opciones.hidden){cerrar();return;}buscar.focus();abrir(true);});
+ buscar.addEventListener('keydown',e=>{if(e.key==='Escape'){cerrar();return;}if(e.key==='Tab'){cerrar();return;}if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();if(opciones.hidden)abrir();if(sugerencias.length)marcar(activo<0?(e.key==='ArrowDown'?0:sugerencias.length-1):(activo+(e.key==='ArrowDown'?1:-1)+sugerencias.length)%sugerencias.length);}else if(e.key==='Enter'&&!opciones.hidden&&activo>=0){e.preventDefault();elegir(sugerencias[activo]);}});
+ document.addEventListener('pointerdown',e=>{if(!picker.contains(e.target as Node))cerrar();});
+ const cargar=async()=>{datos=await apiLocal('/incidencias');render();if(!opciones.hidden)abrir();};
  const render=()=>{
   const f=new FormData(filtros);const q=normalizar(f.get('buscar')).split(/\s+/).filter(Boolean);
   const desde=String(f.get('desde')||''),hasta=String(f.get('hasta')||''),orden=String(f.get('orden')||'');
   for(const tab of tabs){const g=tab.dataset.incEstado;tab.setAttribute('aria-pressed',String(g===grupo));tab.querySelector('.inc-count')!.textContent=String(datos.filter(i=>g==='TODAS'||i.estado===g).length);}
-  const filtradas=datos.filter(i=>{const texto=normalizar([i.id,i.reservaId,i.reportadoPor,i.descripcion,i.resolucion,i.estado].join(' '));const fecha=fechaLima(i.creadoEn);return (grupo==='TODAS'||i.estado===grupo)&&q.every(t=>texto.includes(t))&&(!desde||fecha>=desde)&&(!hasta||fecha<=hasta)&&(!desde||!hasta||desde<=hasta);});
+  const filtradas=datos.filter(i=>coincideFiltros(i)&&(seleccionado!==null?i.id===seleccionado:coincideTexto(i,q)));
   filtradas.sort((a,b)=>{if(orden==='pendientes'&&a.estado!==b.estado)return Number(b.estado==='ABIERTA')-Number(a.estado==='ABIERTA');return orden==='antiguas'?Date.parse(a.creadoEn)-Date.parse(b.creadoEn):Date.parse(b.creadoEn)-Date.parse(a.creadoEn);});
   resultados.textContent=filtradas.length+' de '+datos.length+' incidencias'+(desde&&hasta&&desde>hasta?' · El rango de fechas es inválido.':'');
   list.replaceChildren();
@@ -79,9 +118,9 @@
    }list.append(box);
   }
  };
- for(const tab of tabs)tab.addEventListener('click',()=>{grupo=tab.dataset.incEstado||'TODAS';render();});
+ for(const tab of tabs)tab.addEventListener('click',()=>{grupo=tab.dataset.incEstado||'TODAS';cerrar();render();});
  filtros.addEventListener('submit',e=>e.preventDefault());
- filtros.addEventListener('input',render);
- filtros.addEventListener('reset',()=>{grupo='TODAS';queueMicrotask(render);});
+ filtros.addEventListener('input',e=>{if(e.target!==buscar)cerrar();render();});
+ filtros.addEventListener('reset',()=>{grupo='TODAS';seleccionado=null;cerrar();queueMicrotask(()=>{buscar.value='';render();});});
  cargar().catch(e=>{estado.textContent=String(e);resultados.textContent='No se pudieron cargar las incidencias.';});
 </script>
