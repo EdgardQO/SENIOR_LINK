@@ -12,6 +12,12 @@ const roleHomes: Record<string,string> = {ADMINISTRADOR:'/admin',ADULTO_MAYOR:'/
 const roleHome = roleHomes[role] || '/';
 const adminSection = role === 'ADMINISTRADOR' && Astro.url.pathname !== '/admin';
 const sectionNames: Record<string,string> = {
+  '/adulto-mayor/incidencias':'Mis incidencias',
+  '/familiar/incidencias':'Mis incidencias',
+  '/familiar/acompanantes':'Acompañantes',
+  '/familiar/reservas':'Reservas familiares',
+  '/familiar/metodos-pago':'Métodos de pago',
+  '/familiar/vinculaciones':'Vinculaciones',
   '/soporte/mi-perfil':'Mi perfil',
   '/soporte/incidencias':'Gestionar incidencias',
   '/acompanante/mi-perfil':'Mi perfil',
@@ -34,7 +40,9 @@ const sectionNames: Record<string,string> = {
   '/admin/perfiles/SOPORTE':'Soporte',
   '/admin/perfiles/ADMINISTRADOR':'Administradores'
 };
-const sectionName = sectionNames[Astro.url.pathname] || label;
+const currentRoute = Astro.url.pathname.replace(/\/$/,'') || '/';
+const isHome = currentRoute === roleHome;
+const sectionName = sectionNames[currentRoute] || label;
 ---
 <!doctype html>
 <html lang="es" data-expected-role={role}>
@@ -119,6 +127,7 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
           <a class="sidebar-link" href="/admin/configuracion-reservas"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4M5 5l3 3m8 8 3 3M5 19l3-3m8-8 3-3"/></svg><span>Configuración de reservas</span></a>
           <a class="sidebar-link" href="/admin/incidencias"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 21h20L12 3zM12 9v4m0 4h.01"/></svg><span>Incidencias</span></a>
         </>}
+        {(role === 'ADULTO_MAYOR'||role === 'FAMILIAR') && <a class="sidebar-link" href={roleHome+'/incidencias'}><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="12" width="4" height="6" rx="2"/><rect x="17" y="12" width="4" height="6" rx="2"/><path d="M19 18c0 3-3 3-7 3"/></svg><span>Mis incidencias</span></a>}
         {role === 'SOPORTE' && <a class="sidebar-link" href="/soporte/incidencias"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 21h20L12 3zM12 9v4m0 4h.01"/></svg><span>Gestionar incidencias</span></a>}
         {role !== "ADMINISTRADOR" && <a class="sidebar-link" href={roleHome}><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M9 21v-8h6v8"/></svg><span>Inicio</span></a>}
         <a class="sidebar-link" href={role === "ADMINISTRADOR" ? "/admin/mi-perfil" : (role === "ADULTO_MAYOR" || role === "ACOMPANANTE" || role === "SOPORTE") ? roleHome + "/mi-perfil" : roleHome + "#mi-perfil"}><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Mi perfil</span></a>
@@ -142,9 +151,9 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
       </aside>
       <main class="panel-content" id="inicio">
         <div class="panel-intro">
-          <div><div class="panel-eyebrow">{adminSection ? 'SENIORLINK / ' + sectionName.toUpperCase() : role === 'ADMINISTRADOR' ? 'SENIORLINK / DASHBOARD' : label.toUpperCase() + ' / ' + (Astro.url.pathname.replace(/\/$/,'') === roleHome ? 'INICIO' : sectionName.toUpperCase())}</div><h1>{adminSection ? sectionName : <>¡Hola, <span id="welcome-name">usuario</span>!</>}</h1><p>{description}</p></div>
+          <div><div class="panel-eyebrow">{adminSection ? 'SENIORLINK / ' + sectionName.toUpperCase() : role === 'ADMINISTRADOR' ? 'SENIORLINK / DASHBOARD' : label.toUpperCase() + ' / ' + (Astro.url.pathname.replace(/\/$/,'') === roleHome ? 'INICIO' : sectionName.toUpperCase())}</div><h1>{!isHome ? sectionName : <>Hola, <span id="welcome-name">usuario</span></>}</h1><p>{description}</p></div>
         </div>
-        {!adminSection && (role === 'ADMINISTRADOR' ? (
+        {isHome && (role === 'ADMINISTRADOR' ? (
           <section class="panel-banner admin-photo-banner" aria-label="Bienvenida al panel de administración">
             <div class="admin-banner-content">
               <div class="banner-kicker">CENTRO DE GESTIÓN</div>
@@ -154,7 +163,7 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
           </section>
         ) : (
           <div class="panel-banner">
-            <div><div class="banner-kicker">BIENVENIDO A SENIORLINK</div><h2>Tu espacio de {label.toLowerCase()}</h2><p>Tu información, tus herramientas y tus servicios en un solo lugar.</p></div>
+            <div><div class="banner-kicker">BIENVENIDO A SENIORLINK</div><h2>Tu espacio de {label.toLowerCase()}</h2><p>Consulta tu información y administra tus servicios desde un solo lugar.</p></div>
           </div>
         ))}
         
