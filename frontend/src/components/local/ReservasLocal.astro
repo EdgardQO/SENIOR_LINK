@@ -56,7 +56,7 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
   <p id="agenda-resultados" role="status" aria-live="polite">Cargando solicitudes…</p>
  </section>}
  <div id="reserva-local-list" class="local-list"></div>
- {cliente && <dialog id="recibo-modal" class="recibo-modal" aria-labelledby="recibo-titulo">
+ {<dialog id="recibo-modal" class="recibo-modal" aria-labelledby="recibo-titulo">
   <div class="recibo-header"><div><small>SENIORLINK</small><h2 id="recibo-titulo">Recibo de pago</h2></div><button type="button" class="recibo-cerrar" data-recibo-cerrar aria-label="Cerrar recibo">×</button></div>
   <div class="recibo-contenido">
    <div class="recibo-resumen"><svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg><strong id="recibo-estado"></strong><span id="recibo-total"></span></div>
@@ -152,7 +152,7 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
  let todas:any[]=[];
  let medios:any[]=[];
  let errorMedios=false;
- type Recibo={referencia:string,reservaId:number,estado:string,monto:number|string,moneda:string,fecha:string,metodo:string,ultimosCuatro:string};
+ type Recibo={referencia:string,reservaId:number,estado:string,monto:number|string,moneda:string,fecha:string,metodo:string|null,ultimosCuatro:string|null};
  let recibos:Recibo[]=[];
  const modal=root.querySelector<HTMLDialogElement>('#recibo-modal');
  let focoRecibo:HTMLElement|null=null;
@@ -163,7 +163,7 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
   const reembolsado=r.estado==='REEMBOLSADO';
   campo('estado',reembolsado?'Pago reembolsado':'Pago aprobado');
   campo('total',importe(r.monto));campo('reserva','#'+r.reservaId);campo('fecha',horaLocal(r.fecha));
-  campo('metodo',(r.metodo==='DEBITO'?'Débito':'Crédito')+' · •••• '+r.ultimosCuatro);campo('referencia',r.referencia);
+  campo('metodo',r.metodo&&r.ultimosCuatro?(r.metodo==='DEBITO'?'Débito':'Crédito')+' · •••• '+r.ultimosCuatro:'Pago registrado');campo('referencia',r.referencia);
   modal.querySelector<HTMLElement>('.recibo-resumen')!.dataset.reembolsado=String(reembolsado);
   if(!modal.open){focoRecibo=document.activeElement as HTMLElement;scrollRecibo=document.body.style.overflow;modal.showModal();document.body.style.overflow='hidden';}
  }
