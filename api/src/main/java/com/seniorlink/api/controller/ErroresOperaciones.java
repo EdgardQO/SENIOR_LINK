@@ -11,7 +11,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.dao.DataIntegrityViolationException;
 import java.util.Map;
 
-@RestControllerAdvice(assignableTypes={OperacionesController.class,OperacionesLocalesController.class})
+@RestControllerAdvice(assignableTypes={OperacionesController.class,OperacionesLocalesController.class,IncidenciasConsultaController.class,LiquidacionesConsultaController.class,AdminGestionController.class,ReservaController.class,UsuarioController.class,AuthController.class,PersonalInternoController.class,AcompananteInstitucionController.class,VerificacionController.class})
 public class ErroresOperaciones {
  @ExceptionHandler(ResponseStatusException.class)
  public ResponseEntity<Map<String,Object>> regla(ResponseStatusException e){
