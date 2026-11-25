@@ -84,6 +84,39 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
      }catch(e){cvv.value='';estado.textContent=e instanceof Error?e.message:String(e);}
     });acciones.append(pago);
    }
+   if((rol==='ADULTO_MAYOR'||rol==='FAMILIAR') && b.estado==='COMPLETADA'){
+    const review=document.createElement('form');review.className='local-form';
+    const score=document.createElement('select');
+    for(let n=5;n>=1;n--){const o=document.createElement('option');o.value=String(n);o.textContent=n+' estrellas';score.append(o);}
+    const comment=document.createElement('input');comment.placeholder='Comentario (opcional)';comment.maxLength=1000;
+    const btn=nuevo('button','Enviar valoración') as HTMLButtonElement;btn.type='submit';
+    review.append(score,comment,btn);
+    review.addEventListener('submit',async e=>{
+     e.preventDefault();
+     try{await apiLocal('/reservas/'+b.id+'/valorar',{method:'POST',body:JSON.stringify({
+      puntuacion:Number(score.value),comentario:comment.value
+     })});estado.textContent='Valoración registrada.';review.remove();
+     }catch(err){estado.textContent=err instanceof Error?err.message:String(err);}
+    });acciones.append(review);
+   }
+   if(rol!=='ADMINISTRADOR'&&['CONFIRMADA','EN_PROGRESO','PENDIENTE_CONFIRMACION'].includes(b.estado)){
+    const inc=nuevo('button','Reportar incidencia') as HTMLButtonElement;
+    inc.addEventListener('click',async()=>{
+     const descripcion=prompt('Describe el problema con esta reserva:');
+     if(!descripcion)return;
+     try{await apiLocal('/reservas/'+b.id+'/incidencias',{method:'POST',body:JSON.stringify({descripcion})});
+      estado.textContent='Incidencia enviada a soporte.';await refrescar();
+     }catch(e){estado.textContent=e instanceof Error?e.message:String(e);}
+    });acciones.append(inc);
+   }
+   if(rol==='ADMINISTRADOR'&&b.estado==='COMPLETADA'){
+    const settle=nuevo('button','Registrar liquidación ficticia') as HTMLButtonElement;
+    settle.addEventListener('click',async()=>{
+     try{await apiLocal('/liquidaciones/'+b.id,{method:'POST'});
+      estado.textContent='Liquidación manual registrada.';await refrescar();
+     }catch(e){estado.textContent=e instanceof Error?e.message:String(e);}
+    });acciones.append(settle);
+   }
    div.append(acciones);contenedor.append(div);
   }
  };
