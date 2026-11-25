@@ -1,33 +1,39 @@
 ---
 import RoleLayout from '../layouts/RoleLayout.astro';
 ---
-<RoleLayout role="ADULTO_MAYOR" label="Adulto mayor" description="Un espacio claro para consultar tus datos y organizar tu acompañamiento.">
-  <section id="herramientas" class="dashboard-grid" aria-label="Herramientas del perfil">
-    <article class="dashboard-card"><span class="card-symbol" aria-hidden="true">◯</span><h3>Mis datos</h3><p>Revisa tu información de contacto y residencia.</p></article>
-<article class="dashboard-card"><span class="card-symbol" aria-hidden="true">☎</span><h3>Emergencias</h3><p>Ten disponible la información de tu contacto de emergencia.</p></article>
-<article class="dashboard-card"><span class="card-symbol" aria-hidden="true">♡</span><h3>Acompañamiento</h3><p>La contratación de acompañantes estará disponible próximamente.</p></article>
-  </section>
-  <section id="mi-perfil">
-    <div class="section-heading"><h2>Mi información</h2><small>Datos de tu cuenta</small></div>
-    <div class="profile-box">
-      <div class="profile-grid">
-        <div><div class="profile-key">Nombre completo</div><div class="profile-value" data-field="usuario.nombreCompleto">Cargando...</div></div>
-        <div><div class="profile-key">Correo electrónico</div><div class="profile-value" data-field="usuario.correoElectronico">Cargando...</div></div>
-        <div><div class="profile-key">DNI</div><div class="profile-value" data-field="usuario.dni">Cargando...</div></div>
-        <div><div class="profile-key">Teléfono</div><div class="profile-value" data-field="usuario.telefono">Cargando...</div></div>
-        <div><div class="profile-key">Fecha de nacimiento</div><div class="profile-value" data-field="adultoMayor.fechaNacimiento">Cargando...</div></div>
-<div><div class="profile-key">Dirección</div><div class="profile-value" data-field="adultoMayor.direccionResidencia">Cargando...</div></div>
-<div><div class="profile-key">Contacto de emergencia</div><div class="profile-value" data-field="adultoMayor.contactoEmergencia">Cargando...</div></div>
-<div><div class="profile-key">Teléfono de emergencia</div><div class="profile-value" data-field="adultoMayor.telefonoEmergencia">Cargando...</div></div>
-      </div>
-      <p class="profile-note">Esta información proviene de tu perfil registrado en SeniorLink.</p>
-    </div>
-  </section>
-  
+<RoleLayout role="ADULTO_MAYOR" label="Adulto mayor" description="Organiza tu acompañamiento y consulta el estado de tus servicios.">
+ <section class="adult-home">
+  <div class="section-heading"><h2>Resumen de tus reservas</h2></div>
+  <div class="dashboard-grid">
+   <article class="dashboard-card"><h3>Solicitudes pendientes</h3><strong id="adult-pendientes">—</strong></article>
+   <article class="dashboard-card"><h3>Servicios activos</h3><strong id="adult-activas">—</strong></article>
+   <article class="dashboard-card"><h3>Servicios completados</h3><strong id="adult-completadas">—</strong></article>
+  </div>
+  <p id="adult-resumen-status" role="status"></p>
+  <div class="section-heading"><h2>Accesos directos</h2></div>
+  <div class="dashboard-grid">
+   <article class="dashboard-card"><h3>Encontrar acompañante</h3><p>Consulta perfiles y opiniones.</p><a href="/adulto-mayor/acompanantes">Ver catálogo</a></article>
+   <article class="dashboard-card"><h3>Mis reservas</h3><p>Consulta y administra tus solicitudes.</p><a href="/adulto-mayor/reservas">Ver reservas</a></article>
+   <article class="dashboard-card"><h3>Mi perfil</h3><p>Revisa tus datos personales y fotografía.</p><a href="/adulto-mayor/mi-perfil">Consultar perfil</a></article>
+   <article class="dashboard-card"><h3>Herramientas</h3><p>Accede a tus tarjetas, familiares y contacto de emergencia.</p><a href="/adulto-mayor/herramientas">Abrir herramientas</a></article>
+  </div>
+ </section>
 </RoleLayout>
+<style>
+.adult-home .dashboard-card strong{display:block;color:#087a70;font-size:2rem;margin-top:12px}.adult-home a{display:inline-block;color:#087a70;font-weight:600;margin-top:12px;text-decoration:underline;text-underline-offset:3px}.adult-home a:focus-visible{outline:2px solid #087a70;outline-offset:3px}
+</style>
 <script>
-  import { renderProfileFields } from '../lib/profile-fields';
-  document.addEventListener('seniorlink:profile', (event: Event) => {
-    renderProfileFields((event as CustomEvent).detail);
-  }, { once: true });
+ import {apiLocal} from '../lib/local-api';
+ async function resumen(){
+  try{
+   const reservas=await apiLocal('/reservas');
+   const contar=(estados:string[])=>reservas.filter((r:any)=>estados.includes(r.estado)).length;
+   document.querySelector('#adult-pendientes')!.textContent=String(contar(['PENDIENTE_ACEPTACION','PENDIENTE_PAGO']));
+   document.querySelector('#adult-activas')!.textContent=String(contar(['CONFIRMADA','EN_PROGRESO','PENDIENTE_CONFIRMACION','EN_DISPUTA']));
+   document.querySelector('#adult-completadas')!.textContent=String(contar(['COMPLETADA']));
+  }catch{document.querySelector('#adult-resumen-status')!.textContent='No se pudo consultar el resumen de reservas.';}
+ }
+ document.addEventListener('seniorlink:profile',()=>void resumen(),{once:true});
+ const hash=window.location.hash;
+ if(hash==='#mi-perfil'||hash==='#herramientas')window.location.replace('/adulto-mayor/'+hash.slice(1));
 </script>
