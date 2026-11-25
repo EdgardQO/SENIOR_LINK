@@ -95,7 +95,11 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
  const nuevo=(tag:string,texto:string)=>{const e=document.createElement(tag);e.textContent=texto;return e;};
  const refrescar=async()=>{
   const bookings=await apiLocal('/reservas');
-  const medios=(rol==='ADULTO_MAYOR'||rol==='FAMILIAR')?await apiLocal('/metodos-pago'):[];
+  let medios:any[]=[];
+  let errorMedios=false;
+  if(rol==='ADULTO_MAYOR'||rol==='FAMILIAR'){
+   try{medios=await apiLocal('/metodos-pago');}catch(e){errorMedios=true;console.error('Error al consultar métodos de pago',e);}
+  }
   contenedor.querySelectorAll<HTMLImageElement>('img').forEach(limpiarFoto);
   contenedor.replaceChildren();
   if(!bookings.length){contenedor.textContent='No hay reservas para mostrar.';return;}
@@ -163,7 +167,8 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
     const btn=nuevo('button','Pagar '+importe(b.montoTotal)) as HTMLButtonElement;btn.type='submit';
     let clave=crypto.randomUUID();let enviando=false;
     pago.append(titulo,total,aviso);
-    if(!medios.length){const enlace=document.createElement('a');enlace.href=rol==='FAMILIAR'?'/familiar/metodos-pago':'/adulto-mayor/metodos-pago';enlace.textContent='Agregar un método de pago de prueba';pago.append(enlace);}
+    if(errorMedios)pago.append(nuevo('p','No se pudieron consultar tus métodos de pago. Recarga la página para reintentar.'));
+    else if(!medios.length){const enlace=document.createElement('a');enlace.href=rol==='FAMILIAR'?'/familiar/metodos-pago':'/adulto-mayor/metodos-pago';enlace.textContent='Agregar un método de pago de prueba';pago.append(enlace);}
     else pago.append(sel,cvv,btn,mensaje);
     const renovar=()=>{if(!enviando)clave=crypto.randomUUID();};
     sel.addEventListener('change',renovar);cvv.addEventListener('input',renovar);
