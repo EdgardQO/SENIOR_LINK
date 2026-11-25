@@ -38,6 +38,13 @@ public class OperacionesLocalesController {
  public List<ReservaLocalService.Horario> disponibilidadDe(@PathVariable String dni){
   return reservas.disponibilidad(dni);
  }
+ @GetMapping("/acompanantes/{dni}/ocupacion")
+ @PreAuthorize("hasAnyRole('ADULTO_MAYOR','FAMILIAR','ACOMPANANTE','ADMINISTRADOR')")
+ public List<ReservaLocalService.IntervaloOcupado> ocupacion(@PathVariable String dni,
+  @RequestParam @org.springframework.format.annotation.DateTimeFormat(iso=org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.OffsetDateTime inicio,
+  @RequestParam @org.springframework.format.annotation.DateTimeFormat(iso=org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.OffsetDateTime fin){
+  return reservas.horariosOcupados(dni,inicio,fin);
+ }
  @GetMapping("/mi-disponibilidad")
  @PreAuthorize("hasRole('ACOMPANANTE')")
  public List<ReservaLocalService.Horario> miDisponibilidad(Authentication auth){
