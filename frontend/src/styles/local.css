@@ -1,1 +1,27 @@
 .local-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:24px;max-width:980px;margin:18px 0;box-shadow:0 6px 24px #0f172a09}.local-card h2{font-size:1.25rem;color:#163452;margin:0 0 12px}.local-card p{color:#475569;line-height:1.6}.local-form{display:grid;gap:12px;margin:20px 0}.local-form label{display:grid;gap:5px;color:#213547;font-weight:600}.local-form input,.local-form select,.local-form textarea{width:100%;min-height:42px;border:1px solid #a8bbcb;border-radius:8px;padding:9px 12px;font:inherit;background:#fff;color:#1e293b}.local-form button,.local-item button{background:#136c86;color:white;border:0;border-radius:8px;padding:10px 14px;cursor:pointer;font:inherit;font-weight:600}.local-form button:hover,.local-item button:hover{background:#0c566c}.local-list{display:grid;gap:12px;margin-top:18px}.local-item{border:1px solid #d6e2e8;background:#f8fbfd;border-radius:10px;padding:15px;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px}.local-booking{display:block}.local-booking p{margin:7px 0}.local-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.local-actions form{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.local-actions form input,.local-actions form select{width:auto}.local-day{display:grid;grid-template-columns:1fr 120px 120px}.local-day label{display:flex;align-items:center;gap:5px}.local-day input[type=checkbox]{width:auto;min-height:auto}@media(max-width:640px){.local-card{padding:16px}.local-day{grid-template-columns:1fr 1fr}.local-day label{grid-column:span 2}}
+/* Shared operational panels */
+.local-card{max-width:1120px;border-radius:14px;border-color:#dce8e3;box-shadow:0 3px 14px #153d3010}
+.local-card h2,.local-card h3{color:#173d35;line-height:1.4}
+.local-card h3{font-size:1rem;margin:0 0 12px}
+.local-form input,.local-form select,.local-form textarea{border-color:#cbdad5;border-radius:9px;box-sizing:border-box}
+.local-form input:focus-visible,.local-form select:focus-visible,.local-form textarea:focus-visible,.local-item button:focus-visible{outline:2px solid #087a70;outline-offset:2px}
+.local-form button,.local-item button{background:#087a70}
+.local-form button:hover,.local-item button:hover{background:#065e56}
+.local-form button:disabled,.local-item button:disabled{opacity:.55;cursor:not-allowed}
+.local-item{background:#fff;border-color:#dce8e3;border-radius:12px}
+.local-booking{padding:20px}
+.local-actions{border-top:1px solid #e5eeea;padding-top:14px;margin-top:14px}
+.local-card .local-muted{font-size:.85rem;margin:0;color:#52665f}
+.local-test-notice{background:#f3f8f7;border:1px solid #d5e6e1;border-radius:10px;padding:14px 16px;margin:12px 0 20px}
+.local-test-notice p{margin:5px 0 0;font-size:.9rem}
+.local-payment-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px}
+.local-payment-panel{min-width:0}
+.local-card-preview{background:linear-gradient(135deg,#173d35,#087a70);color:white;border-radius:15px;padding:22px;display:grid;gap:24px;max-width:360px;min-height:145px;box-sizing:border-box}
+.local-card-preview strong{letter-spacing:.08em;font-size:1.1rem}
+.local-card-preview div{display:flex;justify-content:space-between;gap:12px;font-size:.75rem}
+.local-card-preview span{overflow-wrap:anywhere}
+.local-actions .local-checkout{display:grid;width:100%;grid-template-columns:1fr 1fr;gap:12px;padding:16px;border:1px solid #dce8e3;border-radius:12px;background:#f7faf9;box-sizing:border-box}
+.local-checkout h3,.local-checkout p,.local-checkout .checkout-total,.local-checkout a,.local-checkout button{grid-column:1/-1}
+.local-actions .local-checkout input,.local-actions .local-checkout select{width:100%;min-width:0}
+.local-checkout .checkout-total{font-size:1.55rem;color:#173d35}
+@media(max-width:700px){.local-payment-grid,.local-actions .local-checkout{grid-template-columns:1fr}.local-booking{padding:14px}}
