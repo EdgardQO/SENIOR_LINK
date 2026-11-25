@@ -83,7 +83,7 @@ public class FotoPerfilService {
     public void guardar(String dni, MultipartFile archivo) {
         validar(archivo);
         if (!DNI.matcher(dni).matches()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Identificador inválido");
-        Usuario usuario = usuarios.findById(dni).orElseThrow(() ->
+        Usuario usuario = usuarios.bloquear(dni).orElseThrow(() ->
                 new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
         try {
             byte[] datos = archivo.getBytes();
@@ -108,6 +108,7 @@ public class FotoPerfilService {
                 final Path anteriorSegura = vieja;
                 try {
                     usuario.setFotoPerfilRuta(dni + "/" + nombre);
+                    usuario.registrarCambioFoto();
                     usuario.setActualizadoEn(OffsetDateTime.now());
                     usuarios.save(usuario);
                     if (TransactionSynchronizationManager.isSynchronizationActive()) {
