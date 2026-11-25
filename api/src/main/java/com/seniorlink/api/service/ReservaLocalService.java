@@ -45,7 +45,9 @@ public class ReservaLocalService {
   String solicitanteDni,String acompananteDni,String acompananteNombre,
   OffsetDateTime inicio,OffsetDateTime fin,OffsetDateTime venceAceptacionEn,
   OffsetDateTime vencePagoEn,BigDecimal montoTotal,BigDecimal tarifaHora,String direccion){}
- public record AcompananteVista(String dni,String nombre,BigDecimal tarifaHora,String carrera){}
+ public record AcompananteVista(String dni,String nombre,BigDecimal tarifaHora,String carrera,
+  Integer ciclo,String biografia,String institucion,BigDecimal promedioCalificacion,
+  Integer totalCalificaciones,String fotoUrl){}
  public record Horario(short diaSemana,LocalTime horaInicio,LocalTime horaFin){}
  public record VinculoVista(Long id,String familiarDni,String familiarNombre,
   String adultoMayorDni,String adultoMayorNombre,String estado,
@@ -234,7 +236,10 @@ public class ReservaLocalService {
  public List<AcompananteVista> acompanantes(){
   return perfiles.findAll().stream().filter(p->Boolean.TRUE.equals(p.getUsuario().getEstaActivo()))
    .map(p->new AcompananteVista(p.getUsuarioDni(),p.getUsuario().getNombres()+" "+p.getUsuario().getApellidos(),
-    p.getTarifaActualPorHora(),p.getCarrera())).toList();
+    p.getTarifaActualPorHora(),p.getCarrera(),p.getCiclo(),p.getBiografia(),
+    p.getInstitucionAliada()==null?null:p.getInstitucionAliada().getNombre(),
+    p.getPromedioCalificacion(),p.getTotalCalificaciones(),
+    p.getUsuario().getFotoPerfilRuta()==null?null:"/api/v1/usuarios/"+p.getUsuarioDni()+"/foto")).toList();
  }
  public List<Servicio> servicios(){return servicios.findAll().stream().filter(s->Boolean.TRUE.equals(s.getEstaActivo())).toList();}
  public List<Horario> disponibilidad(String dni){return horarios.findByAcompananteDniAndEstaActivoTrue(dni).stream()
