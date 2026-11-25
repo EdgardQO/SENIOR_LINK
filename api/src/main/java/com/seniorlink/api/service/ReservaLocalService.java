@@ -90,7 +90,7 @@ public class ReservaLocalService {
  public record Horario(short diaSemana,LocalTime horaInicio,LocalTime horaFin){}
  public record VinculoVista(Long id,String familiarDni,String familiarNombre,
   String adultoMayorDni,String adultoMayorNombre,String estado,
-  boolean permiteReservar,boolean permitePagar,boolean permiteGestionar){}
+  boolean permiteReservar,boolean permitePagar,boolean permiteGestionar,String parentescoNombre){}
 
  private ResponseStatusException bad(String msg){return new ResponseStatusException(HttpStatus.BAD_REQUEST,msg);}
  private ResponseStatusException no(){return new ResponseStatusException(HttpStatus.FORBIDDEN,"Sin autorización");}
@@ -359,9 +359,9 @@ public class ReservaLocalService {
   return lista.stream().map(this::vistaVinculo).toList();
  }
  private VinculoVista vistaVinculo(VinculacionFamiliarAdulto v){
-  return new VinculoVista(v.getId(),v.getFamiliar().getDni(),v.getFamiliar().getNombres(),
-   v.getAdultoMayor().getDni(),v.getAdultoMayor().getNombres(),v.getEstado(),
-   v.isPermiteReservar(),v.isPermitePagar(),v.isPermiteGestionar());
+  return new VinculoVista(v.getId(),v.getFamiliar().getDni(),v.getFamiliar().getNombres()+" "+v.getFamiliar().getApellidos(),
+   v.getAdultoMayor().getDni(),v.getAdultoMayor().getNombres()+" "+v.getAdultoMayor().getApellidos(),v.getEstado(),
+   v.isPermiteReservar(),v.isPermitePagar(),v.isPermiteGestionar(),v.getParentesco()==null?null:v.getParentesco().getNombre());
  }
  public VinculoVista solicitarVinculo(String dni,String otroDni,Short parentescoId){
   Usuario actor=actor(dni);
