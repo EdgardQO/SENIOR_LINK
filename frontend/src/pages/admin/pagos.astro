@@ -48,7 +48,7 @@ import RoleLayout from '../../layouts/RoleLayout.astro';
 .pagos-filtros{display:grid;grid-template-columns:minmax(240px,2fr) repeat(4,minmax(125px,1fr)) auto;gap:12px;align-items:end;margin:20px 0;padding:18px;background:#f5faf8;border:1px solid #dcece6;border-radius:13px}
 .pagos-filtros label{display:grid;gap:7px;min-width:0;font-size:12px;font-weight:650;color:#345a4d}
 .pagos-filtros input,.pagos-filtros select{width:100%;min-width:0;border:1px solid #cadfd5;background:#fff;border-radius:9px;padding:11px;font:inherit;font-size:12px;color:#173d35}
-.pagos-limpiar{border:0;border-radius:9px;padding:11px 14px;background:#e0f1e9;color:#116553;font:600 12px inherit;cursor:pointer;min-height:41px}
+.pagos-limpiar{border:0;border-radius:9px;padding:11px 14px;background:#e0f1e9;color:#116553;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;min-height:41px}
 .pagos-tabla-wrap{overflow-x:auto}
 :global(.pagos-admin-table){border-collapse:collapse;width:100%;text-align:left;font-size:12px;min-width:880px}
 :global(.pagos-admin-table th),:global(.pagos-admin-table td){padding:14px 12px;border-bottom:1px solid #e0ede7;vertical-align:middle}
@@ -58,6 +58,7 @@ import RoleLayout from '../../layouts/RoleLayout.astro';
 :global(.pagos-persona){display:flex;gap:10px;align-items:center}
 :global(.pagos-avatar){width:38px;height:38px;flex:none;border-radius:50%;background:#def1e8;color:#146b5a;display:grid;place-items:center;font-weight:800;font-size:12px;overflow:hidden}
 :global(.pagos-avatar img){width:100%;height:100%;object-fit:cover;display:block}
+:global(.pagos-avatar img[hidden]){display:none!important}
 :global(.pagos-persona-info){display:grid;gap:2px;min-width:0}
 :global(.pagos-persona-info strong){font-size:12px;color:#183d36;overflow-wrap:anywhere}
 :global(.pagos-persona-info small){font-size:11px;color:#668278}
