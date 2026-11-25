@@ -207,7 +207,7 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
    if((rol==='ADULTO_MAYOR'||rol==='FAMILIAR')&&b.estado==='PENDIENTE_CONFIRMACION')accion('Confirmar servicio','confirmar');
    if(['PENDIENTE_ACEPTACION','PENDIENTE_PAGO','CONFIRMADA','EN_PROGRESO','PENDIENTE_CONFIRMACION'].includes(b.estado) && rol!=='ADMINISTRADOR')
     accion('Cancelar reserva','cancelar');
-   if(import.meta.env.DEV && rol==='ADMINISTRADOR' && (b.estado='CANCELADA'||b.estado==='EN_DISPUTA')){
+   if(import.meta.env.DEV && rol==='ADMINISTRADOR' && (b.estado==='CANCELADA'||b.estado==='EN_DISPUTA')){
     const refund=nuevo('button','Reembolsar pago') as HTMLButtonElement;
     refund.addEventListener('click',async()=>{
      if(!confirm('¿Registrar el reembolso de esta reserva?'))return;
