@@ -191,6 +191,8 @@ public class AdminGestionController {
         EstadoReserva estado;
         try { estado = EstadoReserva.desdeValor(dto.estado()); }
         catch (IllegalArgumentException ex) { throw bad("Estado de reserva inválido"); }
+        if (estado != EstadoReserva.CANCELADA && estado != EstadoReserva.EN_DISPUTA)
+            throw bad("La aprobación de pagos y los estados operativos no se asignan manualmente");
         if (r.getEstadoActual() == estado) return ReservaAdmin.of(r);
         if (r.getEstadoActual() == EstadoReserva.COMPLETADA || r.getEstadoActual() == EstadoReserva.CANCELADA)
             throw new ResponseStatusException(HttpStatus.CONFLICT, "No se puede modificar una reserva finalizada");
