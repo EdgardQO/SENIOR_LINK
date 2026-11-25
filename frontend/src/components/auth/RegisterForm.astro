@@ -703,7 +703,7 @@ g('registerForm')?.addEventListener('submit', async event => {
   button.textContent = 'Creando cuenta...';
   try {
     const datosRegistro = new FormData();
-    datosRegistro.append('datos', JSON.stringify(payload));
+    datosRegistro.append('datos', new Blob([JSON.stringify(payload)], { type: 'application/json' }), 'registro.json');
     datosRegistro.append('foto', foto);
     const response = await fetch(apiUrl + '/api/v1/auth/registro', {
       method: 'POST', body: datosRegistro
