@@ -198,8 +198,38 @@ public class ReservaLocalService {
      "FAMILIAR".equals(rol(u)) && permisoFamiliar(dni,r.getCliente().getDni(),"GESTIONAR")))throw no();
    if(r.getEstadoActual()!=EstadoReserva.PENDIENTE_CONFIRMACION)throw new ResponseStatusException(HttpStatus.CONFLICT,"El servicio no espera confirmación");
    r.setConfirmadoEn(ahora);cambiar(r,EstadoReserva.COMPLETADA,"Servicio confirmado",rActor);
+  }else if(accion.equals("CANCELAR")){
+   String adulto=r.getAdultoMayor()!=null?r.getAdultoMayor().getDni():r.getCliente().getDni();
+   boolean esAcomp=dni.equals(r.getAcompanante().getDni());
+   boolean puede=dni.equals(adulto)||esAcomp||
+    ("FAMILIAR".equals(rol(u))&&permisoFamiliar(dni,adulto,"GESTIONAR"));
+   if(!puede)throw no();
+   if(EnumSet.of(EstadoReserva.COMPLETADA,EstadoReserva.CANCELADA,
+     EstadoReserva.RECHAZADA,EstadoReserva.EXPIRADA).contains(r.getEstadoActual()))
+    throw new ResponseStatusException(HttpStatus.CONFLICT,"La reserva ya terminó");
+   boolean cobrada=EnumSet.of(EstadoReserva.CONFIRMADA,EstadoReserva.EN_PROGRESO,
+     EstadoReserva.PENDIENTE_CONFIRMACION,EstadoReserva.EN_DISPUTA).contains(r.getEstadoActual());
+   cambiar(r,cobrada?EstadoReserva.EN_DISPUTA:EstadoReserva.CANCELADA,
+    cobrada?"Cancelación con pago: requiere evaluación de soporte":"Cancelación sin cobro",rActor);
   }else throw bad("Acción desconocida");
   return vista(r);
+ }
+ public void procesarPlazos(){
+  OffsetDateTime ahora=OffsetDateTime.now();
+  for(Reserva item:reservas.findAll()){
+   if(item.getEstadoActual()==EstadoReserva.PENDIENTE_ACEPTACION ||
+      item.getEstadoActual()==EstadoReserva.PENDIENTE_PAGO ||
+      item.getEstadoActual()==EstadoReserva.PENDIENTE_CONFIRMACION){
+    Reserva r=bloquear(item.getId());
+    expirar(r);
+    if(r.getEstadoActual()==EstadoReserva.PENDIENTE_CONFIRMACION &&
+       r.getFinRealEn()!=null &&
+       !ahora.isBefore(r.getFinRealEn().plusHours(cfg().getHorasConfirmacionAutomatica()))){
+     r.setConfirmadoEn(ahora);
+     cambiar(r,EstadoReserva.COMPLETADA,"Confirmación automática tras 48 horas sin disputa",null);
+    }
+   }
+  }
  }
  public List<AcompananteVista> acompanantes(){
   return perfiles.findAll().stream().filter(p->Boolean.TRUE.equals(p.getUsuario().getEstaActivo()))
