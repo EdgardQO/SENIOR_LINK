@@ -53,6 +53,7 @@
 </style>
 <script>
  import {apiLocal,horaLocal} from '../../lib/local-api';
+ import {consultarRecibos,reciboDeReserva,botonRecibo,type Recibo} from '../../lib/recibos';
  const list=document.querySelector<HTMLElement>('#incidencia-local-list')!;
  const estado=document.querySelector<HTMLElement>('#incidencia-local-estado')!;
  type Incidencia={id:number,reservaId:number,reportadoPor:string,descripcion:string,estado:string,resolucion?:string,creadoEn:string,reportanteNombre?:string|null,reportanteTelefono?:string|null};
@@ -63,6 +64,7 @@
  let grupo=['ABIERTA','RESUELTA'].includes(params.get('estado')||'')?params.get('estado')!:'TODAS';
  (filtros.elements.namedItem('buscar') as HTMLInputElement).value=params.get('buscar')||'';
  let datos:Incidencia[]=[];
+ let recibos:Recibo[]=[];
  const borradores=new Map<number,string>();
  const normalizar=(v:unknown)=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
  const fechaLima=(v:string)=>{if(!Number.isFinite(Date.parse(v)))return '';const partes=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Lima',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(v));const p=Object.fromEntries(partes.map(x=>[x.type,x.value]));return p.year+'-'+p.month+'-'+p.day;};
@@ -101,7 +103,7 @@
   if(/^519\d{8}$/.test(n))return n;
   return null;
  }
- const cargar=async()=>{datos=await apiLocal('/incidencias');render();if(!opciones.hidden)abrir();};
+ const cargar=async()=>{datos=await apiLocal('/incidencias');recibos=await consultarRecibos().catch(e=>{console.error('No se pudieron consultar recibos',e);return [];});render();if(!opciones.hidden)abrir();};
  const render=()=>{
   const f=new FormData(filtros);const q=normalizar(f.get('buscar')).split(/\s+/).filter(Boolean);
   const desde=String(f.get('desde')||''),hasta=String(f.get('hasta')||''),orden=String(f.get('orden')||'');
@@ -125,6 +127,8 @@
     link.textContent='Contactar por WhatsApp';link.setAttribute('aria-label','Contactar por WhatsApp al usuario que reportó la incidencia '+i.id);
     contacto.append(link);
    }else{const aviso=document.createElement('small');aviso.textContent='No hay un número de WhatsApp válido registrado.';contacto.append(aviso);}
+   const recibo=reciboDeReserva(recibos,i.reservaId);
+   if(recibo)contacto.append(botonRecibo(recibo));
    box.append(contacto);
    if(i.resolucion){const p=document.createElement('p');p.textContent='Resolución: '+i.resolucion;box.append(p);}
    if(i.estado==='ABIERTA'){
