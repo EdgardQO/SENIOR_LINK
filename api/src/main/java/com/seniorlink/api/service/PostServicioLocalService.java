@@ -41,11 +41,9 @@ public class PostServicioLocalService {
  @Transactional(readOnly=true)
  public List<ResenaPublica> resenasAcompanante(String dni){
   Usuario acomp=usuarios.findById(dni).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Acompañante no disponible"));
-  if(!esRol(acomp,"ACOMPANANTE")||!Boolean.TRUE.equals(acomp.getEstaActivo())||!acomp.isFotoVerificada())
+  if(!Boolean.TRUE.equals(acomp.getEstaActivo())||!acomp.isFotoVerificada()||!perfiles.existsById(dni))
    throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Acompañante no disponible");
-  return valoraciones.findByAcompananteDni(dni).stream()
-   .filter(v->v.getReserva().getEstadoActual()==EstadoReserva.COMPLETADA && dni.equals(v.getReserva().getAcompanante().getDni()))
-   .sorted(Comparator.comparing(Valoracion::getCreadoEn).reversed())
+  return valoraciones.resenasDeReservas(dni,EstadoReserva.COMPLETADA).stream()
    .map(v->new ResenaPublica(v.getPuntuacion(),v.getComentario(),v.getCreadoEn())).toList();
  }
 
