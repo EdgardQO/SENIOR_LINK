@@ -105,6 +105,10 @@ class FotoPerfilIntegrationTests {
     @Test
     void catalogoAcompanantesIncluyeFotoDatosYAccesoDeLectura() throws IOException {
         registro.registrarConFoto(acompanante(), imagen("png"));
+        var usuario = usuarios.findById("96000002").orElseThrow();
+        assertFalse(usuario.isFotoVerificada());
+        usuario.revisarFoto("VERIFICADO", "96000003", null);
+        usuarios.saveAndFlush(usuario);
         var perfil = reservas.acompanantes().stream()
                 .filter(item -> item.dni().equals("96000002"))
                 .findFirst().orElseThrow();
