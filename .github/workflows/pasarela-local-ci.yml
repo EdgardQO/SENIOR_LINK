@@ -4,6 +4,10 @@ on:
     branches: [dev/pasarela-local]
   workflow_dispatch:
 
+concurrency:
+  group: pasarela-local-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   backend:
     runs-on: ubuntu-latest
