@@ -31,26 +31,13 @@ public class AuthController {
         this.objectMapper = objectMapper;
     }
 
-    @PostMapping("/registro")
-    public ResponseEntity<UsuarioDTO> registrar(@RequestBody RegistroUsuarioDTO request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(registroUsuarioService.registrar(request));
-    }
-
     @PostMapping(value = "/registro", consumes = "multipart/form-data")
     public ResponseEntity<UsuarioDTO> registrarConFoto(
             @RequestPart("datos") String datos,
             @RequestPart("foto") MultipartFile foto) throws com.fasterxml.jackson.core.JsonProcessingException {
         fotos.validar(foto);
         RegistroUsuarioDTO solicitud = objectMapper.readValue(datos, RegistroUsuarioDTO.class);
-        UsuarioDTO usuario = registroUsuarioService.registrar(solicitud);
-        try {
-            fotos.guardar(usuario.dni(), foto);
-        } catch (RuntimeException ex) {
-            // Se evita devolver éxito cuando falta la foto. El alta JSON heredada queda para clientes existentes.
-            throw ex;
-        }
-        return ResponseEntity.status(HttpStatus.CREATED).body(
-            UsuarioDTO.desdeEntidad(registroUsuarioService.buscarUsuario(usuario.dni())));
+        return ResponseEntity.status(HttpStatus.CREATED).body(registroUsuarioService.registrarConFoto(solicitud, foto));
     }
 
     @PostMapping("/login")
