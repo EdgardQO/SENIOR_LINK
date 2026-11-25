@@ -30,6 +30,15 @@ class PasarelaLocalIntegrationTests {
  }
  @Autowired PasarelaLocalService pasarela;
 
+ @Test void rechazaTarjetaNoRegistrada(){
+  registro.registrar(new RegistroUsuarioDTO("95000001","Adulto","Demo",
+   "adulto.it.demo@seniorlink.test","ClaveLocalSolo123",null,"ADULTO_MAYOR",
+   new RegistroUsuarioDTO.AdultoMayor(LocalDate.of(1950,2,5),"Lima","Contacto","900000000",null),null,null));
+  long antes=tarjetas.count();
+  assertThrows(org.springframework.web.server.ResponseStatusException.class,()->pasarela.agregar("95000001",
+   new PasarelaLocalService.NuevaTarjeta("DEMO-99999999","Adulto Demo","DEBITO",(short)12,(short)2090,"123")));
+  assertEquals(antes,tarjetas.count());
+ }
  @Test void pagoSimuladoExitosoYRechazoPorFondosInsuficientes() {
   RegistroUsuarioDTO adulto=new RegistroUsuarioDTO("95000001","Adulto","Demo",
    "adulto.it.demo@seniorlink.test","ClaveLocalSolo123",null,"ADULTO_MAYOR",
