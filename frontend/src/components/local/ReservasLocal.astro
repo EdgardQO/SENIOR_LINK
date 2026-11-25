@@ -1,0 +1,110 @@
+---
+interface Props { rol: 'ADULTO_MAYOR'|'FAMILIAR'|'ACOMPANANTE'|'ADMINISTRADOR' }
+const {rol}=Astro.props;
+const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
+---
+<section class="local-card" data-reservas-rol={rol}>
+ <h2>{cliente?'Solicitar acompañamiento':rol==='ACOMPANANTE'?'Solicitudes y agenda':'Reservas registradas'}</h2>
+ {cliente && <form id="reserva-local-form" class="local-form">
+  {rol==='FAMILIAR' && <label>Adulto mayor autorizado<select name="adultoMayorDni" id="reserva-local-adulto" required><option value="">Selecciona un adulto autorizado</option></select></label>}
+  <label>Acompañante<select name="acompananteDni" id="reserva-local-acompanante" required><option value="">Selecciona un acompañante</option></select></label>
+  <label>Servicio<select name="servicioId" id="reserva-local-servicio" required><option value="">Selecciona un servicio</option></select></label>
+  <label>Inicio<input name="inicio" type="datetime-local" required/></label>
+  <label>Fin<input name="fin" type="datetime-local" required/></label>
+  <label>Dirección de encuentro<input name="direccion" maxlength="1000" required/></label>
+  <label>Indicaciones adicionales<textarea name="indicaciones" rows="2"></textarea></label>
+  <button type="submit">Enviar solicitud</button>
+ </form>}
+ <p id="reserva-local-status" role="status" aria-live="polite"></p>
+ <div id="reserva-local-list" class="local-list"></div>
+ {cliente && <p>Para pagar, registra una tarjeta ficticia en <a href={rol==='FAMILIAR'?'/familiar/metodos-pago':'/adulto-mayor/metodos-pago'}>Mis métodos de pago</a>.</p>}
+</section>
+<script>
+ import {apiLocal,horaLocal,importe,sesionRequerida} from '../../lib/local-api';
+ const root=document.querySelector<HTMLElement>('[data-reservas-rol]')!;
+ const rol=root.dataset.reservasRol!;
+ const estado=root.querySelector<HTMLElement>('#reserva-local-status')!;
+ const contenedor=root.querySelector<HTMLElement>('#reserva-local-list')!;
+ const session=sesionRequerida();
+ const nuevo=(tag:string,texto:string)=>{const e=document.createElement(tag);e.textContent=texto;return e;};
+ const refrescar=async()=>{
+  const bookings=await apiLocal('/reservas');
+  const medios=(rol==='ADULTO_MAYOR'||rol==='FAMILIAR')?await apiLocal('/metodos-pago'):[];
+  contenedor.replaceChildren();
+  if(!bookings.length){contenedor.textContent='No hay reservas para mostrar.';return;}
+  for(const b of bookings){
+   const div=document.createElement('article');div.className='local-item local-booking';
+   div.append(nuevo('strong','#'+b.id+' · '+b.estado.replaceAll('_',' ')));
+   div.append(nuevo('p',b.adultoMayorNombre+' · '+b.acompananteNombre));
+   div.append(nuevo('p',horaLocal(b.inicio)+' — '+horaLocal(b.fin)+' · '+importe(b.montoTotal)));
+   const acciones=document.createElement('div');acciones.className='local-actions';
+   const accion=(nombre:string,ruta:string)=>{
+    const btn=nuevo('button',nombre) as HTMLButtonElement;btn.type='button';
+    btn.addEventListener('click',async()=>{
+     try{estado.textContent='Procesando…';await apiLocal('/reservas/'+b.id+'/'+ruta,{method:'POST'});
+      estado.textContent='Actualización guardada.';await refrescar();
+     }catch(e){estado.textContent=e instanceof Error?e.message:String(e);}
+    });acciones.append(btn);
+   };
+   if(rol==='ACOMPANANTE'){
+    if(b.estado==='PENDIENTE_ACEPTACION'){accion('Aceptar','aceptar');accion('Rechazar','rechazar');}
+    if(b.estado==='CONFIRMADA')accion('Iniciar','iniciar');
+    if(b.estado==='EN_PROGRESO')accion('Finalizar','finalizar');
+   }
+   if((rol==='ADULTO_MAYOR'||rol==='FAMILIAR')&&b.estado==='PENDIENTE_CONFIRMACION')accion('Confirmar servicio','confirmar');
+   if((rol==='ADULTO_MAYOR'||rol==='FAMILIAR')&&b.estado==='PENDIENTE_PAGO'){
+    const pago=document.createElement('form');pago.className='local-form';
+    const sel=document.createElement('select');sel.required=true;
+    const n=document.createElement('option');n.value='';n.textContent='Seleccionar tarjeta ficticia';sel.append(n);
+    for(const m of medios){const opt=document.createElement('option');opt.value=m.id;opt.textContent=m.tipo+' '+m.numeroEnmascarado;sel.append(opt);}
+    const cvv=document.createElement('input');cvv.type='password';cvv.placeholder='CVV ficticio';cvv.required=true;cvv.pattern='[0-9]{3,4}';cvv.autocomplete='off';
+    const btn=nuevo('button','Pagar '+importe(b.montoTotal)) as HTMLButtonElement;btn.type='submit';
+    const clave=crypto.randomUUID();
+    pago.append(sel,cvv,btn);
+    pago.addEventListener('submit',async ev=>{
+     ev.preventDefault();
+     try{
+      estado.textContent='Procesando el cobro ficticio…';
+      const res=await apiLocal('/reservas/'+b.id+'/pagar',{method:'POST',body:JSON.stringify({
+       metodoId:sel.value,claveIdempotencia:clave,cvv:cvv.value
+      })});
+      cvv.value='';estado.textContent=res.estado==='APROBADO'?'Pago aprobado':'Pago rechazado: '+res.codigo;
+      await refrescar();
+     }catch(e){cvv.value='';estado.textContent=e instanceof Error?e.message:String(e);}
+    });acciones.append(pago);
+   }
+   div.append(acciones);contenedor.append(div);
+  }
+ };
+ const form=root.querySelector<HTMLFormElement>('#reserva-local-form');
+ if(form){
+  (async()=>{
+   const [personas,servicios]=await Promise.all([apiLocal('/acompanantes'),apiLocal('/servicios')]);
+   const acomp=form.querySelector<HTMLSelectElement>('#reserva-local-acompanante')!;
+   for(const x of personas){const opt=document.createElement('option');opt.value=x.dni;opt.textContent=x.nombre+' · '+importe(x.tarifaHora)+'/h';acomp.append(opt);}
+   const lista=form.querySelector<HTMLSelectElement>('#reserva-local-servicio')!;
+   for(const s of servicios){const opt=document.createElement('option');opt.value=s.id;opt.textContent=s.nombre;lista.append(opt);}
+   if(rol==='FAMILIAR'){
+    const links=await apiLocal('/vinculos');
+    const adultos=form.querySelector<HTMLSelectElement>('#reserva-local-adulto')!;
+    for(const v of links.filter((v:any)=>v.estado==='ACEPTADO'&&v.permiteReservar)){
+     const opt=document.createElement('option');opt.value=v.adultoMayorDni;opt.textContent=v.adultoMayorNombre;adultos.append(opt);
+    }
+   }
+  })().catch(e=>estado.textContent=String(e));
+  form.addEventListener('submit',async ev=>{
+   ev.preventDefault();const fd=new FormData(form);
+   const inicio=new Date(String(fd.get('inicio'))),fin=new Date(String(fd.get('fin')));
+   if(!Number.isFinite(inicio.getTime())||!Number.isFinite(fin.getTime())){estado.textContent='Fechas inválidas';return;}
+   try{estado.textContent='Registrando solicitud…';
+    await apiLocal('/reservas',{method:'POST',body:JSON.stringify({
+     adultoMayorDni:rol==='FAMILIAR'?String(fd.get('adultoMayorDni')):session.dni,
+     acompananteDni:String(fd.get('acompananteDni')),servicioId:Number(fd.get('servicioId')),
+     inicio:inicio.toISOString(),fin:fin.toISOString(),
+     direccion:String(fd.get('direccion')),indicaciones:String(fd.get('indicaciones')||'')
+    })});form.reset();estado.textContent='Solicitud enviada al acompañante.';await refrescar();
+   }catch(e){estado.textContent=e instanceof Error?e.message:String(e);}
+  });
+ }
+ refrescar().catch(e=>estado.textContent=String(e));
+</script>
