@@ -29,6 +29,15 @@ class AgendaReservasIntegrationTests {
  @Autowired UsuarioRepository usuarios;
  @Autowired ReservaRepository repo;
  @Autowired ReservaLocalService agenda;
+ @Autowired com.seniorlink.api.repository.TarjetaRepository tarjetas;
+ @Autowired org.springframework.security.crypto.password.PasswordEncoder encoder;
+ private String provisionarTarjeta(){
+  var t=new com.seniorlink.api.model.entity.Tarjeta();
+  t.setTitularDni(ADULTO);t.setNumeroTarjeta("DEMO-97000001");t.setNombreTitular("Adulto Agenda");
+  t.setTipoTarjeta("DEBITO");t.setMesVencimiento((short)12);t.setAnioVencimiento((short)2090);
+  t.setCvvHash(encoder.encode("123"));t.setSaldo(new BigDecimal("500.00"));tarjetas.saveAndFlush(t);
+  return t.getNumeroTarjeta();
+ }
  @Autowired PasarelaLocalService pagos;
  private OffsetDateTime inicio,fin;
  private Long servicio;
@@ -84,7 +93,7 @@ class AgendaReservasIntegrationTests {
  @Test void cancelacionPagadaLiberaYConservaFlujoReembolso(){
   var a=crear(inicio,fin);var b=crear(inicio,fin);
   agenda.accion(ACOMP,a.id(),"ACEPTAR");
-  var tarjeta=pagos.agregar(ADULTO,new PasarelaLocalService.NuevaTarjeta(null,"Adulto Agenda","DEBITO",(short)12,(short)2090,"123"));
+  var tarjeta=pagos.agregar(ADULTO,new PasarelaLocalService.NuevaTarjeta(provisionarTarjeta(),"Adulto Agenda","DEBITO",(short)12,(short)2090,"123"));
   assertEquals("APROBADO",pagos.pagar(ADULTO,a.id(),new PasarelaLocalService.PagoRequest(tarjeta.id(),UUID.randomUUID(),"123")).estado());
   assertEquals(1,ocupados());
   assertEquals("CANCELADA",agenda.accion(ADULTO,a.id(),"CANCELAR").estado());
