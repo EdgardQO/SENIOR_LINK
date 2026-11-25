@@ -37,6 +37,18 @@ public class PostServicioLocalService {
  public record LiquidacionVista(Long id,Long reservaId,String acompananteDni,
   BigDecimal monto,String moneda,String estado,OffsetDateTime registradoEn){}
  public record ValoracionVista(Long id,Long reservaId,short puntuacion,String comentario){}
+ public record ResenaPublica(short puntuacion,String comentario,OffsetDateTime creadoEn){}
+ @Transactional(readOnly=true)
+ public List<ResenaPublica> resenasAcompanante(String dni){
+  Usuario acomp=usuarios.findById(dni).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Acompañante no disponible"));
+  if(!esRol(acomp,"ACOMPANANTE")||!Boolean.TRUE.equals(acomp.getEstaActivo())||!acomp.isFotoVerificada())
+   throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Acompañante no disponible");
+  return valoraciones.findByAcompananteDni(dni).stream()
+   .filter(v->v.getReserva().getEstadoActual()==EstadoReserva.COMPLETADA && dni.equals(v.getReserva().getAcompanante().getDni()))
+   .sorted(Comparator.comparing(Valoracion::getCreadoEn).reversed())
+   .map(v->new ResenaPublica(v.getPuntuacion(),v.getComentario(),v.getCreadoEn())).toList();
+ }
+
  private ResponseStatusException no(){return new ResponseStatusException(HttpStatus.FORBIDDEN,"Acceso denegado");}
  private ResponseStatusException bad(String m){return new ResponseStatusException(HttpStatus.BAD_REQUEST,m);}
  private Usuario usuario(String dni){return usuarios.findById(dni).orElseThrow(this::no);}
