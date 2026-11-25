@@ -4,7 +4,6 @@ import com.seniorlink.api.service.*;
 import com.seniorlink.api.model.entity.Servicio;
 import com.seniorlink.api.model.entity.DisponibilidadAcompanante;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -14,7 +13,6 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/v1/local")
-@Profile("local")
 @ConditionalOnProperty(name="seniorlink.pagos.simulacion-habilitada",havingValue="true")
 @PreAuthorize("isAuthenticated()")
 public class OperacionesLocalesController {
