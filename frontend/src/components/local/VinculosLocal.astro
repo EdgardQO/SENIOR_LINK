@@ -2,25 +2,29 @@
 interface Props { rol: 'FAMILIAR'|'ADULTO_MAYOR' }
 const {rol}=Astro.props;
 ---
-<section class="local-card" data-vinculos-rol={rol}>
- <h2>Vinculaciones familiares</h2>
- <p>Solo el adulto mayor puede aprobar la relación y autorizar reservas, pagos y gestión.</p>
+<section class="vinculos-panel" data-vinculos-rol={rol}>
+ <div class="vinculos-guia">
+  <h2>Antes de vincular a tu familiar</h2>
+  <p>La vinculación requiere la aprobación del adulto mayor.</p>
+  <div class="vinculos-pasos">
+   {['El adulto mayor se registra en SeniorLink.','Se envía una solicitud con el DNI y parentesco.','El adulto mayor responde desde su cuenta.','Se habilitan las opciones según los permisos otorgados.'].map((paso,i)=><article><span>{i+1}</span><p>{paso}</p></article>)}
+  </div>
+  <div class="vinculos-aviso"><strong>Importante:</strong> la solicitud pendiente no concede permisos de reserva, pago ni gestión.</div>
+ </div>
+ <div class="vinculos-grid">
+ <section class="local-card"><h2>Solicitar vinculación</h2><p>Envía una solicitud para vincular las cuentas.</p>
  <form id="vinculo-form" class="local-form">
-  <label>{rol==='FAMILIAR'?'DNI del adulto mayor':'DNI del familiar'}
-   <input name="otroDni" inputmode="numeric" pattern="[0-9]{8}" maxlength="8" required />
-  </label>
-  <label>Parentesco
-   <select name="parentescoId">
-    <option value="1">Hijo/a</option><option value="2">Nieto/a</option>
-    <option value="3">Hermano/a</option><option value="4">Sobrino/a</option>
-    <option value="5">Cónyuge</option><option value="13">Otro</option>
-   </select>
-  </label>
+  <label>{rol==='FAMILIAR'?'DNI del adulto mayor':'DNI del familiar'}<input name="otroDni" placeholder="Ingresa el DNI (8 dígitos)" inputmode="numeric" pattern="[0-9]{8}" maxlength="8" required /></label>
+  <label>Parentesco<select name="parentescoId" required><option value="">Selecciona tu parentesco</option><option value="1">Hijo/a</option><option value="2">Nieto/a</option><option value="3">Hermano/a</option><option value="4">Sobrino/a</option><option value="5">Cónyuge</option><option value="13">Otro</option></select></label>
   <button type="submit">Solicitar vinculación</button>
- </form>
- <p id="vinculos-status" aria-live="polite" role="status"></p>
- <div id="vinculos-list" class="local-list"></div>
+ </form><p id="vinculos-status" aria-live="polite" role="status"></p>
+ </section>
+ <section class="local-card"><h2>Mis vinculaciones</h2><p>Consulta el estado y los permisos de tus vínculos familiares.</p><div id="vinculos-list" class="local-list"></div></section>
+ </div>
 </section>
+<style>
+.vinculos-panel{display:grid;gap:16px}.vinculos-guia{background:#e9f7f1;border:1px solid #d5ebe1;border-radius:16px;padding:20px}.vinculos-guia h2{margin:0;font-size:20px}.vinculos-guia p{margin:6px 0;color:#405d55}.vinculos-pasos{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}.vinculos-pasos article{background:#fff;border:1px solid #dce8e3;border-radius:12px;padding:14px;display:flex;gap:10px;align-items:flex-start}.vinculos-pasos span{background:#087a70;color:white;border-radius:50%;width:25px;height:25px;display:grid;place-items:center;flex-shrink:0;font-weight:600}.vinculos-pasos p{font-size:13px;margin:0}.vinculos-aviso{padding:12px;border:1px solid #a4d3c0;border-radius:9px;color:#174e42;font-size:13px}.vinculos-grid{display:grid;grid-template-columns:minmax(260px,2fr) minmax(0,3fr);gap:16px;align-items:start}.vinculos-grid .local-card{margin:0}.vinculos-panel :global(.vinculo-ficha){display:grid;gap:12px;background:#fff}.vinculos-panel :global(.vinculo-identidad){display:flex;align-items:center;gap:12px;flex-wrap:wrap}.vinculos-panel :global(.vinculo-avatar){width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:#d9f0e5;color:#087a70;font-weight:700;flex-shrink:0}.vinculos-panel :global(.vinculo-persona){flex:1;min-width:120px}.vinculos-panel :global(.vinculo-persona small){display:block;margin-top:4px;color:#52665f}.vinculos-panel :global(.vinculo-estado){font-size:11px;border-radius:20px;padding:6px 10px;background:#e6f5ec;color:#12634a}.vinculos-panel :global(.vinculo-estado[data-estado="PENDIENTE"]){background:#fff4d7;color:#85600c}.vinculos-panel :global(.vinculo-estado[data-estado="RECHAZADO"]){background:#fce8e8;color:#9c3030}.vinculos-panel :global(.vinculo-permisos){display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12px}.vinculos-panel :global(.vinculo-permisos span){background:#e4f6ed;padding:5px 9px;border-radius:7px;color:#12634a}.vinculos-panel :global(.vinculo-permisos span[data-activo="false"]){background:#f0f2f1;color:#687771}.vinculos-panel :global(.vinculo-espera){background:#eef8f4;padding:10px;border-radius:8px;font-size:12px;margin:0}@media(max-width:900px){.vinculos-pasos{grid-template-columns:repeat(2,1fr)}.vinculos-grid{grid-template-columns:1fr}}@media(max-width:480px){.vinculos-pasos{grid-template-columns:1fr}}
+</style>
 <script>
  import {apiLocal} from '../../lib/local-api';
  const root=document.querySelector<HTMLElement>('[data-vinculos-rol]')!;
@@ -32,16 +36,19 @@ const {rol}=Astro.props;
   const datos=await apiLocal('/vinculos');list.replaceChildren();
   if(!datos.length){list.textContent='Aún no hay solicitudes.';return;}
   for(const v of datos){
-   const row=document.createElement('article');row.className='local-item';
-   const info=document.createElement('p');
-   info.textContent=(role==='FAMILIAR'?v.adultoMayorNombre:v.familiarNombre)+' · '+v.estado;
-   row.append(info);
+   const row=document.createElement('article');row.className='local-item vinculo-ficha';
+   const nombre=String(role==='FAMILIAR'?v.adultoMayorNombre:v.familiarNombre);
+   const dni=String(role==='FAMILIAR'?v.adultoMayorDni:v.familiarDni);
+   const identidad=document.createElement('div');identidad.className='vinculo-identidad';
+   const avatar=document.createElement('span');avatar.className='vinculo-avatar';avatar.textContent=nombre.split(/\s+/).slice(0,2).map(n=>n[0]||'').join('').toUpperCase();
+   const persona=document.createElement('div');persona.className='vinculo-persona';const titulo=document.createElement('strong');titulo.textContent=nombre;const doc=document.createElement('small');doc.textContent='DNI: '+dni;persona.append(titulo,doc);
+   if(v.parentescoNombre){const p=document.createElement('small');p.textContent='Parentesco: '+v.parentescoNombre;persona.append(p);}
+   const badge=document.createElement('span');badge.className='vinculo-estado';badge.dataset.estado=v.estado;badge.textContent=({ACEPTADO:'Vinculación aceptada',PENDIENTE:'Solicitud pendiente',RECHAZADO:'Solicitud rechazada'} as Record<string,string>)[v.estado]||v.estado;
+   identidad.append(avatar,persona,badge);row.append(identidad);
    if(v.estado==='ACEPTADO'){
-    const p=document.createElement('p');
-    p.textContent='Permisos: reserva '+(v.permiteReservar?'sí':'no')+
-     ' · pago '+(v.permitePagar?'sí':'no')+' · gestión '+(v.permiteGestionar?'sí':'no');
-    row.append(p);
-   }
+    const permisos=document.createElement('div');permisos.className='vinculo-permisos';permisos.append('Permisos otorgados: ');
+    for(const [nombre,activo] of [['Reserva',v.permiteReservar],['Pago',v.permitePagar],['Gestión',v.permiteGestionar]]){const p=document.createElement('span');p.textContent=nombre+(activo?'':' (no autorizado)');p.dataset.activo=String(Boolean(activo));permisos.append(p);}row.append(permisos);
+   }else if(v.estado==='PENDIENTE'){const aviso=document.createElement('p');aviso.className='vinculo-espera';aviso.textContent='En espera de la aprobación del adulto mayor.';row.append(aviso);}
    if(role==='ADULTO_MAYOR'&&v.estado==='PENDIENTE'){
     for(const [nombre,aprobar] of [['Autorizar',true],['Rechazar',false]] as const){
      const b=document.createElement('button');b.textContent=nombre;b.type='button';
@@ -56,11 +63,11 @@ const {rol}=Astro.props;
   }
  };
  form.addEventListener('submit',async e=>{
-  e.preventDefault();const f=new FormData(form);
+  e.preventDefault();const btn=form.querySelector<HTMLButtonElement>('button[type=submit]')!;if(btn.disabled)return;btn.disabled=true;const f=new FormData(form);
   try{await apiLocal('/vinculos',{method:'POST',body:JSON.stringify({
    otroDni:String(f.get('otroDni')),parentescoId:Number(f.get('parentescoId'))
   })});form.reset();estado.textContent='Solicitud registrada.';await cargar();
-  }catch(err){estado.textContent=err instanceof Error?err.message:String(err);}
+  }catch(err){estado.textContent=err instanceof Error?err.message:String(err);}finally{btn.disabled=false;}
  });
  cargar().catch(e=>estado.textContent=String(e));
 </script>
