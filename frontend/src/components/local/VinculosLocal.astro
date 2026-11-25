@@ -1,15 +1,15 @@
 ---
 interface Props { rol: 'FAMILIAR'|'ADULTO_MAYOR' }
 const {rol}=Astro.props;
+const pasos=[{titulo:'Cuenta registrada',detalle:'El adulto mayor debe tener una cuenta activa en SeniorLink.',trazo:'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 3a4 4 0 1 0 0 8 4 4 0 1 0 0-8zM19 8v6m-3-3h6'},{titulo:'Enviar solicitud',detalle:'Ingresa el DNI y selecciona el parentesco correspondiente.',trazo:'M3 5h18v14H3zM7 9a2 2 0 1 0 0 4 2 2 0 1 0 0-4zM12 9h5m-5 4h5M5 17l2-2 2 2'},{titulo:'Esperar aprobación',detalle:'El adulto mayor revisa y responde la solicitud desde su perfil.',trazo:'M5 3h14v18H5zM8 12l3 3 5-6'},{titulo:'Gestionar servicios',detalle:'Una vez aceptada, consulta los permisos de reserva, pago y gestión.',trazo:'M12 3l8 3v6c0 5-8 9-8 9s-8-4-8-9V6zM8 12l3 3 5-6'}];
 ---
 <section class="vinculos-panel" data-vinculos-rol={rol}>
  <div class="vinculos-guia">
-  <h2>Antes de vincular a tu familiar</h2>
-  <p>La vinculación requiere la aprobación del adulto mayor.</p>
-  <div class="vinculos-pasos">
-   {['El adulto mayor se registra en SeniorLink.','Se envía una solicitud con el DNI y parentesco.','El adulto mayor responde desde su cuenta.','Se habilitan las opciones según los permisos otorgados.'].map((paso,i)=><article><span>{i+1}</span><p>{paso}</p></article>)}
-  </div>
-  <div class="vinculos-aviso"><strong>Importante:</strong> la solicitud pendiente no concede permisos de reserva, pago ni gestión.</div>
+  <div class="guia-cabecera"><span class="guia-icono"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10h.01"/></svg></span><div><div class="guia-eyebrow">GUÍA DE VINCULACIÓN</div><h2>Conecta tu cuenta con tu familiar</h2><p>Cuatro pasos para gestionar el acompañamiento con autorización.</p></div></div>
+  <ol class="vinculos-pasos">
+   {pasos.map((paso,i)=><li style={'--paso:'+i}><div class="guia-paso-top"><span class="guia-numero">{String(i+1).padStart(2,'0')}</span><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={paso.trazo}/></svg></div><h3>{paso.titulo}</h3><p>{paso.detalle}</p></li>)}
+  </ol>
+  <div class="vinculos-aviso"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-8 9-8 9s-8-4-8-9V6zM8 12l3 3 5-6"/></svg><div><strong>La autorización es indispensable</strong><p>Mientras la solicitud esté pendiente, no se habilitan los permisos de reserva, pago ni gestión.</p></div></div>
  </div>
  <div class="vinculos-grid">
  <section class="local-card"><h2>Solicitar vinculación</h2><p>Envía una solicitud para vincular las cuentas.</p>
@@ -24,6 +24,17 @@ const {rol}=Astro.props;
 </section>
 <style>
 .vinculos-panel{display:grid;gap:16px}.vinculos-guia{background:#e9f7f1;border:1px solid #d5ebe1;border-radius:16px;padding:20px}.vinculos-guia h2{margin:0;font-size:20px}.vinculos-guia p{margin:6px 0;color:#405d55}.vinculos-pasos{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}.vinculos-pasos article{background:#fff;border:1px solid #dce8e3;border-radius:12px;padding:14px;display:flex;gap:10px;align-items:flex-start}.vinculos-pasos span{background:#087a70;color:white;border-radius:50%;width:25px;height:25px;display:grid;place-items:center;flex-shrink:0;font-weight:600}.vinculos-pasos p{font-size:13px;margin:0}.vinculos-aviso{padding:12px;border:1px solid #a4d3c0;border-radius:9px;color:#174e42;font-size:13px}.vinculos-grid{display:grid;grid-template-columns:minmax(260px,2fr) minmax(0,3fr);gap:16px;align-items:start}.vinculos-grid .local-card{margin:0}.vinculos-panel :global(.vinculo-ficha){display:grid;gap:12px;background:#fff}.vinculos-panel :global(.vinculo-identidad){display:flex;align-items:center;gap:12px;flex-wrap:wrap}.vinculos-panel :global(.vinculo-avatar){width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:#d9f0e5;color:#087a70;font-weight:700;flex-shrink:0}.vinculos-panel :global(.vinculo-persona){flex:1;min-width:120px}.vinculos-panel :global(.vinculo-persona small){display:block;margin-top:4px;color:#52665f}.vinculos-panel :global(.vinculo-estado){font-size:11px;border-radius:20px;padding:6px 10px;background:#e6f5ec;color:#12634a}.vinculos-panel :global(.vinculo-estado[data-estado="PENDIENTE"]){background:#fff4d7;color:#85600c}.vinculos-panel :global(.vinculo-estado[data-estado="RECHAZADO"]){background:#fce8e8;color:#9c3030}.vinculos-panel :global(.vinculo-permisos){display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12px}.vinculos-panel :global(.vinculo-permisos span){background:#e4f6ed;padding:5px 9px;border-radius:7px;color:#12634a}.vinculos-panel :global(.vinculo-permisos span[data-activo="false"]){background:#f0f2f1;color:#687771}.vinculos-panel :global(.vinculo-espera){background:#eef8f4;padding:10px;border-radius:8px;font-size:12px;margin:0}@media(max-width:900px){.vinculos-pasos{grid-template-columns:repeat(2,1fr)}.vinculos-grid{grid-template-columns:1fr}}@media(max-width:480px){.vinculos-pasos{grid-template-columns:1fr}}
+
+/* Movimiento breve, sin bucles ni desplazamientos automáticos. */
+.vinculos-guia{position:relative;overflow:hidden;background:linear-gradient(125deg,#effaf5,#e2f3ec);padding:clamp(16px,2.2vw,26px)}
+.guia-cabecera{display:flex;align-items:center;gap:14px}.guia-icono{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;background:#d7f1e5;color:#087a70;flex-shrink:0}.guia-eyebrow{font-size:10px;font-weight:750;letter-spacing:.13em;color:#087a70;margin-bottom:5px}.guia-cabecera h2{line-height:1.3;font-size:clamp(18px,2vw,23px)}.guia-cabecera p{font-size:13px}
+.vinculos-pasos{list-style:none;padding:0;margin:22px 0;gap:18px}.vinculos-pasos li{position:relative;padding:16px 14px;border:1px solid #d3e6dd;background:white;border-radius:12px;min-width:0;box-shadow:0 3px 10px #173d3508;transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease;animation:guia-entrada .46s ease-out both;animation-delay:calc(var(--paso)*85ms)}
+.guia-paso-top{display:flex;align-items:center;justify-content:space-between;color:#087a70;margin-bottom:14px}.vinculos-pasos .guia-numero{width:auto;height:auto;border-radius:6px;background:#e0f3e9;color:#087a70;padding:5px 8px;font-size:12px;letter-spacing:.06em}.vinculos-pasos h3{font-size:14px;color:#173d35;line-height:1.4;margin:0 0 6px}.vinculos-pasos li p{font-size:12px;line-height:1.6;margin:0;color:#52665f}.vinculos-pasos li:not(:last-child)::after{content:'';position:absolute;width:7px;height:7px;border-top:2px solid #6aa999;border-right:2px solid #6aa999;right:-14px;top:50%;transform:translateY(-50%) rotate(45deg)}
+.vinculos-aviso{display:flex;align-items:center;gap:12px;background:#f5fcf8}.vinculos-aviso svg{flex-shrink:0;color:#087a70}.vinculos-aviso p{font-size:12px;margin:4px 0 0}.vinculos-panel :global(.vinculo-ficha){transition:box-shadow .2s ease,border-color .2s ease}.vinculos-panel :global(.vinculo-ficha:hover){border-color:#acd2c2;box-shadow:0 4px 14px #173d350b}
+@keyframes guia-entrada{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+@media(hover:hover){.vinculos-pasos li:hover{transform:translateY(-3px);box-shadow:0 6px 18px #173d3510;border-color:#acd2c2}}
+@media(max-width:900px){.vinculos-pasos li::after{display:none}}
+@media(prefers-reduced-motion:reduce){.vinculos-pasos li{animation:none;transition:none}.vinculos-pasos li:hover{transform:none}.vinculos-panel :global(.vinculo-ficha){transition:none}}
 </style>
 <script>
  import {apiLocal} from '../../lib/local-api';
