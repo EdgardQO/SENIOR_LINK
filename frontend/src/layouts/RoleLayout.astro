@@ -130,7 +130,7 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
             <a class="sidebar-link" href="/admin/promociones"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="2"/><circle cx="18" cy="18" r="2"/><path d="M4 20 20 4"/></svg><span>Promociones</span></a>
           </>
         ) : (
-          {role !== "ADULTO_MAYOR" && <a class="sidebar-link" href={roleHome + "#herramientas"}><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 7a5 5 0 0 0-6 6L3 18l3 3 5-5a5 5 0 0 0 6-6l-3 3-3-3z"/></svg><span>Herramientas</span></a>}
+          role !== "ADULTO_MAYOR" && <a class="sidebar-link" href={roleHome + "#herramientas"}><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 7a5 5 0 0 0-6 6L3 18l3 3 5-5a5 5 0 0 0 6-6l-3 3-3-3z"/></svg><span>Herramientas</span></a>
         )}
         
       </aside>
