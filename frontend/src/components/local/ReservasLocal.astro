@@ -267,7 +267,7 @@ const pasos=rol==='ACOMPANANTE'?[
      }else if(v.autorizadoPorMi)detalle.textContent='Tu autorización está activa. Espera que el otro participante autorice el contacto.';
      else detalle.textContent='Contacto opcional entre adultos. Autoriza compartir el teléfono registrado para esta reserva.';
      const btn=nuevo('button',v.autorizadoPorMi?'Revocar autorización':'Autorizar WhatsApp') as HTMLButtonElement;btn.type='button';
-     if(!v.telefonoPropioValido&&!v.autorizadoPorMi){btn.disabled=true;detalle.textContent='Registra un teléfono válido en Mi perfil para habilitar el contacto.';}
+     if(!v.telefonoPropioValido&&!v.autorizadoPorMi){btn.disabled=true;detalle.textContent='Tu teléfono principal no está registrado o no tiene un formato válido.';const perfil=document.createElement('a');perfil.href=(rol==='ACOMPANANTE'?'/acompanante':rol==='FAMILIAR'?'/familiar':'/adulto-mayor')+'/mi-perfil';perfil.textContent='Editar mi teléfono';controles.append(perfil);}
      btn.addEventListener('click',async()=>{
       const autorizar=!v.autorizadoPorMi;
       if(autorizar&&!confirm('Confirmo que tengo 18 años o más y autorizo compartir mi teléfono registrado con el otro participante adulto de esta reserva.'))return;
