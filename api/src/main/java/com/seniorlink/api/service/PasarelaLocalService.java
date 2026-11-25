@@ -4,7 +4,6 @@ import com.seniorlink.api.model.entity.*;
 import com.seniorlink.api.model.enums.*;
 import com.seniorlink.api.repository.*;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -15,7 +14,6 @@ import java.time.*;
 import java.util.*;
 
 @Service
-@Profile("local")
 @ConditionalOnProperty(name="seniorlink.pagos.simulacion-habilitada",havingValue="true")
 @Transactional
 public class PasarelaLocalService {
