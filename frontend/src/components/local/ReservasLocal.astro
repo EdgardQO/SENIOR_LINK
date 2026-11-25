@@ -4,11 +4,32 @@ const {rol,modo='todo'}=Astro.props;
 const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
 const solicitar=cliente&&modo!=='historial';
 const historial=modo!=='solicitar';
+const pasos=rol==='ACOMPANANTE'?[
+ ['Revisa la solicitud','Consulta todas las jornadas y acepta o rechaza la contratación.','M4 4h16v16H4zM8 9h8m-8 4h8'],
+ ['Espera el pago','La contratación debe estar confirmada antes de iniciar.','M3 6h18v12H3zM3 10h18m-14 5h3'],
+ ['Realiza cada jornada','Inicia y finaliza cada servicio desde tu agenda.','M12 6v6l4 2M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18'],
+ ['Finaliza la contratación','Espera la confirmación de todas las jornadas.','M5 12l4 4L19 6']
+]:[
+ ['Elige a quién acompañar',rol==='FAMILIAR'?'Selecciona un adulto mayor autorizado.':'Solicita acompañamiento para ti.','M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 3a4 4 0 1 0 0 8 4 4 0 1 0 0-8'],
+ ['Selecciona un acompañante','Consulta su perfil, tarifa y horario semanal.','M4 4h16v16H4zM8 12l3 3 5-6'],
+ ['Programa las jornadas','Elige fechas y horarios libres; máximo ocho horas diarias.','M3 5h18v16H3zM7 3v4m10-4v4M3 10h18'],
+ ['Revisa y envía','Indica el lugar de encuentro y revisa el total.','M3 6h18v12H3zM3 10h18m-14 5h3'],
+ ['Gestiona tu reserva','En Mis reservas consulta la aceptación, pago y confirmación de cada jornada.','M5 12l4 4L19 6']
+];
 ---
 <section class="local-card" data-reservas-rol={rol} data-reservas-modo={modo}>
  <h2>{solicitar?'Solicitar acompañamiento':cliente?'Mis reservas':rol==='ACOMPANANTE'?'Solicitudes y agenda':'Reservas registradas'}</h2>
  {modo==='solicitar' && <p>Completa los datos para enviar una nueva solicitud. <a href={rol==='FAMILIAR'?'/familiar/mis-reservas':'/adulto-mayor/mis-reservas'}>Consultar mis reservas</a>.</p>}
  {modo==='historial' && <p>Consulta el estado de tus servicios, pagos, recibos y valoraciones. <a href={rol==='FAMILIAR'?'/familiar/reservas':'/adulto-mayor/reservas'}>Solicitar una reserva</a>.</p>}
+ {(solicitar||rol==='ACOMPANANTE') && <section class="reserva-guia" aria-label="Guía de reservas">
+  <span class="guia-eyebrow">GUÍA DE RESERVAS</span>
+  <h3>{rol==='ACOMPANANTE'?'Gestiona tus acompañamientos':'Solicita un acompañamiento paso a paso'}</h3>
+  <ol class="reserva-guia-pasos">{pasos.map(([titulo,detalle,trazo],i)=><li>
+   <div class="reserva-guia-iconos"><span>{String(i+1).padStart(2,'0')}</span><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={trazo}/></svg></div>
+   <strong>{titulo}</strong><p>{detalle}</p>
+  </li>)}</ol>
+  <p class="reserva-guia-aviso">La disponibilidad se confirma al aceptar la solicitud. No realices pagos fuera de SeniorLink.</p>
+ </section>}
  {solicitar && <form id="reserva-local-form" class="local-form">
   {rol==='FAMILIAR' && <label>Adulto mayor autorizado<select name="adultoMayorDni" id="reserva-local-adulto" required><option value="">Selecciona un adulto autorizado</option></select></label>}
   <div class="companion-picker" id="reserva-local-picker">
@@ -129,6 +150,14 @@ const historial=modo!=='solicitar';
  :global(.horario-libre){background:#e3f5ed!important;color:#087a70!important;border:1px solid #9acdb9!important;border-radius:8px;padding:8px 12px;cursor:pointer}
  :global(.jornada-form [data-estado="error"]){color:#a33333}
  :global(.jornada-form [data-estado="libre"]){color:#087a70;font-weight:600}
+ .reserva-guia{background:#e9f7f1;border:1px solid #d5ebe1;border-radius:16px;padding:20px;margin:16px 0}.guia-eyebrow{font-size:11px;letter-spacing:.12em;font-weight:700;color:#087a70}.reserva-guia h3{margin:8px 0;color:#174e42}
+ .reserva-guia-pasos{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;list-style:none;padding:0;margin:16px 0}.reserva-guia-pasos li{background:white;border:1px solid #d3e6dd;border-radius:12px;padding:14px;color:#173d35}.reserva-guia-iconos{display:flex;justify-content:space-between;align-items:center;color:#087a70;margin-bottom:12px}.reserva-guia-iconos span{font-size:13px;font-weight:700}.reserva-guia-pasos p,.reserva-guia-aviso{font-size:13px;color:#405d55;line-height:1.5}.reserva-guia-aviso{margin:0}
+ :global(.reserva-seguimiento){padding:14px;background:#f1faf6;border:1px solid #d5ebe1;border-radius:12px;margin:12px 0;color:#174e42}
+ :global(.reserva-etapas){list-style:none;display:flex;flex-wrap:wrap;gap:6px;padding:0;margin:10px 0}
+ :global(.reserva-etapas li){border-radius:7px;padding:7px 9px;background:#eef1ef;color:#52665f;font-size:12px}
+ :global(.reserva-etapas li[data-paso="hecho"]){background:#d4ede0;color:#087a70}
+ :global(.reserva-etapas li[data-paso="actual"]){background:#087a70;color:white;font-weight:600}
+ :global(.reserva-seguimiento p){font-size:13px;margin:8px 0 0}
  </style>
 <script>
  import {apiLocal,apiPagoLocal,horaLocal,importe,sesionRequerida} from '../../lib/local-api';
@@ -200,6 +229,13 @@ const historial=modo!=='solicitar';
       (rol==='ACOMPANANTE'||rol==='ADULTO_MAYOR'||rol==='ADMINISTRADOR'))
     participante(b.solicitanteDni,b.solicitanteNombre,'Familiar solicitante',Boolean(b.solicitanteFotoUrl));
    div.append(personas);
+   const etapas=['Solicitud','Aceptación y pago','Programación','Acompañamiento','Confirmación','Completada'];
+   const indice:Record<string,number>={PENDIENTE_ACEPTACION:0,PENDIENTE_PAGO:1,CONFIRMADA:2,EN_PROGRESO:3,PENDIENTE_CONFIRMACION:4,COMPLETADA:5};
+   const mensajes:Record<string,string>={PENDIENTE_ACEPTACION:rol==='ACOMPANANTE'?'Revisa las jornadas antes de aceptar.':'Espera la respuesta del acompañante.',PENDIENTE_PAGO:rol==='ACOMPANANTE'?'Espera la confirmación del pago.':'Realiza el pago desde SeniorLink Pay.',CONFIRMADA:'Consulta la próxima jornada y coordina el encuentro.',EN_PROGRESO:rol==='ACOMPANANTE'?'Finaliza la jornada cuando termine el servicio.':'Consulta el progreso del acompañamiento.',PENDIENTE_CONFIRMACION:rol==='ACOMPANANTE'?'Espera la confirmación del servicio.':'Confirma las jornadas que ya recibiste.',COMPLETADA:rol==='ADMINISTRADOR'?'Verifica los requisitos para la liquidación.':'La contratación ha finalizado.',CANCELADA:'La contratación fue cancelada. Consulta soporte si necesitas ayuda.',RECHAZADA:'La solicitud no fue aceptada.',EXPIRADA:'El plazo de la solicitud terminó.',EN_DISPUTA:'Consulta el seguimiento de la incidencia con soporte.'};
+   const guia=document.createElement('section');guia.className='reserva-seguimiento';guia.setAttribute('aria-label','Seguimiento de contratación');
+   guia.append(nuevo('strong','Estado y siguiente paso'));
+   if(indice[b.estado]!==undefined){const lista=document.createElement('ol');lista.className='reserva-etapas';etapas.forEach((t,i)=>{const li=nuevo('li',(i+1)+'. '+t);li.dataset.paso=i<indice[b.estado]?'hecho':i===indice[b.estado]?'actual':'pendiente';if(i===indice[b.estado])li.setAttribute('aria-current','step');lista.append(li);});guia.append(lista);}
+   guia.append(nuevo('p',mensajes[b.estado]||'Consulta el detalle de la contratación.'));div.append(guia);
    const js:any[]=b.jornadas||[];
     div.append(nuevo('p',js.length?js.length+' jornadas · '+b.totalHoras+' horas · '+importe(b.montoTotal):horaLocal(b.inicio)+' — '+horaLocal(b.fin)+' · '+importe(b.montoTotal)));
     if(js.length){div.append(nuevo('p',js.filter(j=>j.estado==='COMPLETADA').length+' de '+js.length+' jornadas completadas'));
