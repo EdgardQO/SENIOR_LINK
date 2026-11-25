@@ -39,6 +39,13 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
  .local-companion-heading img[hidden]{display:none}
  .local-companion-card p{margin:3px 0;line-height:1.5;font-size:13px}
  .local-companion-card h3{font-size:14px;margin:10px 0 0;color:#12695d}
+ :global(.reserva-personas){display:flex;flex-wrap:wrap;gap:12px;margin:12px 0}
+ :global(.reserva-persona){display:flex;align-items:center;gap:10px;flex:1 1 195px;padding:12px;border:1px solid #d7e9e2;background:#f5fbf8;border-radius:12px;min-width:0}
+ :global(.reserva-persona img),:global(.reserva-persona-avatar){width:58px;height:58px;border-radius:50%;object-fit:cover;flex-shrink:0}
+ :global(.reserva-persona-avatar){display:grid;place-items:center;background:#dcefe7;color:#245b50;font-weight:700}
+ :global(.reserva-persona [hidden]){display:none!important}
+ :global(.reserva-persona small){display:block;color:#496b60;font-size:12px}
+ :global(.reserva-persona strong){display:block;overflow-wrap:anywhere}
  </style>
 <script>
  import {apiLocal,horaLocal,importe,sesionRequerida} from '../../lib/local-api';
@@ -52,12 +59,31 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
  const refrescar=async()=>{
   const bookings=await apiLocal('/reservas');
   const medios=(rol==='ADULTO_MAYOR'||rol==='FAMILIAR')?await apiLocal('/metodos-pago'):[];
+  contenedor.querySelectorAll<HTMLImageElement>('img').forEach(limpiarFoto);
   contenedor.replaceChildren();
   if(!bookings.length){contenedor.textContent='No hay reservas para mostrar.';return;}
   for(const b of bookings){
    const div=document.createElement('article');div.className='local-item local-booking';
    div.append(nuevo('strong','#'+b.id+' · '+b.estado.replaceAll('_',' ')));
-   div.append(nuevo('p',b.adultoMayorNombre+' · '+b.acompananteNombre));
+   const personas=document.createElement('div');personas.className='reserva-personas';
+   const participante=(dni:string,nombre:string,etiqueta:string,tieneFoto:boolean)=>{
+    const tarjeta=document.createElement('div');tarjeta.className='reserva-persona';
+    const img=document.createElement('img');img.alt='Foto de '+nombre;img.hidden=true;
+    const iniciales=nuevo('span',String(nombre||'?').trim().split(/\s+/).slice(0,2).map(n=>n[0]||'').join('').toUpperCase());
+    iniciales.className='reserva-persona-avatar';iniciales.setAttribute('aria-hidden','true');
+    const info=document.createElement('div');info.append(nuevo('small',etiqueta),nuevo('strong',nombre||'Sin nombre'));
+    const aviso=nuevo('small',tieneFoto?'Cargando fotografía…':'Sin fotografía');info.append(aviso);
+    tarjeta.append(img,iniciales,info);personas.append(tarjeta);
+    if(tieneFoto)void mostrarFotoProtegida(dni,img,Number(b.id)).then(ok=>{
+     iniciales.hidden=ok;aviso.textContent=ok?'':'Fotografía no disponible';aviso.hidden=ok;
+    });
+   };
+   if(rol!=='ACOMPANANTE')participante(b.acompananteDni,b.acompananteNombre,'Acompañante',Boolean(b.acompananteFotoUrl));
+   if(rol!=='ADULTO_MAYOR')participante(b.adultoMayorDni,b.adultoMayorNombre,'Adulto mayor',Boolean(b.adultoMayorFotoUrl));
+   if(b.solicitanteDni && b.solicitanteDni!==b.adultoMayorDni &&
+      (rol==='ACOMPANANTE'||rol==='ADULTO_MAYOR'||rol==='ADMINISTRADOR'))
+    participante(b.solicitanteDni,b.solicitanteNombre,'Familiar solicitante',Boolean(b.solicitanteFotoUrl));
+   div.append(personas);
    div.append(nuevo('p',horaLocal(b.inicio)+' — '+horaLocal(b.fin)+' · '+importe(b.montoTotal)));
    const acciones=document.createElement('div');acciones.className='local-actions';
    const accion=(nombre:string,ruta:string)=>{
@@ -200,5 +226,6 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
    }catch(e){estado.textContent=e instanceof Error?e.message:String(e);}
   });
  }
+ window.addEventListener('pagehide',()=>contenedor.querySelectorAll<HTMLImageElement>('img').forEach(limpiarFoto));
  refrescar().catch(e=>estado.textContent=String(e));
 </script>
