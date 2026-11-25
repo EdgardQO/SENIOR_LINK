@@ -354,6 +354,12 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
       : 'Sin horarios registrados');
     }catch{if(seleccion===consulta)campo('reserva-local-horarios','No se pudo consultar la disponibilidad');}
    });
+   const preseleccion=new URLSearchParams(window.location.search).get('acompanante');
+   if(preseleccion){
+    const encontrado=catalogo.find(p=>p.dni===preseleccion);
+    if(encontrado){acomp.value=encontrado.dni;buscar.value=encontrado.nombre;buscar.setCustomValidity('');cerrar();acomp.dispatchEvent(new Event('change'));}
+    else estado.textContent='El acompañante seleccionado ya no está disponible. Selecciona otro del catálogo.';
+   }
    const lista=form.querySelector<HTMLSelectElement>('#reserva-local-servicio')!;
    for(const s of servicios){const opt=document.createElement('option');opt.value=s.id;opt.textContent=s.nombre;lista.append(opt);}
    if(rol==='FAMILIAR'){
