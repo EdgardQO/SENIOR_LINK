@@ -52,6 +52,17 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
     if(b.estado==='EN_PROGRESO')accion('Finalizar','finalizar');
    }
    if((rol==='ADULTO_MAYOR'||rol==='FAMILIAR')&&b.estado==='PENDIENTE_CONFIRMACION')accion('Confirmar servicio','confirmar');
+   if(['PENDIENTE_ACEPTACION','PENDIENTE_PAGO','CONFIRMADA','EN_PROGRESO','PENDIENTE_CONFIRMACION'].includes(b.estado) && rol!=='ADMINISTRADOR')
+    accion('Cancelar / reportar','cancelar');
+   if(rol==='ADMINISTRADOR' && (b.estado==='CANCELADA'||b.estado==='EN_DISPUTA')){
+    const refund=nuevo('button','Reembolsar pago ficticio') as HTMLButtonElement;
+    refund.addEventListener('click',async()=>{
+     if(!confirm('¿Registrar el reembolso ficticio de esta reserva?'))return;
+     try{const res=await apiLocal('/admin/reservas/'+b.id+'/reembolsar',{method:'POST'});
+      estado.textContent='Resultado del reembolso: '+res.estado;await refrescar();
+     }catch(e){estado.textContent=e instanceof Error?e.message:String(e);}
+    });acciones.append(refund);
+   }
    if((rol==='ADULTO_MAYOR'||rol==='FAMILIAR')&&b.estado==='PENDIENTE_PAGO'){
     const pago=document.createElement('form');pago.className='local-form';
     const sel=document.createElement('select');sel.required=true;
