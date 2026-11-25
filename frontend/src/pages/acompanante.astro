@@ -1,33 +1,54 @@
 ---
 import RoleLayout from '../layouts/RoleLayout.astro';
+const accesos=[
+ {titulo:'Solicitudes y agenda',detalle:'Acepta solicitudes y administra tus servicios.',ruta:'/acompanante/solicitudes',accion:'Ver solicitudes'},
+ {titulo:'Disponibilidad y tarifa',detalle:'Configura tus horarios semanales y tu tarifa por hora.',ruta:'/acompanante/disponibilidad',accion:'Administrar disponibilidad'},
+ {titulo:'Mis liquidaciones',detalle:'Consulta los importes registrados por tus servicios.',ruta:'/acompanante/liquidaciones',accion:'Ver liquidaciones'},
+ {titulo:'Mi perfil',detalle:'Consulta tu información profesional y actualiza tu fotografía.',ruta:'/acompanante/mi-perfil',accion:'Consultar perfil'}
+];
 ---
-<RoleLayout role="ACOMPANANTE" label="Acompañante" description="Consulta tu perfil de estudiante y tus servicios de acompañamiento.">
-  <section id="herramientas" class="dashboard-grid" aria-label="Herramientas del perfil">
-    <article class="dashboard-card"><span class="card-symbol" aria-hidden="true">✦</span><h3>Mi perfil profesional</h3><p>Consulta tu carrera, ciclo y centro de estudios.</p></article>
-<article class="dashboard-card"><span class="card-symbol" aria-hidden="true">S/</span><h3>Tarifa por hora</h3><p>Revisa la tarifa registrada en tu perfil.</p></article>
-<article class="dashboard-card"><span class="card-symbol" aria-hidden="true">▤</span><h3>Próximos servicios</h3><p>La agenda de servicios individuales estará disponible próximamente.</p></article>
-  </section>
-  <section id="mi-perfil">
-    <div class="section-heading"><h2>Mi información</h2><small>Datos de tu cuenta</small></div>
-    <div class="profile-box">
-      <div class="profile-grid">
-        <div><div class="profile-key">Nombre completo</div><div class="profile-value" data-field="usuario.nombreCompleto">Cargando...</div></div>
-        <div><div class="profile-key">Correo electrónico</div><div class="profile-value" data-field="usuario.correoElectronico">Cargando...</div></div>
-        <div><div class="profile-key">DNI</div><div class="profile-value" data-field="usuario.dni">Cargando...</div></div>
-        <div><div class="profile-key">Teléfono</div><div class="profile-value" data-field="usuario.telefono">Cargando...</div></div>
-        <div><div class="profile-key">Carrera</div><div class="profile-value" data-field="acompanante.carrera">Cargando...</div></div>
-<div><div class="profile-key">Ciclo académico</div><div class="profile-value" data-field="acompanante.ciclo">Cargando...</div></div>
-<div><div class="profile-key">Institución aliada</div><div class="profile-value" data-field="acompanante.institucionAliada.nombre">Cargando...</div></div>
-<div><div class="profile-key">Tarifa base por hora</div><div class="profile-value" data-field="acompanante.tarifaBasePorHora">Cargando...</div></div>
-      </div>
-      <p class="profile-note">Esta información proviene de tu perfil registrado en SeniorLink.</p>
-    </div>
-  </section>
-  
+<RoleLayout role="ACOMPANANTE" label="Acompañante" description="Organiza tu agenda, consulta tus solicitudes y administra tus servicios.">
+ <section class="comp-home">
+  <div class="section-heading"><h2>Resumen de tus servicios</h2></div>
+  <div class="dashboard-grid">
+   <article class="dashboard-card"><h3>Solicitudes por aceptar</h3><strong id="comp-pendientes">—</strong></article>
+   <article class="dashboard-card"><h3>Reservas pendientes de pago</h3><strong id="comp-pagos">—</strong></article>
+   <article class="dashboard-card"><h3>Servicios activos</h3><strong id="comp-activas">—</strong></article>
+   <article class="dashboard-card"><h3>Por confirmar</h3><strong id="comp-confirmacion">—</strong></article>
+   <article class="dashboard-card"><h3>Servicios completados</h3><strong id="comp-completadas">—</strong></article>
+   <article class="dashboard-card"><h3>Reservas canceladas</h3><strong id="comp-canceladas">—</strong></article>
+  </div>
+  <p id="comp-resumen-status" role="status" aria-live="polite"></p>
+  <div class="section-heading"><h2>Próximos servicios confirmados</h2><a href="/acompanante/solicitudes">Ver agenda</a></div>
+  <div id="comp-proximos" class="local-list" aria-live="polite">Consultando agenda…</div>
+  <div class="section-heading"><h2>Accesos directos</h2></div>
+  <div class="dashboard-grid">
+   {accesos.map(a=><article class="dashboard-card"><h3>{a.titulo}</h3><p>{a.detalle}</p><a href={a.ruta}>{a.accion}</a></article>)}
+  </div>
+ </section>
 </RoleLayout>
+<style>
+.comp-home .dashboard-card strong{display:block;color:#087a70;font-size:2rem;margin-top:12px}
+.comp-home a{color:#087a70;font-weight:600;text-decoration:underline;text-underline-offset:3px}
+.comp-home .dashboard-card a{display:inline-block;margin-top:12px}
+.comp-home a:focus-visible{outline:2px solid #087a70;outline-offset:3px}
+</style>
 <script>
-  import { renderProfileFields } from '../lib/profile-fields';
-  document.addEventListener('seniorlink:profile', (event: Event) => {
-    renderProfileFields((event as CustomEvent).detail);
-  }, { once: true });
+ import {apiLocal,horaLocal} from '../lib/local-api';
+ type Reserva={id:number,estado:string,inicio:string,fin:string,adultoMayorNombre:string};
+ async function resumen(){
+  const lista=document.querySelector<HTMLElement>('#comp-proximos')!;
+  try{
+   const reservas:Reserva[]=await apiLocal('/reservas');
+   const grupos:Record<string,string[]>={pendientes:['PENDIENTE_ACEPTACION'],pagos:['PENDIENTE_PAGO'],activas:['CONFIRMADA','EN_PROGRESO'],confirmacion:['PENDIENTE_CONFIRMACION'],completadas:['COMPLETADA'],canceladas:['CANCELADA']};
+   for(const [key,estados] of Object.entries(grupos))document.querySelector('#comp-'+key)!.textContent=String(reservas.filter(r=>estados.includes(r.estado)).length);
+   const proximos=reservas.filter(r=>r.estado==='CONFIRMADA'&&Date.parse(r.fin)>Date.now()).sort((a,b)=>Date.parse(a.inicio)-Date.parse(b.inicio)).slice(0,5);
+   lista.replaceChildren();
+   if(!proximos.length)lista.textContent='No tienes próximos servicios confirmados.';
+   for(const r of proximos){const item=document.createElement('article');item.className='local-item';const titulo=document.createElement('strong');titulo.textContent='#'+r.id+' · '+r.adultoMayorNombre;const fecha=document.createElement('p');fecha.textContent=horaLocal(r.inicio)+' — '+horaLocal(r.fin);item.append(titulo,fecha);lista.append(item);}
+  }catch{document.querySelector('#comp-resumen-status')!.textContent='No se pudo consultar el resumen de reservas.';lista.textContent='Agenda no disponible.';}
+ }
+ document.addEventListener('seniorlink:profile',()=>void resumen(),{once:true});
+ if(window.location.hash==='#mi-perfil')window.location.replace('/acompanante/mi-perfil');
+ else if(window.location.hash==='#herramientas')window.history.replaceState(null,'','/acompanante');
 </script>
