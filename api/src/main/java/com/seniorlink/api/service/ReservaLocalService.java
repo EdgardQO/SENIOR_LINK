@@ -191,11 +191,11 @@ public class ReservaLocalService {
   if(!"ACOMPANANTE".equals(rol(acomp))||!Boolean.TRUE.equals(acomp.getEstaActivo())||!acomp.isFotoVerificada())throw bad("Acompañante no disponible");
   ConfiguracionReservas c=cfg();
   long minutos=Duration.between(input.inicio().toInstant(),input.fin().toInstant()).toMinutes();
-  if(minutos<c.getMinutosDuracionMinima()||minutos>c.getMinutosDuracionMaxima()||
+  if(minutos<c.getMinutosDuracionMinima()||minutos>Math.min(480,c.getMinutosDuracionMaxima())||
    Duration.between(input.inicio().toInstant(),input.fin().toInstant()).toSeconds()!=minutos*60)
-   throw bad("Duración fuera de los límites configurados");
-  if(Duration.between(Instant.now(),input.inicio().toInstant()).toMinutes()<c.getMinutosAnticipacion())
-   throw bad("La reserva requiere al menos 2 horas de anticipación");
+   throw bad("La duración debe estar entre "+c.getMinutosDuracionMinima()+" y "+Math.min(480,c.getMinutosDuracionMaxima())+" minutos por jornada");
+  if(Duration.between(Instant.now(),input.inicio().toInstant()).toMinutes()<60)
+   throw bad("La reserva requiere al menos 1 hora de anticipación");
   if(!input.inicio().isAfter(OffsetDateTime.now()))throw bad("La reserva debe comenzar en el futuro");
   validarHorario(acomp.getDni(),input.inicio(),input.fin(),null);
   PerfilAcompanante perfil=perfiles.findById(acomp.getDni()).orElseThrow(()->bad("Perfil incompleto"));
