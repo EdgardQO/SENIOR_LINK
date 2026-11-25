@@ -1,7 +1,51 @@
 ---
 import RoleLayout from '../../layouts/RoleLayout.astro';
-import ReservasLocal from '../../components/local/ReservasLocal.astro';
 ---
-<RoleLayout role="ADMINISTRADOR" label="Administrador" description="Supervisión de reservas y pagos.">
-  <ReservasLocal rol="ADMINISTRADOR" />
+<RoleLayout role="ADMINISTRADOR" label="Administrador" description="Consulta de pagos registrados y su estado.">
+  <section class="pagos-admin">
+    <h2>Pagos registrados</h2>
+    <p>Consulta de operaciones guardadas en SENIOR_LINK. Esta pantalla no realiza cobros ni reembolsos.</p>
+    <p id="pagos-admin-estado" role="status" aria-live="polite">Cargando pagos…</p>
+    <div class="pagos-tabla-wrap" id="pagos-admin-tabla"></div>
+  </section>
 </RoleLayout>
+<style>
+.pagos-admin{padding:22px;border:1px solid #dcece6;background:#fff;border-radius:16px;margin-top:20px}
+.pagos-admin h2{margin:0 0 10px;font-size:20px}
+.pagos-admin p{color:#526b62}
+.pagos-tabla-wrap{overflow-x:auto}
+:global(.pagos-admin-table){border-collapse:collapse;width:100%;text-align:left;font-size:13px;min-width:650px}
+:global(.pagos-admin-table th),:global(.pagos-admin-table td){padding:12px;border-bottom:1px solid #e0ede7}
+:global(.pagos-admin-table th){background:#edf7f2;color:#285b4f}
+</style>
+<script>
+ import {adminRequest} from '../../lib/admin-api';
+ import {horaLocal,importe} from '../../lib/local-api';
+ type Pago={id:number;reservaId:number;monto:number;moneda:string;estado:string;metodo:string|null;creadoEn:string|null};
+ const estado=document.querySelector<HTMLElement>('#pagos-admin-estado')!;
+ const destino=document.querySelector<HTMLElement>('#pagos-admin-tabla')!;
+ const cargar=async()=>{
+   const pagos=await adminRequest<Pago[]>('/pagos');
+   destino.replaceChildren();
+   if(!pagos.length){estado.textContent='No hay pagos registrados.';return;}
+   estado.textContent=pagos.length+' pagos registrados.';
+   const table=document.createElement('table');table.className='pagos-admin-table';
+   const head=document.createElement('thead');const row=document.createElement('tr');
+   for(const label of ['Pago','Reserva','Importe','Estado','Método','Registrado']){
+     const th=document.createElement('th');th.textContent=label;row.append(th);
+   }
+   head.append(row);table.append(head);
+   const body=document.createElement('tbody');
+   for(const pago of pagos){
+     const tr=document.createElement('tr');
+     for(const value of ['#'+pago.id,'#'+pago.reservaId,importe(pago.monto),pago.estado,pago.metodo||'—',horaLocal(pago.creadoEn)]){
+       const td=document.createElement('td');td.textContent=value;tr.append(td);
+     }
+     body.append(tr);
+   }
+   table.append(body);destino.append(table);
+ };
+ const comenzar=()=>{void cargar().catch(e=>{estado.textContent=e instanceof Error?e.message:String(e);});};
+ if(document.documentElement.dataset.profileReady==='true')comenzar();
+ else document.addEventListener('seniorlink:profile',comenzar,{once:true});
+</script>

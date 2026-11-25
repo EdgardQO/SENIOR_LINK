@@ -52,7 +52,7 @@
 @media(max-width:520px){.inc-form{grid-template-columns:1fr}.inc-tabs button{flex:1 1 auto;justify-content:space-between}}
 </style>
 <script>
- import {apiLocal,horaLocal} from '../../lib/local-api';
+ import {apiSegura,horaLocal} from '../../lib/local-api';
  import {consultarRecibos,reciboDeReserva,botonRecibo,type Recibo} from '../../lib/recibos';
  const list=document.querySelector<HTMLElement>('#incidencia-local-list')!;
  const estado=document.querySelector<HTMLElement>('#incidencia-local-estado')!;
@@ -103,7 +103,7 @@
   if(/^519\d{8}$/.test(n))return n;
   return null;
  }
- const cargar=async()=>{datos=await apiLocal('/incidencias');recibos=await consultarRecibos().catch(e=>{console.error('No se pudieron consultar recibos',e);return [];});render();if(!opciones.hidden)abrir();};
+ const cargar=async()=>{datos=await apiSegura('/incidencias');recibos=await consultarRecibos().catch(e=>{console.error('No se pudieron consultar recibos',e);return [];});render();if(!opciones.hidden)abrir();};
  const render=()=>{
   const f=new FormData(filtros);const q=normalizar(f.get('buscar')).split(/\s+/).filter(Boolean);
   const desde=String(f.get('desde')||''),hasta=String(f.get('hasta')||''),orden=String(f.get('orden')||'');
@@ -139,7 +139,7 @@
     form.append(campo,boton);
     form.addEventListener('submit',async e=>{
      e.preventDefault();if(boton.disabled)return;boton.disabled=true;
-     try{await apiLocal('/incidencias/'+i.id+'/resolver',{method:'POST',body:JSON.stringify({resolucion:campo.value})});
+     try{await apiSegura('/incidencias/'+i.id+'/resolver',{method:'POST',body:JSON.stringify({resolucion:campo.value})});
       borradores.delete(i.id);estado.textContent='Resolución registrada.';await cargar();
      }catch(err){estado.textContent=err instanceof Error?err.message:String(err);}finally{boton.disabled=false;}
     });box.append(form);

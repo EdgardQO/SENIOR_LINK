@@ -25,6 +25,7 @@ import java.util.*;
 public class AdminGestionController {
     private final UsuarioRepository usuarios;
     private final ReservaRepository reservas;
+    private final PagoRepository pagos;
     private final InstitucionAliadaRepository instituciones;
     private final DescuentoRepository descuentos;
     private final HistorialEstadoReservaRepository historial;
@@ -36,12 +37,14 @@ public class AdminGestionController {
     private final ConfiguracionLocalService configuracionReservas;
 
     public AdminGestionController(UsuarioRepository usuarios, ReservaRepository reservas,
+            PagoRepository pagos,
             InstitucionAliadaRepository instituciones, DescuentoRepository descuentos,
             HistorialEstadoReservaRepository historial, UsuarioService usuarioService,
             RegistroUsuarioService registro, PersonalInternoService personal,
             VinculacionFamiliarAdultoRepository vinculaciones, ReservaLocalService agenda,
             ConfiguracionLocalService configuracionReservas) {
-        this.usuarios = usuarios; this.reservas = reservas; this.instituciones = instituciones;
+        this.usuarios = usuarios; this.reservas = reservas; this.pagos = pagos;
+        this.instituciones = instituciones;
         this.descuentos = descuentos; this.historial = historial; this.usuarioService = usuarioService;
         this.registro = registro; this.personal = personal; this.vinculaciones = vinculaciones; this.agenda = agenda;
         this.configuracionReservas = configuracionReservas;
@@ -159,6 +162,21 @@ public class AdminGestionController {
         u.setEstaActivo(false);
         u.setActualizadoEn(OffsetDateTime.now());
         usuarios.save(u);
+    }
+
+    // Consulta de pagos existentes, sin procesar cargos ni reembolsos.
+    public record PagoAdmin(Long id, Long reservaId, BigDecimal monto, String moneda,
+            String estado, String metodo, OffsetDateTime creadoEn) {}
+
+    @GetMapping("/pagos")
+    @Transactional(readOnly = true)
+    public List<PagoAdmin> pagosRegistrados() {
+        return pagos.findAll().stream()
+            .map(p -> new PagoAdmin(
+                p.getId(), p.getReserva().getId(), p.getMonto(), p.getMoneda(),
+                p.getMpEstado().getValor(), p.getMpMetodoPago(), p.getCreadoEn()))
+            .sorted(Comparator.comparing(PagoAdmin::id).reversed())
+            .toList();
     }
 
     public record ReservaAdmin(Long id, String clienteDni, String clienteNombre,
