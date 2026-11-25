@@ -239,7 +239,7 @@ public class ReservaLocalService {
     p.getTarifaActualPorHora(),p.getCarrera(),p.getCiclo(),p.getBiografia(),
     p.getInstitucionAliada()==null?null:p.getInstitucionAliada().getNombre(),
     p.getPromedioCalificacion(),p.getTotalCalificaciones(),
-    p.getUsuario().getFotoPerfilRuta()==null?null:"/api/v1/usuarios/"+p.getUsuarioDni()+"/foto")).toList();
+    "/api/v1/usuarios/"+p.getUsuarioDni()+"/foto")).toList();
  }
  public List<Servicio> servicios(){return servicios.findAll().stream().filter(s->Boolean.TRUE.equals(s.getEstaActivo())).toList();}
  public List<Horario> disponibilidad(String dni){return horarios.findByAcompananteDniAndEstaActivoTrue(dni).stream()
