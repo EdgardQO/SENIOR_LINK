@@ -43,8 +43,8 @@ public class PostServicioLocalService {
   Usuario acomp=usuarios.findById(dni).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Acompañante no disponible"));
   if(!Boolean.TRUE.equals(acomp.getEstaActivo())||!acomp.isFotoVerificada()||!perfiles.existsById(dni))
    throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Acompañante no disponible");
-  return valoraciones.resenasDeReservas(dni,EstadoReserva.COMPLETADA).stream()
-   .map(v->new ResenaPublica(v.getPuntuacion(),v.getComentario(),v.getCreadoEn())).toList();
+  return motor.opiniones(dni).stream()
+   .map(v->new ResenaPublica(v.puntuacion(),v.comentario(),v.creadoEn())).toList();
  }
 
  private ResponseStatusException no(){return new ResponseStatusException(HttpStatus.FORBIDDEN,"Acceso denegado");}
