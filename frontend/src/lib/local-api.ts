@@ -19,7 +19,7 @@ async function consultarApi(base: string, path: string, options: RequestInit = {
  if(!res.ok){
   let err='Error HTTP '+res.status;
   try{const j=await res.json();err=j.detail||j.message||j.error||err;}catch{}
-  throw new Error(err);
+  throw Object.assign(new Error(err),{status:res.status});
  }
  return res.status===204?null:res.json();
 }

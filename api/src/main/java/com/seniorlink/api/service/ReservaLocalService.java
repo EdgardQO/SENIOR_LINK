@@ -176,7 +176,7 @@ public class ReservaLocalService {
    r.getVencePagoEn(),r.getMontoTotal(),r.getTarifaPorHora(),r.getDireccionEncuentro(),
    solicitante.getNombres()+" "+solicitante.getApellidos(),fotoUrl(r,a),fotoUrl(r,acomp),fotoUrl(r,solicitante),opinionReserva(r.getId()),r.getJornadas().stream().map(j->new JornadaVista(j.getId(),j.getFechaHoraInicio(),j.getFechaHoraFin(),j.getEstado())).toList(),r.getTotalHoras(),r.getSubtotal(),r.getComisionPlataforma());
  }
- public record ContactoWhatsapp(boolean autorizadoPorMi,boolean autorizadoPorOtro,boolean telefonoPropioValido,boolean activo,String url){}
+ public record ContactoWhatsapp(boolean autorizadoPorMi,boolean autorizadoPorOtro,boolean telefonoPropioValido,boolean activo,String url,String destinatarioNombre,String destinatarioRol){}
  private String normalizarWhatsapp(String raw){
   if(raw==null||!raw.trim().matches("[+0-9 ()-]+"))return null;
   String n=raw.replaceAll("[^0-9]","");
@@ -212,7 +212,7 @@ public class ReservaLocalService {
    String mensaje="Hola, quisiera coordinar el acompañamiento de la reserva #"+r.getId()+" de SeniorLink.";
    url="https://wa.me/"+numero+"?text="+java.net.URLEncoder.encode(mensaje,java.nio.charset.StandardCharsets.UTF_8).replace("+","%20");
   }
-  return new ContactoWhatsapp(mio,ajeno,valido,activo,url);
+  return new ContactoWhatsapp(mio,ajeno,valido,activo,url,otro.getNombres()+" "+otro.getApellidos(),rol(otro));
  }
  @Transactional(readOnly=true)
  public ContactoWhatsapp consultarWhatsapp(String dni,Long id){return vistaWhatsapp(dni,buscar(id));}
