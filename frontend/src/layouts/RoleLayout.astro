@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import '../styles/local.css';
+import RoleGuide from '../components/RoleGuide.astro';
 import FotoPerfilEditor from '../components/profile/FotoPerfilEditor.astro';
 interface Props {
   role: string;
@@ -171,6 +172,7 @@ const sectionName = sectionNames[currentRoute] || label;
         ))}
         
         <div id="panel-error" class="panel-error" role="alert" hidden></div>
+        <RoleGuide role={role} route={currentRoute} home={roleHome} />
         <slot />
         <footer class="panel-footer">SeniorLink · Acompañamiento de confianza</footer>
       </main>
