@@ -8,13 +8,22 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
 @Component
 @Profile("local")
 public class InicializadorLocal implements ApplicationRunner {
  private final EntityManager em;
  private final ConfiguracionReservasRepository configuracion;
- public InicializadorLocal(EntityManager em, ConfiguracionReservasRepository configuracion) {
-  this.em=em; this.configuracion=configuracion;
+ private final PasswordEncoder passwordEncoder;
+ @Value("${LOCAL_ADMIN_DNI:}") private String adminDni;
+ @Value("${LOCAL_ADMIN_EMAIL:}") private String adminEmail;
+ @Value("${LOCAL_ADMIN_PASSWORD:}") private String adminPassword;
+ @Value("${LOCAL_SOPORTE_DNI:}") private String soporteDni;
+ @Value("${LOCAL_SOPORTE_EMAIL:}") private String soporteEmail;
+ @Value("${LOCAL_SOPORTE_PASSWORD:}") private String soportePassword;
+ public InicializadorLocal(EntityManager em, ConfiguracionReservasRepository configuracion,PasswordEncoder passwordEncoder) {
+  this.em=em; this.configuracion=configuracion;this.passwordEncoder=passwordEncoder;
  }
  @Override @Transactional
  public void run(ApplicationArguments args) {
@@ -41,6 +50,8 @@ public class InicializadorLocal implements ApplicationRunner {
   if(em.find(InstitucionAliada.class,"20000000001")==null){
    InstitucionAliada i=new InstitucionAliada();i.setRuc("20000000001");i.setNombre("Institución Demo SeniorLink");i.setDetallesConvenio("Entidad ficticia local");em.persist(i);
   }
+  crearInterno(adminDni,adminEmail,adminPassword,(short)1);
+  crearInterno(soporteDni,soporteEmail,soportePassword,(short)4);
   if(!configuracion.existsById((short)1)) {
    ConfiguracionReservas c=new ConfiguracionReservas();
    c.setId((short)1); c.setMinutosAceptacion(60); c.setMinutosPago(30);
@@ -52,5 +63,17 @@ public class InicializadorLocal implements ApplicationRunner {
    c.setPorcentajeComision(new BigDecimal("10.00"));
    configuracion.save(c);
   }
+ }
+ private void crearInterno(String dni,String correo,String password,short rolId){
+  if(dni.isBlank()&&correo.isBlank()&&password.isBlank())return;
+  if(!dni.matches("[0-9]{8}")||correo.isBlank()||password.length()<12)
+   throw new IllegalStateException("Credenciales locales internas incompletas: configura DNI, correo y contraseña de al menos 12 caracteres");
+  if(em.find(Usuario.class,dni)!=null)return;
+  Usuario usuario=new Usuario();usuario.setDni(dni);usuario.setNombres(rolId==1?"Admin":"Soporte");
+  usuario.setApellidos("Local");usuario.setCorreoElectronico(correo.trim().toLowerCase());
+  usuario.setContrasenaHash(passwordEncoder.encode(password));usuario.setRol(em.getReference(Rol.class,rolId));
+  em.persist(usuario);em.flush();
+  if(rolId==1)em.persist(new PerfilAdmin(usuario,"Administración local",(short)1));
+  else em.persist(new PerfilSoporte(usuario,"Flexible",null));
  }
 }
