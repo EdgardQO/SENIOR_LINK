@@ -41,10 +41,39 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
   <button type="submit">Enviar solicitud</button>
  </form>}
  <p id="reserva-local-status" role="status" aria-live="polite"></p>
+ {rol==='ACOMPANANTE' && <section class="agenda-filtros" aria-label="Filtros de solicitudes">
+  <div class="agenda-tabs" role="group" aria-label="Filtrar por estado">
+   {['Todas','Pendientes','Activas','Completadas','Canceladas','Rechazadas','Expiradas','En disputa'].map((nombre,i)=><button type="button" data-agenda-grupo={['TODAS','PENDIENTES','ACTIVAS','COMPLETADA','CANCELADA','RECHAZADA','EXPIRADA','EN_DISPUTA'][i]} aria-pressed={i===0?'true':'false'}><span>{nombre}</span><span class="agenda-count">0</span></button>)}
+  </div>
+  <form id="agenda-filtros-form" class="agenda-form">
+   <label class="agenda-search">Buscar reserva<input name="busqueda" type="search" placeholder="Nombre del adulto mayor, familiar, ID o dirección" autocomplete="off"/></label>
+   <label>Estado específico<select name="estado"><option value="">Todos los estados</option><option value="PENDIENTE_ACEPTACION">Pendiente de aceptación</option><option value="PENDIENTE_PAGO">Pendiente de pago</option><option value="CONFIRMADA">Confirmada</option><option value="EN_PROGRESO">En progreso</option><option value="PENDIENTE_CONFIRMACION">Pendiente de confirmación</option><option value="COMPLETADA">Completada</option><option value="CANCELADA">Cancelada</option><option value="RECHAZADA">Rechazada</option><option value="EXPIRADA">Expirada</option><option value="EN_DISPUTA">En disputa</option></select></label>
+   <label>Desde<input name="desde" type="date"/></label>
+   <label>Hasta<input name="hasta" type="date"/></label>
+   <label>Ordenar por<select name="orden"><option value="recientes">Fecha más reciente</option><option value="proximas">Fecha más próxima (ascendente)</option><option value="mayor">Mayor importe</option><option value="menor">Menor importe</option></select></label>
+   <button type="reset" class="agenda-reset">Limpiar filtros</button>
+  </form>
+  <p id="agenda-resultados" role="status" aria-live="polite">Cargando solicitudes…</p>
+ </section>}
  <div id="reserva-local-list" class="local-list"></div>
  {cliente && <p>Para pagar, registra una tarjeta en <a href={rol==='FAMILIAR'?'/familiar/metodos-pago':'/adulto-mayor/metodos-pago'}>Mis métodos de pago</a>.</p>}
 </section>
 <style>
+ .agenda-filtros{display:grid;gap:14px;margin:16px 0}
+ .agenda-tabs{display:flex;flex-wrap:wrap;gap:8px}
+ .agenda-tabs button{display:inline-flex;align-items:center;gap:8px;border:1px solid #d5e5df;background:#fff;color:#355e53;border-radius:9px;padding:10px 12px;font:inherit;font-size:13px;cursor:pointer}
+ .agenda-tabs button[aria-pressed=true]{background:#087a70;border-color:#087a70;color:#fff}
+ .agenda-tabs button:focus-visible,.agenda-form button:focus-visible{outline:2px solid #087a70;outline-offset:3px}
+ .agenda-count{font-size:11px;min-width:22px;text-align:center;border-radius:10px;background:#e7f3ee;color:#285b50;padding:2px 5px}
+ .agenda-form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:end;background:#f5faf8;border:1px solid #dce8e3;border-radius:12px;padding:16px}
+ .agenda-form label{display:grid;gap:6px;font-size:13px;color:#355e53;min-width:0}
+ .agenda-form input,.agenda-form select{width:100%;min-width:0;border:1px solid #cbded6;border-radius:8px;background:white;padding:10px;font:inherit;color:#173d35}
+ .agenda-search{grid-column:1/-1}
+ .agenda-form .agenda-reset{background:#e3f1eb;color:#087a70;border:0;border-radius:8px;padding:11px;font:inherit;cursor:pointer}
+ #agenda-resultados{margin:0;color:#527067;font-size:13px}
+ @media(max-width:850px){.agenda-form{grid-template-columns:repeat(2,minmax(0,1fr))}}
+ @media(max-width:520px){.agenda-form{grid-template-columns:1fr}.agenda-tabs button{flex:1 1 auto;justify-content:space-between}}
+
  .companion-picker{position:relative;display:grid;gap:5px;min-width:0}
  .companion-picker-field{position:relative}
  .companion-picker-field input{padding-right:48px}
@@ -93,16 +122,39 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
  const contenedor=root.querySelector<HTMLElement>('#reserva-local-list')!;
  const session=sesionRequerida();
  const nuevo=(tag:string,texto:string)=>{const e=document.createElement(tag);e.textContent=texto;return e;};
+ const filtros=root.querySelector<HTMLFormElement>('#agenda-filtros-form');
+ const tabs=Array.from(root.querySelectorAll<HTMLButtonElement>('[data-agenda-grupo]'));
+ const resultadosAgenda=root.querySelector<HTMLElement>('#agenda-resultados');
+ let grupo='TODAS';
+ let todas:any[]=[];
+ let medios:any[]=[];
+ let errorMedios=false;
+ const grupos:Record<string,string[]>={PENDIENTES:['PENDIENTE_ACEPTACION','PENDIENTE_PAGO','PENDIENTE_CONFIRMACION'],ACTIVAS:['CONFIRMADA','EN_PROGRESO']};
+ const coincideGrupo=(b:any,g:string)=>g==='TODAS'||(grupos[g]||[g]).includes(b.estado);
+ const normalizarAgenda=(v:unknown)=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+ const fechaLima=(v:string)=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Lima',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(v)).filter(x=>x.type!=='literal').reduce((a,x)=>({...a,[x.type]:x.value}),{} as Record<string,string>);
+ const fechaClave=(v:string)=>{if(!v||!Number.isFinite(Date.parse(v)))return '';const p=fechaLima(v);return p.year+'-'+p.month+'-'+p.day;};
  const refrescar=async()=>{
-  const bookings=await apiLocal('/reservas');
-  let medios:any[]=[];
-  let errorMedios=false;
+  todas=await apiLocal('/reservas');
+  medios=[];errorMedios=false;
   if(rol==='ADULTO_MAYOR'||rol==='FAMILIAR'){
    try{medios=await apiLocal('/metodos-pago');}catch(e){errorMedios=true;console.error('Error al consultar métodos de pago',e);}
   }
+  renderReservas();
+ };
+ const renderReservas=()=>{
+  let bookings=[...todas];
+  if(filtros){
+   const f=new FormData(filtros);const q=normalizarAgenda(f.get('busqueda')).split(/\s+/).filter(Boolean);
+   const especifico=String(f.get('estado')||'');const desde=String(f.get('desde')||'');const hasta=String(f.get('hasta')||'');const orden=String(f.get('orden')||'');
+   for(const tab of tabs){const g=tab.dataset.agendaGrupo||'TODAS';tab.setAttribute('aria-pressed',String(g===grupo));const c=tab.querySelector('.agenda-count');if(c)c.textContent=String(todas.filter(b=>coincideGrupo(b,g)).length);}
+   bookings=bookings.filter(b=>{const texto=normalizarAgenda([b.id,b.adultoMayorNombre,b.solicitanteNombre,b.direccion,b.estado.replaceAll('_',' ')].join(' '));const fecha=fechaClave(b.inicio);return coincideGrupo(b,grupo)&&(!especifico||b.estado===especifico)&&q.every(t=>texto.includes(t))&&(!desde||fecha>=desde)&&(!hasta||fecha<=hasta);});
+   bookings.sort((a,b)=>{if(orden==='mayor')return Number(b.montoTotal)-Number(a.montoTotal);if(orden==='menor')return Number(a.montoTotal)-Number(b.montoTotal);return orden==='proximas'?Date.parse(a.inicio)-Date.parse(b.inicio):Date.parse(b.inicio)-Date.parse(a.inicio);});
+   if(resultadosAgenda)resultadosAgenda.textContent=bookings.length+' de '+todas.length+' reservas'+(desde&&hasta&&desde>hasta?' · El rango de fechas es inválido.':'');
+  }
   contenedor.querySelectorAll<HTMLImageElement>('img').forEach(limpiarFoto);
   contenedor.replaceChildren();
-  if(!bookings.length){contenedor.textContent='No hay reservas para mostrar.';return;}
+  if(!bookings.length){contenedor.textContent=todas.length?'No hay reservas que coincidan con los filtros.':'No hay reservas para mostrar.';return;}
   for(const b of bookings){
    const div=document.createElement('article');div.className='local-item local-booking';
    div.append(nuevo('strong','#'+b.id+' · '+b.estado.replaceAll('_',' ')));
@@ -223,6 +275,13 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
    div.append(acciones);contenedor.append(div);
   }
  };
+ if(filtros){
+  for(const tab of tabs)tab.addEventListener('click',()=>{grupo=tab.dataset.agendaGrupo||'TODAS';(filtros.elements.namedItem('estado') as HTMLSelectElement).value='';renderReservas();});
+  filtros.addEventListener('submit',e=>e.preventDefault());
+  filtros.addEventListener('input',()=>renderReservas());
+  filtros.addEventListener('change',e=>{if((e.target as HTMLInputElement).name==='estado')grupo='TODAS';renderReservas();});
+  filtros.addEventListener('reset',()=>{grupo='TODAS';queueMicrotask(renderReservas);});
+ }
  const form=root.querySelector<HTMLFormElement>('#reserva-local-form');
  if(form){
   (async()=>{
