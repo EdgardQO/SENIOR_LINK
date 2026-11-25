@@ -68,6 +68,9 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
  {cliente && <p>Para pagar, registra una tarjeta en <a href={rol==='FAMILIAR'?'/familiar/metodos-pago':'/adulto-mayor/metodos-pago'}>Mis métodos de pago</a>.</p>}
 </section>
 <style>
+ .reserva-valoracion-registrada{width:100%;display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;padding:14px;border:1px solid #d5e5df;border-radius:10px;background:#f5faf7;color:#173d35}
+ .reserva-valoracion-stars{color:#b57912;font-size:20px;letter-spacing:2px}
+ .reserva-valoracion-registrada p{width:100%;margin:0;overflow-wrap:anywhere}
  .recibo-modal{position:fixed;inset:0;margin:auto;width:min(480px,calc(100% - 28px));max-height:85dvh;border:1px solid #d5e5df;border-radius:18px;padding:0;background:white;color:#173d35;overflow:auto;box-shadow:0 18px 70px #102f3550}
  .recibo-modal::backdrop{background:#102f3570}
  .recibo-header,.recibo-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 22px}
@@ -285,7 +288,14 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
      finally{enviando=false;btn.disabled=false;sel.disabled=false;cvv.disabled=false;}
     });acciones.append(pago);
    }
-   if((rol==='ADULTO_MAYOR'||rol==='FAMILIAR') && b.estado==='COMPLETADA'){
+   if(b.valoracion){
+    const detalle=document.createElement('div');detalle.className='reserva-valoracion-registrada';
+    const puntuacion=Math.max(0,Math.min(5,Number(b.valoracion.puntuacion)||0));
+    const stars=nuevo('span','★'.repeat(puntuacion)+'☆'.repeat(5-puntuacion));stars.className='reserva-valoracion-stars';stars.setAttribute('aria-label',puntuacion+' de 5 estrellas');
+    detalle.append(nuevo('strong','Valoración registrada'),stars,nuevo('span',puntuacion+' / 5'));
+    if(b.valoracion.comentario)detalle.append(nuevo('p',b.valoracion.comentario));
+    acciones.append(detalle);
+   }else if((rol==='ADULTO_MAYOR'||rol==='FAMILIAR') && b.estado==='COMPLETADA'){
     const review=document.createElement('form');review.className='local-form';
     const score=document.createElement('select');
     for(let n=5;n>=1;n--){const o=document.createElement('option');o.value=String(n);o.textContent=n+' estrellas';score.append(o);}
@@ -293,11 +303,11 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
     const btn=nuevo('button','Enviar valoración') as HTMLButtonElement;btn.type='submit';
     review.append(score,comment,btn);
     review.addEventListener('submit',async e=>{
-     e.preventDefault();
-     try{await apiLocal('/reservas/'+b.id+'/valorar',{method:'POST',body:JSON.stringify({
+     e.preventDefault();if(btn.disabled)return;btn.disabled=true;
+     try{const guardada=await apiLocal('/reservas/'+b.id+'/valorar',{method:'POST',body:JSON.stringify({
       puntuacion:Number(score.value),comentario:comment.value
-     })});estado.textContent='Valoración registrada.';review.remove();
-     }catch(err){estado.textContent=err instanceof Error?err.message:String(err);}
+     })});b.valoracion=guardada;estado.textContent='Valoración registrada.';renderReservas();await refrescar();
+     }catch(err){estado.textContent=err instanceof Error?err.message:String(err);}finally{btn.disabled=false;}
     });acciones.append(review);
    }
    if(rol==='ADULTO_MAYOR'||rol==='FAMILIAR'){
