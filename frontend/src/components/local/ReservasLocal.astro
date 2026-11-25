@@ -146,7 +146,7 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
   todas=await apiLocal('/reservas');
   medios=[];errorMedios=false;
   if(rol==='ADULTO_MAYOR'||rol==='FAMILIAR'){
-   try{if(import.meta.env.DEV)medios=await apiPagoLocal('/metodos-pago');}catch(e){errorMedios=true;console.error('Error al consultar métodos de pago',e);}
+   try{if((import.meta.env.DEV || import.meta.env.PUBLIC_PAGOS_SIMULADOS === 'true'))medios=await apiPagoLocal('/metodos-pago');}catch(e){errorMedios=true;console.error('Error al consultar métodos de pago',e);}
   }
   try{await cargarRecibos();}catch(e){console.error('No se pudieron consultar recibos',e);}
   renderReservas();
@@ -207,7 +207,7 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
    if((rol==='ADULTO_MAYOR'||rol==='FAMILIAR')&&b.estado==='PENDIENTE_CONFIRMACION')accion('Confirmar servicio','confirmar');
    if(['PENDIENTE_ACEPTACION','PENDIENTE_PAGO','CONFIRMADA','EN_PROGRESO','PENDIENTE_CONFIRMACION'].includes(b.estado) && rol!=='ADMINISTRADOR')
     accion('Cancelar reserva','cancelar');
-   if(import.meta.env.DEV && rol==='ADMINISTRADOR' && (b.estado==='CANCELADA'||b.estado==='EN_DISPUTA')){
+   if((import.meta.env.DEV || import.meta.env.PUBLIC_PAGOS_SIMULADOS === 'true') && rol==='ADMINISTRADOR' && (b.estado==='CANCELADA'||b.estado==='EN_DISPUTA')){
     const refund=nuevo('button','Reembolsar pago') as HTMLButtonElement;
     refund.addEventListener('click',async()=>{
      if(!confirm('¿Registrar el reembolso de esta reserva?'))return;
@@ -216,10 +216,10 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
      }catch(e){estado.textContent=e instanceof Error?e.message:String(e);}
     });acciones.append(refund);
    }
-   if((rol==='ADULTO_MAYOR'||rol==='FAMILIAR')&&b.estado==='PENDIENTE_PAGO'&&!import.meta.env.DEV){
+   if((rol==='ADULTO_MAYOR'||rol==='FAMILIAR')&&b.estado==='PENDIENTE_PAGO'&&!(import.meta.env.DEV || import.meta.env.PUBLIC_PAGOS_SIMULADOS === 'true')){
     acciones.append(nuevo('p','Pago en línea no disponible en este entorno. No introduzcas datos de tarjetas.'));
    }
-   if((rol==='ADULTO_MAYOR'||rol==='FAMILIAR')&&b.estado==='PENDIENTE_PAGO'&&import.meta.env.DEV){
+   if((rol==='ADULTO_MAYOR'||rol==='FAMILIAR')&&b.estado==='PENDIENTE_PAGO'&&(import.meta.env.DEV || import.meta.env.PUBLIC_PAGOS_SIMULADOS === 'true')){
     const pago=document.createElement('form');pago.className='local-form local-checkout';
     const titulo=nuevo('h3','SeniorLink Pay · Resumen del pago');
     const total=nuevo('strong',importe(b.montoTotal));total.className='checkout-total';
