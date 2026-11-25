@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -93,19 +95,34 @@ public class FotoPerfilService {
             Path temporal = Files.createTempFile(dir, "nueva-", ".tmp");
             try {
                 Files.write(temporal, datos, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
-                Path destino = dir.resolve("perfil." + extension);
+                String nombre = "perfil-" + UUID.randomUUID() + "." + extension;
+                Path destino = dir.resolve(nombre);
                 try {
-                    Files.move(temporal, destino, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+                    Files.move(temporal, destino, StandardCopyOption.ATOMIC_MOVE);
                 } catch (AtomicMoveNotSupportedException ex) {
-                    Files.move(temporal, destino, StandardCopyOption.REPLACE_EXISTING);
+                    Files.move(temporal, destino);
                 }
                 String anterior = usuario.getFotoPerfilRuta();
-                usuario.setFotoPerfilRuta(dni + "/perfil." + extension);
-                usuario.setActualizadoEn(OffsetDateTime.now());
-                usuarios.save(usuario);
-                if (anterior != null && !anterior.equals(usuario.getFotoPerfilRuta())) {
-                    Path vieja = root.resolve(anterior).normalize();
-                    if (vieja.startsWith(dir)) Files.deleteIfExists(vieja);
+                Path vieja = anterior == null ? null : root.resolve(anterior).normalize();
+                if (vieja != null && !vieja.startsWith(dir)) vieja = null;
+                final Path anteriorSegura = vieja;
+                try {
+                    usuario.setFotoPerfilRuta(dni + "/" + nombre);
+                    usuario.setActualizadoEn(OffsetDateTime.now());
+                    usuarios.save(usuario);
+                    if (TransactionSynchronizationManager.isSynchronizationActive()) {
+                        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                            @Override public void afterCommit() { eliminarSilenciosamente(anteriorSegura); }
+                            @Override public void afterCompletion(int estado) {
+                                if (estado != STATUS_COMMITTED) eliminarSilenciosamente(destino);
+                            }
+                        });
+                    } else {
+                        eliminarSilenciosamente(anteriorSegura);
+                    }
+                } catch (RuntimeException error) {
+                    eliminarSilenciosamente(destino);
+                    throw error;
                 }
             } finally {
                 Files.deleteIfExists(temporal);
@@ -113,6 +130,11 @@ public class FotoPerfilService {
         } catch (IOException ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo guardar la fotografía", ex);
         }
+    }
+
+    private static void eliminarSilenciosamente(Path archivo) {
+        if (archivo == null) return;
+        try { Files.deleteIfExists(archivo); } catch (IOException ignored) { /* la ruta puede limpiarse después */ }
     }
 
     @Transactional(readOnly = true)
