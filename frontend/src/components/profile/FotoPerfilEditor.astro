@@ -36,6 +36,11 @@
   .photo-profile-actions button[type=submit]{background:#0d8070;color:white}
   .photo-profile-actions button[hidden]{display:none}
   #photo-profile-status{color:#b42318;min-height:1.2em}
+  :global(.profile-photo-overview){display:flex;align-items:center;gap:15px;margin:0 0 20px;padding:15px;border:1px solid #cde6de;background:#f6fbf8;border-radius:14px}
+  :global(.profile-photo-overview img){width:86px;height:86px;object-fit:cover;border-radius:50%}
+  :global(.profile-photo-overview img[hidden]){display:none}
+  :global(.profile-photo-overview strong){font-size:14px;color:#124f43}
+  :global(.profile-photo-overview button){cursor:pointer;padding:8px 12px;background:#13796d;color:#fff;border:0;border-radius:8px;font-weight:600}
 </style>
 <script>
   import { API_URL, getSession, fetchProfile } from '../../lib/auth.js';
@@ -57,6 +62,32 @@
     if(modal) modal.hidden = false;
     file?.focus();
   }
+  let vistaPerfil: HTMLImageElement | null = null;
+  function renderVistaPerfil(dni:string,conFoto:boolean){
+    const contenedor=document.querySelector<HTMLElement>('#mi-perfil .profile-box')
+      || document.querySelector<HTMLElement>('#own-profile-fields')?.parentElement;
+    if(!contenedor) return;
+    let vista=contenedor.querySelector<HTMLElement>('.profile-photo-overview');
+    if(!vista){
+      vista=document.createElement('div');
+      vista.className='profile-photo-overview';
+      const img=document.createElement('img');
+      img.alt='Fotografía de mi perfil';
+      img.hidden=true;
+      const info=document.createElement('div');
+      const titulo=document.createElement('strong');
+      titulo.textContent='Fotografía de perfil';
+      const boton=document.createElement('button');
+      boton.type='button';
+      boton.textContent='Actualizar foto';
+      boton.addEventListener('click',()=>abrir(obligatoria));
+      info.append(titulo,document.createElement('p'),boton);
+      vista.append(img,info);
+      contenedor.prepend(vista);
+      vistaPerfil=img;
+    }else vistaPerfil=vista.querySelector('img');
+    if(vistaPerfil && conFoto) void mostrarFotoProtegida(dni,vistaPerfil);
+  }
   function cerrar(){
     if(obligatoria) return;
     if(modal) modal.hidden=true;
@@ -70,6 +101,7 @@
     usuarioDni = String(detail?.usuario?.dni || '');
     const fotoUrl = detail?.usuario?.fotoUrl;
     obligatoria = !fotoUrl;
+    renderVistaPerfil(usuarioDni,Boolean(fotoUrl));
     if(fotoUrl && avatar){
       const ok = await mostrarFotoProtegida(usuarioDni, avatar);
       if(placeholder) placeholder.hidden = ok;
@@ -104,6 +136,7 @@
       }
       const perfil=await fetchProfile(sesion);
       if(avatar){const ok=await mostrarFotoProtegida(usuarioDni,avatar);if(placeholder)placeholder.hidden=ok;}
+      if(vistaPerfil) await mostrarFotoProtegida(usuarioDni,vistaPerfil);
       obligatoria=false;
       if(modal)modal.hidden=true;
       if(file)file.value='';
