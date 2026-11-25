@@ -94,8 +94,14 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
         {role === 'ACOMPANANTE' && <>
           <a class="sidebar-link" href="/acompanante/solicitudes"><span>📅 Solicitudes y agenda</span></a>
           <a class="sidebar-link" href="/acompanante/disponibilidad"><span>🕘 Disponibilidad y tarifa</span></a>
+          <a class="sidebar-link" href="/acompanante/liquidaciones"><span>💵 Mis liquidaciones</span></a>
         </>}
-        {role === 'ADMINISTRADOR' && <a class="sidebar-link" href="/admin/pagos"><span>💳 Pagos de prueba</span></a>}
+        {role === 'ADMINISTRADOR' && <>
+          <a class="sidebar-link" href="/admin/pagos"><span>💳 Pagos de prueba</span></a>
+          <a class="sidebar-link" href="/admin/liquidaciones"><span>💵 Liquidaciones</span></a>
+          <a class="sidebar-link" href="/admin/incidencias"><span>⚠ Incidencias</span></a>
+        </>}
+        {role === 'SOPORTE' && <a class="sidebar-link" href="/soporte/incidencias"><span>⚠ Gestionar incidencias</span></a>}
         {role !== "ADMINISTRADOR" && <a class="sidebar-link" href="#inicio"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M9 21v-8h6v8"/></svg><span>Inicio</span></a>}
         <a class="sidebar-link" href={role === "ADMINISTRADOR" ? "/admin/mi-perfil" : "#mi-perfil"}><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Mi perfil</span></a>
         {role === 'ADMINISTRADOR' ? (
