@@ -19,10 +19,12 @@ import java.util.*;
 public class OperacionesController {
  private final ReservaLocalService reservas;
  private final PostServicioLocalService postServicio;
+ private final ConfiguracionLocalService configuracion;
 
- public OperacionesController(ReservaLocalService reservas, PostServicioLocalService postServicio) {
+ public OperacionesController(ReservaLocalService reservas, PostServicioLocalService postServicio, ConfiguracionLocalService configuracion) {
    this.reservas=reservas;
    this.postServicio=postServicio;
+   this.configuracion=configuracion;
  }
 
  @GetMapping("/servicios")
@@ -81,6 +83,14 @@ public class OperacionesController {
  public ReservaLocalService.ReservaVista cambiar(Authentication auth,@PathVariable Long id,
   @PathVariable String accion){
   return reservas.accion(auth.getName(),id,accion.toUpperCase(Locale.ROOT));
+ }
+ @GetMapping("/parametros-reserva")
+ @PreAuthorize("hasAnyRole('ADULTO_MAYOR','FAMILIAR','ADMINISTRADOR')")
+ public ConfiguracionLocalService.Parametros parametrosReserva(){return configuracion.obtener();}
+ @PostMapping("/reservas/{id}/jornadas/{jornadaId}/{accion:iniciar|finalizar|confirmar}")
+ @PreAuthorize("hasAnyRole('ADULTO_MAYOR','FAMILIAR','ACOMPANANTE')")
+ public ReservaLocalService.ReservaVista cambiarJornada(Authentication auth,@PathVariable Long id,@PathVariable Long jornadaId,@PathVariable String accion){
+  return reservas.accionJornada(auth.getName(),id,jornadaId,accion.toUpperCase(Locale.ROOT));
  }
  @GetMapping("/vinculos")
  @PreAuthorize("hasAnyRole('ADULTO_MAYOR','FAMILIAR')")

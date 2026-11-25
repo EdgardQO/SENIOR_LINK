@@ -125,6 +125,10 @@ const historial=modo!=='solicitar';
  :global(.reserva-persona strong){display:block;overflow-wrap:anywhere}
  :global(.jornada-form){display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;padding:12px;border:1px solid #d7e9e2;border-radius:12px;background:#f5fbf8;margin:8px 0}
  :global(.jornada-form p){grid-column:1/-1;margin:0;color:#087a70}
+ :global(.horarios-libres){grid-column:1/-1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;color:#315d53}
+ :global(.horario-libre){background:#e3f5ed!important;color:#087a70!important;border:1px solid #9acdb9!important;border-radius:8px;padding:8px 12px;cursor:pointer}
+ :global(.jornada-form [data-estado="error"]){color:#a33333}
+ :global(.jornada-form [data-estado="libre"]){color:#087a70;font-weight:600}
  </style>
 <script>
  import {apiLocal,apiPagoLocal,horaLocal,importe,sesionRequerida} from '../../lib/local-api';
@@ -341,45 +345,82 @@ const historial=modo!=='solicitar';
    const i=f.querySelector<HTMLInputElement>('[data-inicio]')!.value,fin=f.querySelector<HTMLInputElement>('[data-fin]')!.value;
    return {fecha,inicio:fecha+'T'+i+':00-05:00',fin:fecha+'T'+fin+':00-05:00',fila:f};
   });
-  async function calcular(comprobar=true){
+  const horaLima=(ms:number)=>new Intl.DateTimeFormat('es-PE',{timeZone:'America/Lima',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(ms));
+  const fechaMinima=()=>fechaClave(new Date(Date.now()+3600000).toISOString());
+  const enviar=form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+  let enviando=false;
+  async function calcular(){
    const actual=++version,js=leer(),dni=dniAcomp();
-   let minutos=0;let valido=true;const fechas=new Set<string>();
+   enviar.disabled=true;
+   let minutos=0,valido=true;const fechas=new Set<string>();
    const minimo=Math.max(1,Number(config?.minutosDuracionMinima??30)),maximo=Math.min(480,Number(config?.minutosDuracionMaxima??480));
+   const limite=Date.now()+3600000;
    let horarios:any[]=[],errorDisponibilidad=false;
-   if(comprobar&&dni)try{horarios=await apiLocal('/acompanantes/'+encodeURIComponent(dni)+'/disponibilidad');}catch{errorDisponibilidad=true;}
+   for(const j of js){j.fila.querySelector<HTMLElement>('[data-libres]')!.textContent=j.fecha&&dni?'Consultando horarios libres…':'Selecciona un acompañante y una fecha.';}
+   if(dni&&js.some(j=>j.fecha))try{horarios=await apiLocal('/acompanantes/'+encodeURIComponent(dni)+'/disponibilidad');}catch{errorDisponibilidad=true;}
    if(actual!==version)return false;
    for(const j of js){
-    const m=(Date.parse(j.fin)-Date.parse(j.inicio))/60000;const aviso=j.fila.querySelector('p')!;
-    let error='';
-    if(!Number.isFinite(m)||!j.fecha||m<minimo||m>maximo)error='Completa una jornada válida de '+minimo+' a '+maximo+' minutos.';
-    else if(Date.parse(j.inicio)<Date.now()+3600000)error='Se requiere una hora de anticipación.';
-    else if(fechas.has(j.fecha))error='Fecha duplicada.';
-    fechas.add(j.fecha);
-    if(!error&&comprobar&&dni){
+    const aviso=j.fila.querySelector<HTMLElement>('[data-aviso]')!, libres=j.fila.querySelector<HTMLElement>('[data-libres]')!;
+    const i=Date.parse(j.inicio),f=Date.parse(j.fin),m=(f-i)/60000;
+    let error='',rangos:{i:number;f:number}[]=[];
+    if(j.fecha&&dni&&!errorDisponibilidad){
      const d=new Date(j.fecha+'T12:00:00-05:00').getUTCDay()||7;
-     if(errorDisponibilidad)error='No se pudo consultar la disponibilidad.';
-     else if(!horarios.some(h=>h.diaSemana===d&&j.inicio.slice(11,16)>=h.horaInicio.slice(0,5)&&j.fin.slice(11,16)<=h.horaFin.slice(0,5)))error='Fuera del horario semanal.';
-     else try{const ocupados=await apiLocal('/acompanantes/'+encodeURIComponent(dni)+'/ocupacion?'+new URLSearchParams({inicio:j.fecha+'T00:00:00-05:00',fin:j.fecha+'T23:59:59-05:00'}));
-      if(ocupados.some((o:any)=>Date.parse(o.inicio)<Date.parse(j.fin)&&Date.parse(o.fin)>Date.parse(j.inicio)))error='Horario ocupado o bloqueado.';
-     }catch{error='No se pudo verificar la ocupación.';}
-    }
+     const semanales=horarios.filter(h=>Number(h.diaSemana)===d);
+     try{
+      const ocupados:any[]=semanales.length?await apiLocal('/acompanantes/'+encodeURIComponent(dni)+'/ocupacion?'+new URLSearchParams({inicio:j.fecha+'T00:00:00-05:00',fin:j.fecha+'T23:59:59-05:00'})):[];
+      if(actual!==version)return false;
+      for(const h of semanales){
+       const desde=Math.max(Date.parse(j.fecha+'T'+h.horaInicio.slice(0,5)+':00-05:00'),Math.ceil(limite/60000)*60000),hasta=Date.parse(j.fecha+'T'+h.horaFin.slice(0,5)+':00-05:00');
+       let cursor=desde;
+       for(const o of ocupados.map(o=>({i:Date.parse(o.inicio),f:Date.parse(o.fin)})).sort((a,b)=>a.i-b.i)){
+        if(o.f<=cursor||o.i>=hasta)continue;
+        if(o.i>cursor)rangos.push({i:cursor,f:Math.min(o.i,hasta)});
+        cursor=Math.max(cursor,o.f);
+       }
+       if(cursor<hasta)rangos.push({i:cursor,f:hasta});
+      }
+      rangos=rangos.filter(r=>r.f-r.i>=minimo*60000).sort((a,b)=>a.i-b.i);
+      libres.replaceChildren();
+      if(!rangos.length)libres.textContent=semanales.length?'No hay intervalos libres que cumplan la duración mínima y la anticipación.':'El acompañante no atiende ese día.';
+      else{
+       libres.append(document.createTextNode('Horarios libres: '));
+       for(const r of rangos){
+        const b=document.createElement('button');b.type='button';b.className='horario-libre';b.textContent=horaLima(r.i)+' – '+horaLima(r.f);
+        b.addEventListener('click',()=>{j.fila.querySelector<HTMLInputElement>('[data-inicio]')!.value=horaLima(r.i);j.fila.querySelector<HTMLInputElement>('[data-fin]')!.value=horaLima(Math.min(r.f,r.i+maximo*60000,r.i+Math.max(60,minimo)*60000));void calcular();});
+        libres.append(b);
+       }
+      }
+     }catch(e){error='No se pudo consultar la ocupación: '+(e instanceof Error?e.message:String(e));libres.textContent=error;}
+    }else if(j.fecha&&dni&&errorDisponibilidad){error='No se pudo consultar la disponibilidad semanal.';libres.textContent=error;}
     if(actual!==version)return false;
-    if(error){valido=false;aviso.textContent=error;}else{minutos+=m;aviso.textContent=(m/60).toFixed(2)+' h · '+importe(tarifa*m/60)+(comprobar&&dni?' · Disponible':'');}
+    if(!error){
+     if(!dni||!j.fecha||!Number.isFinite(m))error='Selecciona el acompañante, fecha y horas.';
+     else if(i<limite)error='Selecciona un inicio con al menos una hora de anticipación.';
+     else if(m<minimo||m>maximo)error='Duración permitida: '+minimo+' a '+maximo+' minutos.';
+     else if(fechas.has(j.fecha))error='No repitas la fecha de una jornada.';
+     else if(!rangos.some(r=>i>=r.i&&f<=r.f))error='Horario ocupado o fuera de los intervalos libres.';
+    }
+    fechas.add(j.fecha);
+    aviso.dataset.estado=error?'error':'libre';
+    if(error){valido=false;aviso.textContent=error;}else{minutos+=m;aviso.textContent='Horario libre · '+(m/60).toFixed(2)+' h · '+importe(tarifa*m/60);}
    }
    const horas=Math.round(minutos/60*100)/100,subtotal=Math.round(tarifa*horas*100)/100,comision=Math.round(subtotal*Number(config?.porcentajeComision??0))/100;
-   cotizacion.textContent=js.length+' jornadas · '+horas.toFixed(2)+' h · Subtotal '+importe(subtotal)+' · '+(config?'Comisión '+importe(comision)+' · Total '+importe(subtotal+comision):'Comisión pendiente de consulta');
-   return valido&&Boolean(dni);
+   cotizacion.textContent=js.length+(js.length===1?' jornada':' jornadas')+' · '+horas.toFixed(2)+' h · Subtotal '+importe(subtotal)+' · '+(config?'Comisión '+importe(comision)+' · Total '+importe(subtotal+comision):'No se pudo obtener la comisión. Recarga la página.');
+   const listo=valido&&Boolean(dni)&&Boolean(config)&&(modalidad.value==='uno'||js.length>=2);
+   enviar.disabled=!listo||enviando;
+   return listo;
   }
   function nuevaFila(){
    const f=document.createElement('div');f.className='jornada-form';
-   f.innerHTML='<label>Fecha<input type="date" data-fecha required></label><label>Inicio (Lima)<input type="time" data-inicio required></label><label>Fin (Lima)<input type="time" data-fin required></label><button type="button" data-quitar>Eliminar</button><p aria-live="polite"></p>';
+   f.innerHTML='<label>Fecha<input type="date" data-fecha required></label><label>Inicio (Lima)<input type="time" data-inicio required></label><label>Fin (Lima)<input type="time" data-fin required></label><button type="button" data-quitar>Eliminar</button><div data-libres class="horarios-libres" aria-live="polite"></div><p data-aviso aria-live="polite"></p>';
+   f.querySelector<HTMLInputElement>('[data-fecha]')!.min=fechaMinima();
    f.querySelector<HTMLButtonElement>('[data-quitar]')!.onclick=()=>{if(filas.children.length>1){f.remove();void calcular();}};
    filas.append(f);f.addEventListener('change',()=>void calcular());actualizarBotones();
   }
   function actualizarBotones(){agregar.hidden=modalidad.value==='uno';filas.querySelectorAll<HTMLButtonElement>('[data-quitar]').forEach(b=>b.hidden=modalidad.value==='uno');}
   modalidad.onchange=()=>{if(modalidad.value==='uno')while(filas.children.length>1)filas.lastElementChild?.remove();else if(filas.children.length===1)nuevaFila();actualizarBotones();void calcular();};
-  agregar.onclick=()=>{if(filas.children.length<365)nuevaFila();};
-  nuevaFila();
+  agregar.onclick=()=>{if(filas.children.length<365){nuevaFila();void calcular();}};
+  nuevaFila();enviar.disabled=true;
   form.addEventListener('reset',()=>queueMicrotask(()=>{filas.replaceChildren();nuevaFila();void calcular();}));
   void apiLocal('/parametros-reserva').then(c=>{config=c;void calcular();}).catch(()=>{cotizacion.textContent='No se pudo consultar la comisión.';});
 
@@ -530,11 +571,12 @@ const historial=modo!=='solicitar';
    }
   })().catch(e=>estado.textContent=String(e));
   form.addEventListener('submit',async ev=>{
-   ev.preventDefault();const fd=new FormData(form);
+   ev.preventDefault();if(enviando)return;const fd=new FormData(form);
    if(!fd.get('acompananteDni')){const input=form.querySelector<HTMLInputElement>('#reserva-local-buscar');input?.setCustomValidity('Selecciona un acompañante de la lista.');input?.reportValidity();return;}
    if(modalidad.value==='varios'&&filas.children.length<2){estado.textContent='Agrega al menos dos jornadas.';return;}
    if(!await calcular()){estado.textContent='Revisa las jornadas y su disponibilidad.';return;}
    const jornadas=leer().map(({inicio,fin})=>({inicio,fin}));
+   enviando=true;enviar.disabled=true;
    try{estado.textContent='Registrando solicitud…';
     await apiLocal('/reservas',{method:'POST',body:JSON.stringify({
      adultoMayorDni:rol==='FAMILIAR'?String(fd.get('adultoMayorDni')):session.dni,
@@ -542,7 +584,7 @@ const historial=modo!=='solicitar';
      inicio:jornadas[0].inicio,fin:jornadas[0].fin,jornadas,
      direccion:String(fd.get('direccion')),indicaciones:String(fd.get('indicaciones')||'')
     })});form.reset();estado.textContent='Solicitud enviada al acompañante.';if(modo==='solicitar'){const enlace=document.createElement('a');enlace.href=rol==='FAMILIAR'?'/familiar/mis-reservas':'/adulto-mayor/mis-reservas';enlace.textContent=' Ver mis reservas';estado.append(enlace);}else await refrescar();
-   }catch(e){estado.textContent=e instanceof Error?e.message:String(e);}
+   }catch(e){estado.textContent=e instanceof Error?e.message:String(e);}finally{enviando=false;void calcular();}
   });
  }
  window.addEventListener('pagehide',()=>contenedor.querySelectorAll<HTMLImageElement>('img').forEach(limpiarFoto));
