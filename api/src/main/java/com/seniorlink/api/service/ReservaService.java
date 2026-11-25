@@ -22,19 +22,21 @@ public class ReservaService {
     private final ServicioRepository servicioRepository;
     private final DescuentoRepository descuentoRepository;
     private final HistorialEstadoReservaRepository historialRepository;
+    private final ReservaLocalService agenda;
 
     public ReservaService(ReservaRepository reservaRepository,
                           UsuarioRepository usuarioRepository,
                           PerfilAcompananteRepository acompananteRepository,
                           ServicioRepository servicioRepository,
                           DescuentoRepository descuentoRepository,
-                          HistorialEstadoReservaRepository historialRepository) {
+                          HistorialEstadoReservaRepository historialRepository, ReservaLocalService agenda) {
         this.reservaRepository = reservaRepository;
         this.usuarioRepository = usuarioRepository;
         this.acompananteRepository = acompananteRepository;
         this.servicioRepository = servicioRepository;
         this.descuentoRepository = descuentoRepository;
         this.historialRepository = historialRepository;
+        this.agenda = agenda;
     }
 
     @Transactional
@@ -42,11 +44,12 @@ public class ReservaService {
         Usuario cliente = usuarioRepository.findById(dto.clienteDni())
                 .orElseThrow(() -> new IllegalArgumentException("Cliente con DNI " + dto.clienteDni() + " no encontrado"));
 
-        Usuario acompanante = usuarioRepository.findById(dto.acompananteDni())
-                .orElseThrow(() -> new IllegalArgumentException("Acompañante con DNI " + dto.acompananteDni() + " no encontrado"));
+        Usuario acompanante = agenda.bloquearAcompanante(dto.acompananteDni());
 
         if (!Boolean.TRUE.equals(acompanante.getEstaActivo()) || !acompanante.isFotoVerificada())
             throw new IllegalArgumentException("Acompañante no disponible o sin verificación");
+        if (dto.fechaHoraInicio()==null || !dto.fechaHoraInicio().isAfter(OffsetDateTime.now())) throw new IllegalArgumentException("Horario vencido");
+        agenda.validarHorario(dto.acompananteDni(),dto.fechaHoraInicio(),dto.fechaHoraFin(),null);
         PerfilAcompanante perfilAcomp = acompananteRepository.findById(dto.acompananteDni())
                 .orElseThrow(() -> new IllegalArgumentException("Perfil del acompañante no encontrado"));
 
@@ -59,6 +62,10 @@ public class ReservaService {
 
         Reserva reserva = new Reserva();
         reserva.setCliente(cliente);
+        reserva.setAdultoMayor(cliente);
+        reserva.setSolicitante(cliente);
+        reserva.setEstadoActual(EstadoReserva.PENDIENTE_PAGO);
+        reserva.setVencePagoEn(agenda.plazoPago(dto.fechaHoraInicio()));
         reserva.setAcompanante(acompanante);
         reserva.setFechaHoraInicio(dto.fechaHoraInicio());
         reserva.setFechaHoraFin(dto.fechaHoraFin());
@@ -131,9 +138,15 @@ public class ReservaService {
 
     @Transactional
     public Reserva actualizarEstado(Long reservaId, EstadoReserva nuevoEstado) {
-        Reserva reserva = obtenerPorId(reservaId);
-        reserva.setEstadoActual(nuevoEstado);
-        reserva.setActualizadoEn(OffsetDateTime.now());
-        return reservaRepository.save(reserva);
+        Reserva reserva = agenda.bloquearParaAgenda(reservaId);
+        EstadoReserva anterior=reserva.getEstadoActual();
+        if (anterior==nuevoEstado) return reserva;
+        if (anterior==EstadoReserva.COMPLETADA || anterior==EstadoReserva.CANCELADA || anterior==EstadoReserva.EXPIRADA || anterior==EstadoReserva.RECHAZADA)
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.CONFLICT,"La reserva ya terminó");
+        if (nuevoEstado!=EstadoReserva.CANCELADA && !(nuevoEstado==EstadoReserva.EN_DISPUTA &&
+            (anterior==EstadoReserva.CONFIRMADA || anterior==EstadoReserva.EN_PROGRESO || anterior==EstadoReserva.PENDIENTE_CONFIRMACION)))
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.CONFLICT,"Usa el flujo operativo de aceptación, pago e inicio");
+        agenda.cambiar(reserva,nuevoEstado,"Cambio administrativo",null);
+        return reserva;
     }
 }
