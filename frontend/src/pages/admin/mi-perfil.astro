@@ -27,6 +27,7 @@ import RoleLayout from '../../layouts/RoleLayout.astro';
 }
 </style>
 <script>
+  import {montarEditorContacto} from '../../lib/profile-fields';
   type Profile = Record<string, unknown>;
   const labels: Record<string,string> = {
     dni:'DNI', nombres:'Nombres', apellidos:'Apellidos',
@@ -50,6 +51,7 @@ import RoleLayout from '../../layouts/RoleLayout.astro';
     const status = document.querySelector<HTMLElement>('#own-profile-status');
     if (!grid || !status || !detail?.usuario) return;
     grid.replaceChildren();
+    montarEditorContacto(detail);
     const sections: Array<[string,Profile,Array<[string,string]>]> = [
       ['Datos personales',detail.usuario,[
         ['nombres','Nombres'],['apellidos','Apellidos'],['dni','DNI'],

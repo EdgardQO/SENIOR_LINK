@@ -16,47 +16,74 @@ export function renderProfileFields(data: Record<string, any>): void {
   montarEditorContacto(data);
 }
 
-function montarEditorContacto(data: Record<string, any>): void {
+export function montarEditorContacto(data: Record<string, any>): void {
   const rol=data.usuario?.rolNombre;
-  if(!['ACOMPANANTE','FAMILIAR','ADULTO_MAYOR'].includes(rol))return;
-  const host=document.querySelector<HTMLElement>('#mi-perfil .profile-box');
-  if(!host || host.querySelector('#perfil-contacto-form'))return;
-  const abrir=document.createElement('button');abrir.type='button';abrir.textContent='Editar datos de contacto';
-  abrir.style.cssText='display:inline-block;margin-top:16px;border:0;border-radius:9px;background:#087a70;color:white;padding:12px 16px;font:inherit;cursor:pointer';
-  const modal=document.createElement('dialog');modal.setAttribute('aria-labelledby','perfil-contacto-titulo');
-  modal.style.cssText='width:min(480px,calc(100% - 32px));max-height:85vh;overflow:auto;border:1px solid #d5ebe1;border-radius:16px;padding:0;background:white;color:#173d35;box-shadow:0 16px 60px #123b3540';
-  const form=document.createElement('form');form.id='perfil-contacto-form';
-  form.style.cssText='display:grid;gap:10px;margin:0;padding:24px;background:#f1faf6;border:1px solid #d5ebe1;border-radius:12px';
-  const titulo=document.createElement('h3');titulo.id='perfil-contacto-titulo';titulo.textContent='Editar datos de contacto';titulo.style.margin='0';
-  const nota=document.createElement('p');nota.textContent='Actualiza tu teléfono personal. El número de emergencia se mantiene separado.';nota.style.margin='0';
-  form.append(titulo,nota);
-  function campo(nombre:string,etiqueta:string,valor:string,obligatorio:boolean){
+  const host=document.querySelector<HTMLElement>('#mi-perfil .profile-box, section.profile-box[aria-labelledby="own-profile-title"]');
+  if(!host || !rol)return;
+  const existente=host.querySelector<HTMLDialogElement>('#perfil-editor');
+  if(existente){existente.dispatchEvent(new CustomEvent('datos-perfil',{detail:data}));return;}
+  let actual=data,guardando=false;
+  const abrir=document.createElement('button');abrir.type='button';abrir.textContent='Editar mi perfil';
+  abrir.style.cssText='margin-top:16px;border:0;border-radius:9px;background:#087a70;color:white;padding:12px 16px;font:inherit;cursor:pointer';
+  const modal=document.createElement('dialog');modal.id='perfil-editor';modal.setAttribute('aria-labelledby','perfil-editor-titulo');
+  modal.style.cssText='width:min(620px,calc(100% - 32px));max-height:85vh;overflow:auto;border:1px solid #d5ebe1;border-radius:16px;padding:0;background:white;color:#173d35';
+  const form=document.createElement('form');form.style.cssText='display:grid;gap:12px;padding:24px;background:#f5faf8';
+  const titulo=document.createElement('h3');titulo.id='perfil-editor-titulo';titulo.textContent='Editar mi perfil';titulo.style.margin='0';form.append(titulo);
+  const controles:Array<{ruta:string;input:HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement;numero:boolean}>=[];
+  const estilo='display:block;width:100%;box-sizing:border-box;border:1px solid #cbded6;border-radius:8px;padding:10px;margin-top:5px;background:white;color:#173d35;font:inherit';
+  function seccion(texto:string){const h=document.createElement('h4');h.textContent=texto;h.style.cssText='margin:8px 0 0;color:#087a70';form.append(h);}
+  function campo(ruta:string,etiqueta:string,max:number,tipo='text',obligatorio=false){
     const label=document.createElement('label');label.textContent=etiqueta;
-    const input=document.createElement('input');input.name=nombre;input.type='tel';input.maxLength=20;input.required=obligatorio;input.value=valor??'';
-    input.placeholder='Celular de 9 dígitos o +código de país';
-    input.style.cssText='display:block;width:100%;box-sizing:border-box;border:1px solid #cbded6;border-radius:8px;padding:11px;margin-top:6px;background:white;color:#173d35;font:inherit';
-    label.append(input);form.append(label);return input;
+    const input=tipo==='textarea'?document.createElement('textarea'):document.createElement('input');
+    if(input instanceof HTMLInputElement){input.type=tipo;if(tipo==='number'){input.min='1';input.max='20';input.step='1';}}
+    else input.rows=3;
+    if(tipo!=='number')input.maxLength=max;
+    input.required=obligatorio;input.style.cssText=estilo;label.append(input);form.append(label);controles.push({ruta,input,numero:tipo==='number'});return input;
   }
-  const tel=campo('telefono','Teléfono personal',data.usuario?.telefono??'',true);
-  tel.autocomplete='tel';
-  const alt=rol==='FAMILIAR'?campo('telefonoAlternativo','Teléfono alternativo (opcional)',data.familiar?.telefonoAlternativo??'',false):null;
-  const btn=document.createElement('button');btn.type='submit';btn.textContent='Guardar datos de contacto';btn.style.cssText='justify-self:start;border:0;border-radius:8px;background:#087a70;color:white;padding:11px 16px;font:inherit;cursor:pointer';
-  const estado=document.createElement('p');estado.setAttribute('role','status');estado.setAttribute('aria-live','polite');estado.style.margin='0';
-  const cancelar=document.createElement('button');cancelar.type='button';cancelar.textContent='Cancelar';cancelar.style.cssText='background:#e3f1eb;color:#087a70;border:0;border-radius:8px;padding:11px 16px;font:inherit;cursor:pointer';
-  const acciones=document.createElement('div');acciones.style.cssText='display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end';acciones.append(cancelar,btn);
-  form.append(acciones,estado);modal.append(form);host.append(abrir,modal);
-  let datosActuales=data;let guardando=false;
-  abrir.onclick=()=>{tel.value=datosActuales.usuario?.telefono??'';if(alt)alt.value=datosActuales.familiar?.telefonoAlternativo??'';estado.textContent='';modal.showModal();tel.focus();};
-  cancelar.onclick=()=>{if(!guardando)modal.close();};
-  modal.addEventListener('cancel',e=>{if(guardando)e.preventDefault();});
+  seccion('Datos personales');
+  campo('usuario.nombres','Nombres',100,'text',true);campo('usuario.apellidos','Apellidos',100,'text',true);campo('usuario.telefono','Teléfono personal',20,'tel');
+  let parentesco:HTMLSelectElement|null=null;
+  if(rol==='ACOMPANANTE'&&data.acompanante){seccion('Perfil profesional');campo('acompanante.carrera','Carrera',150,'text',true);campo('acompanante.ciclo','Ciclo académico',20,'number');campo('acompanante.biografia','Biografía',3000,'textarea');}
+  if(rol==='ADULTO_MAYOR'&&data.adultoMayor){seccion('Perfil de adulto mayor');campo('adultoMayor.direccionResidencia','Dirección de residencia',1000,'textarea');campo('adultoMayor.contactoEmergencia','Contacto de emergencia',100,'text',true);campo('adultoMayor.telefonoEmergencia','Teléfono de emergencia',20,'tel',true);campo('adultoMayor.observacionesMedicas','Observaciones médicas',3000,'textarea');}
+  if(rol==='FAMILIAR'&&data.familiar){
+    seccion('Perfil familiar');const label=document.createElement('label');label.textContent='Parentesco principal';parentesco=document.createElement('select');parentesco.style.cssText=estilo;label.append(parentesco);form.append(label);controles.push({ruta:'familiar.parentescoPrincipalId',input:parentesco,numero:true});campo('familiar.telefonoAlternativo','Teléfono alternativo',20,'tel');
+  }
+  if(rol==='SOPORTE'&&data.soporte){seccion('Perfil de soporte');campo('soporte.extensionTelefonica','Extensión telefónica',20);}
+  const nota=document.createElement('p');nota.textContent='Los datos de identificación, correo, permisos y asignaciones institucionales requieren revisión administrativa. Las tarifas se gestionan en su módulo.';nota.style.fontSize='13px';form.append(nota);
+  const estado=document.createElement('p');estado.setAttribute('role','status');estado.setAttribute('aria-live','polite');
+  const botones=document.createElement('div');botones.style.cssText='display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap';
+  const cancelar=document.createElement('button');cancelar.type='button';cancelar.textContent='Cancelar';
+  const guardar=document.createElement('button');guardar.type='submit';guardar.textContent='Guardar cambios';
+  cancelar.style.cssText='border:0;border-radius:8px;padding:11px;background:#e3f1eb;color:#087a70;cursor:pointer';
+  guardar.style.cssText='border:0;border-radius:8px;padding:11px;background:#087a70;color:white;cursor:pointer';
+  botones.append(cancelar,guardar);form.append(estado,botones);modal.append(form);host.append(abrir,modal);
   const aviso=document.createElement('p');aviso.setAttribute('role','status');host.append(aviso);
-  form.addEventListener('submit',async(e)=>{
-    e.preventDefault();guardando=true;btn.disabled=true;cancelar.disabled=true;estado.textContent='Guardando…';
-    try{
-      const actualizado=await apiSegura('/usuarios/me/contacto',{method:'PUT',body:JSON.stringify({telefono:tel.value,...(alt?{telefonoAlternativo:alt.value}:{})})});
-      tel.value=actualizado.usuario?.telefono??'';if(alt)alt.value=actualizado.familiar?.telefonoAlternativo??'';
-      datosActuales=actualizado;renderProfileFields(actualizado);modal.close();aviso.textContent='Datos de contacto actualizados. Si cambiaste el número, revisa nuevamente las autorizaciones de tus reservas.';
-    }catch(err){estado.textContent=err instanceof Error?err.message:String(err);}
-    finally{guardando=false;btn.disabled=false;cancelar.disabled=false;}
-  });
+  const valor=(ruta:string)=>ruta.split('.').reduce<any>((v,k)=>v?.[k],actual);
+  modal.addEventListener('datos-perfil',e=>{actual=(e as CustomEvent).detail;});
+  abrir.onclick=async()=>{
+    estado.textContent='';modal.showModal();guardar.disabled=true;
+    if(parentesco){parentesco.replaceChildren();parentesco.disabled=true;const opt=new Option(actual.familiar?.parentescoPrincipalNombre||'Sin parentesco',String(actual.familiar?.parentescoPrincipalId??''));parentesco.add(opt);
+      try{const lista=await apiSegura('/usuarios/me/parentescos');parentesco.replaceChildren(new Option('Selecciona un parentesco',''));for(const item of lista)parentesco.add(new Option(item.nombre,String(item.id)));parentesco.disabled=false;}
+      catch(e){estado.textContent='No se pudo cargar el catálogo de parentescos. Puedes editar otros campos.';}
+    }
+    for(const c of controles)c.input.value=String(valor(c.ruta)??'');
+    guardar.disabled=false;
+  };
+  cancelar.onclick=()=>{if(!guardando)modal.close();};modal.addEventListener('cancel',e=>{if(guardando)e.preventDefault();});
+  form.onsubmit=async(e)=>{
+    e.preventDefault();if(guardando)return;
+    const payload:Record<string,any>={};
+    for(const c of controles){
+      if(c.input.disabled)continue;
+      const raw=c.input.value.trim();if(raw===String(valor(c.ruta)??''))continue;
+      if(c.numero&&!raw)continue;
+      const [grupo,key]=c.ruta.split('.');const v=c.numero?Number(raw):raw;
+      if(grupo==='usuario')payload[key]=v;else (payload[grupo]??={})[key]=v;
+    }
+    if(!Object.keys(payload).length){modal.close();return;}
+    guardando=true;guardar.disabled=true;cancelar.disabled=true;estado.textContent='Guardando cambios…';
+    try{actual=await apiSegura('/usuarios/me/perfil',{method:'PUT',body:JSON.stringify(payload)});renderProfileFields(actual);document.dispatchEvent(new CustomEvent('seniorlink:profile',{detail:actual}));modal.close();aviso.textContent='Perfil actualizado correctamente.';}
+    catch(e){estado.textContent=e instanceof Error?e.message:String(e);}
+    finally{guardando=false;guardar.disabled=false;cancelar.disabled=false;}
+  };
 }
