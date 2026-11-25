@@ -8,6 +8,18 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
  {cliente && <form id="reserva-local-form" class="local-form">
   {rol==='FAMILIAR' && <label>Adulto mayor autorizado<select name="adultoMayorDni" id="reserva-local-adulto" required><option value="">Selecciona un adulto autorizado</option></select></label>}
   <label>Acompañante<select name="acompananteDni" id="reserva-local-acompanante" required><option value="">Selecciona un acompañante</option></select></label>
+  <section id="reserva-local-ficha" class="local-companion-card" aria-live="polite" hidden>
+    <div class="local-companion-heading">
+      <img id="reserva-local-foto" alt="Fotografía del acompañante seleccionado" hidden />
+      <div><strong id="reserva-local-nombre"></strong><p id="reserva-local-carrera"></p></div>
+    </div>
+    <p id="reserva-local-institucion"></p>
+    <p id="reserva-local-bio"></p>
+    <p id="reserva-local-tarifa"></p>
+    <p id="reserva-local-calificacion"></p>
+    <h3>Horarios de atención</h3>
+    <p id="reserva-local-horarios">Consultando disponibilidad...</p>
+  </section>
   <label>Servicio<select name="servicioId" id="reserva-local-servicio" required><option value="">Selecciona un servicio</option></select></label>
   <label>Inicio<input name="inicio" type="datetime-local" required/></label>
   <label>Fin<input name="fin" type="datetime-local" required/></label>
@@ -19,8 +31,18 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
  <div id="reserva-local-list" class="local-list"></div>
  {cliente && <p>Modo de prueba: para pagar, registra una tarjeta en <a href={rol==='FAMILIAR'?'/familiar/metodos-pago':'/adulto-mayor/metodos-pago'}>Mis métodos de pago</a>.</p>}
 </section>
+<style>
+ .local-companion-card{border:1px solid #cbe6db;background:#f5fbf8;padding:17px;border-radius:15px;display:grid;gap:7px}
+ .local-companion-card[hidden]{display:none}
+ .local-companion-heading{display:flex;align-items:center;gap:13px}
+ .local-companion-heading img{width:78px;height:78px;border-radius:50%;object-fit:cover;flex-shrink:0}
+ .local-companion-heading img[hidden]{display:none}
+ .local-companion-card p{margin:3px 0;line-height:1.5;font-size:13px}
+ .local-companion-card h3{font-size:14px;margin:10px 0 0;color:#12695d}
+ </style>
 <script>
  import {apiLocal,horaLocal,importe,sesionRequerida} from '../../lib/local-api';
+ import {mostrarFotoProtegida,limpiarFoto} from '../../lib/profile-photo';
  const root=document.querySelector<HTMLElement>('[data-reservas-rol]')!;
  const rol=root.dataset.reservasRol!;
  const estado=root.querySelector<HTMLElement>('#reserva-local-status')!;
@@ -126,6 +148,34 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
    const [personas,servicios]=await Promise.all([apiLocal('/acompanantes'),apiLocal('/servicios')]);
    const acomp=form.querySelector<HTMLSelectElement>('#reserva-local-acompanante')!;
    for(const x of personas){const opt=document.createElement('option');opt.value=x.dni;opt.textContent=x.nombre+' · '+importe(x.tarifaHora)+'/h';acomp.append(opt);}
+   const ficha=form.querySelector<HTMLElement>('#reserva-local-ficha')!;
+   const foto=form.querySelector<HTMLImageElement>('#reserva-local-foto')!;
+   const campo=(id:string,valor:string)=>{const e=form.querySelector<HTMLElement>('#'+id);if(e)e.textContent=valor;};
+   let consulta=0;
+   acomp.addEventListener('change',async()=>{
+    const seleccion=++consulta;
+    const x=personas.find((persona:any)=>persona.dni===acomp.value);
+    limpiarFoto(foto);
+    if(!x){ficha.hidden=true;return;}
+    ficha.hidden=false;
+    campo('reserva-local-nombre',x.nombre);
+    campo('reserva-local-carrera',[x.carrera,x.ciclo?'Ciclo '+x.ciclo:null].filter(Boolean).join(' · '));
+    campo('reserva-local-institucion','Institución: '+(x.institucion||'No registrada'));
+    campo('reserva-local-bio',x.biografia||'El acompañante aún no ha añadido una biografía.');
+    campo('reserva-local-tarifa','Tarifa: '+importe(x.tarifaHora)+' por hora');
+    const puntuacion=x.promedioCalificacion==null?'Sin calificaciones':Number(x.promedioCalificacion).toFixed(1)+' / 5';
+    campo('reserva-local-calificacion','Calificación: '+puntuacion+' · '+(x.totalCalificaciones||0)+' opiniones');
+    campo('reserva-local-horarios','Consultando disponibilidad...');
+    if(x.fotoUrl) void mostrarFotoProtegida(x.dni,foto);
+    try{
+     const horarios=await apiLocal('/acompanantes/'+encodeURIComponent(x.dni)+'/disponibilidad');
+     if(seleccion!==consulta)return;
+     const dias=['','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+     campo('reserva-local-horarios',horarios.length
+      ? horarios.map((h:any)=>dias[h.diaSemana]+': '+h.horaInicio.slice(0,5)+'–'+h.horaFin.slice(0,5)).join(' · ')
+      : 'Sin horarios registrados');
+    }catch{if(seleccion===consulta)campo('reserva-local-horarios','No se pudo consultar la disponibilidad');}
+   });
    const lista=form.querySelector<HTMLSelectElement>('#reserva-local-servicio')!;
    for(const s of servicios){const opt=document.createElement('option');opt.value=s.id;opt.textContent=s.nombre;lista.append(opt);}
    if(rol==='FAMILIAR'){
