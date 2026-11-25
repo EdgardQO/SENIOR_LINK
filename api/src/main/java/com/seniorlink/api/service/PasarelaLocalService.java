@@ -180,6 +180,7 @@ public class PasarelaLocalService {
   tarjetas.save(t);movimiento(t,tr,"REEMBOLSO",tr.getMonto(),antes,antes.add(tr.getMonto()));
   tr.setEstado("REEMBOLSADO");tr.setCodigo("REEMBOLSADO");transacciones.save(tr);
   pagos.findByReservaId(reservaId).ifPresent(p->{p.setMpEstado(EstadoPasarelaPago.REEMBOLSADO);pagos.save(p);});
+  motor.cambiar(r,EstadoReserva.CANCELADA,"Reembolso local aprobado por administración",admin);
   return resultado(tr);
  }
 }
