@@ -48,8 +48,13 @@ public class ReservaService {
 
         if (!Boolean.TRUE.equals(acompanante.getEstaActivo()) || !acompanante.isFotoVerificada())
             throw new IllegalArgumentException("Acompañante no disponible o sin verificación");
-        if (dto.fechaHoraInicio()==null || !dto.fechaHoraInicio().isAfter(OffsetDateTime.now())) throw new IllegalArgumentException("Horario vencido");
+        if (!Boolean.TRUE.equals(cliente.getEstaActivo()) || !"ADULTO_MAYOR".equals(cliente.getRol().getNombre()))
+            throw new IllegalArgumentException("Adulto mayor inválido o inactivo");
+        if (dto.fechaHoraInicio()==null || dto.fechaHoraInicio().isBefore(OffsetDateTime.now().plusMinutes(60)))
+            throw new IllegalArgumentException("La reserva requiere al menos una hora de anticipación");
+        agenda.bloquearAdulto(cliente.getDni());
         agenda.validarHorario(dto.acompananteDni(),dto.fechaHoraInicio(),dto.fechaHoraFin(),null);
+        agenda.validarLimiteAdulto(cliente.getDni(),dto.fechaHoraInicio(),dto.fechaHoraFin(),null);
         PerfilAcompanante perfilAcomp = acompananteRepository.findById(dto.acompananteDni())
                 .orElseThrow(() -> new IllegalArgumentException("Perfil del acompañante no encontrado"));
 

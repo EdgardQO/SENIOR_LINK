@@ -51,5 +51,9 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
     @Query("select count(r)>0 from Reserva r where r.acompanante.dni=:dni and r.id<>:excluir and r.estadoActual=:estado")
     boolean existeOtroEnEstado(@Param("dni") String dni,@Param("excluir") Long excluir,@Param("estado") EstadoReserva estado);
 
+    @Query("select r from Reserva r left join r.adultoMayor a where (a.dni=:dni or (a is null and r.cliente.dni=:dni)) and r.id<>:excluir and r.fechaHoraInicio<:fin and r.fechaHoraFin>:inicio and r.estadoActual in :estados")
+    List<Reserva> reservasAdultoEnDia(@Param("dni") String dni,@Param("inicio") OffsetDateTime inicio,
+      @Param("fin") OffsetDateTime fin,@Param("excluir") Long excluir,@Param("estados") Collection<EstadoReserva> estados);
+
     List<Reserva> findByEstadoActual(EstadoReserva estadoActual);
 }

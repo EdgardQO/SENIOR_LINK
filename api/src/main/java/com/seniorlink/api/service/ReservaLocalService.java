@@ -27,6 +27,30 @@ public class ReservaLocalService {
  public Usuario bloquearAcompanante(String dni){
   return usuarios.bloquear(dni).orElseThrow(()->bad("Acompañante no encontrado"));
  }
+ public void bloquearAdulto(String dni){
+  usuarios.bloquear(dni).orElseThrow(()->bad("Adulto mayor no encontrado"));
+ }
+ public void validarLimiteAdulto(String dni,OffsetDateTime inicio,OffsetDateTime fin,Long excluir){
+  if(inicio==null||fin==null||!fin.isAfter(inicio))throw bad("Horario inválido");
+  ZonedDateTime i=inicio.atZoneSameInstant(LIMA),f=fin.atZoneSameInstant(LIMA);
+  if(!i.toLocalDate().equals(f.toLocalDate()))throw bad("La jornada debe estar dentro de un mismo día");
+  Duration duracion=Duration.between(inicio,fin);
+  if(duracion.compareTo(Duration.ofHours(8))>0)throw bad("El máximo diario es de ocho horas");
+  OffsetDateTime desde=i.toLocalDate().atStartOfDay(LIMA).toOffsetDateTime();
+  OffsetDateTime hasta=i.toLocalDate().plusDays(1).atStartOfDay(LIMA).toOffsetDateTime();
+  OffsetDateTime ahora=OffsetDateTime.now();
+  Set<EstadoReserva> estados=EnumSet.of(EstadoReserva.PENDIENTE_ACEPTACION,EstadoReserva.PENDIENTE_PAGO,
+   EstadoReserva.CONFIRMADA,EstadoReserva.EN_PROGRESO,EstadoReserva.PENDIENTE_CONFIRMACION,EstadoReserva.COMPLETADA,EstadoReserva.EN_DISPUTA);
+  for(Reserva r:reservas.reservasAdultoEnDia(dni,desde,hasta,excluir==null?-1L:excluir,estados)){
+   if(plazoVencido(r,ahora))continue;
+   OffsetDateTime ri=r.getFechaHoraInicio(),rf=r.getFechaHoraFin();
+   if(ri.isBefore(fin)&&rf.isAfter(inicio))
+    throw new ResponseStatusException(HttpStatus.CONFLICT,"El adulto mayor ya tiene otra reserva en ese horario");
+   duracion=duracion.plus(Duration.between(ri.isBefore(desde)?desde:ri,rf.isAfter(hasta)?hasta:rf));
+  }
+  if(duracion.compareTo(Duration.ofHours(8))>0)
+   throw new ResponseStatusException(HttpStatus.CONFLICT,"El adulto mayor supera las ocho horas acumuladas de acompañamiento del día "+i.toLocalDate());
+ }
  public Reserva bloquearParaAgenda(Long id){
   String dni=reservas.dniAcompanante(id).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Reserva no encontrada"));
   bloquearAcompanante(dni);
@@ -197,7 +221,9 @@ public class ReservaLocalService {
   if(Duration.between(Instant.now(),input.inicio().toInstant()).toMinutes()<60)
    throw bad("La reserva requiere al menos 1 hora de anticipación");
   if(!input.inicio().isAfter(OffsetDateTime.now()))throw bad("La reserva debe comenzar en el futuro");
+  bloquearAdulto(adulto.getDni());
   validarHorario(acomp.getDni(),input.inicio(),input.fin(),null);
+  validarLimiteAdulto(adulto.getDni(),input.inicio(),input.fin(),null);
   PerfilAcompanante perfil=perfiles.findById(acomp.getDni()).orElseThrow(()->bad("Perfil incompleto"));
   BigDecimal tarifa=perfil.getTarifaActualPorHora();
   if(tarifa==null||tarifa.compareTo(c.getTarifaMinimaHora())<0||tarifa.compareTo(c.getTarifaMaximaHora())>0)
@@ -241,7 +267,10 @@ public class ReservaLocalService {
    if(accion.equals("RECHAZAR"))cambiar(r,EstadoReserva.RECHAZADA,"Rechazada por el acompañante",rActor);
    else{
     if(!r.getFechaHoraInicio().isAfter(ahora))throw new ResponseStatusException(HttpStatus.CONFLICT,"El horario solicitado ya comenzó");
+    String adulto=r.getAdultoMayor()!=null?r.getAdultoMayor().getDni():r.getCliente().getDni();
+    bloquearAdulto(adulto);
     validarHorario(dni,r.getFechaHoraInicio(),r.getFechaHoraFin(),r.getId());
+    validarLimiteAdulto(adulto,r.getFechaHoraInicio(),r.getFechaHoraFin(),r.getId());
     r.setAceptadoEn(ahora);r.setVencePagoEn(antesDe(ahora.plusMinutes(cfg().getMinutosPago()),r.getFechaHoraInicio()));
     cambiar(r,EstadoReserva.PENDIENTE_PAGO,"Aceptada, pendiente de pago",rActor);}
   }else if(accion.equals("INICIAR")){
