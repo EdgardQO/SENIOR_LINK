@@ -25,6 +25,7 @@ public class ReservaLocalService {
  private final ServicioRepository servicios;
  private final ConfiguracionReservasRepository configuraciones;
  private final VinculacionFamiliarAdultoRepository vinculos;
+ private final ParentescoRepository parentescos;
  private final DisponibilidadAcompananteRepository horarios;
  private final BloqueoDisponibilidadRepository bloqueos;
  private final HistorialEstadoReservaRepository historial;
@@ -32,10 +33,10 @@ public class ReservaLocalService {
  public ReservaLocalService(ReservaRepository reservas,UsuarioRepository usuarios,
   PerfilAcompananteRepository perfiles,ServicioRepository servicios,
   ConfiguracionReservasRepository configuraciones,VinculacionFamiliarAdultoRepository vinculos,
-  DisponibilidadAcompananteRepository horarios,BloqueoDisponibilidadRepository bloqueos,
+  ParentescoRepository parentescos,DisponibilidadAcompananteRepository horarios,BloqueoDisponibilidadRepository bloqueos,
   HistorialEstadoReservaRepository historial){
   this.reservas=reservas;this.usuarios=usuarios;this.perfiles=perfiles;
-  this.servicios=servicios;this.configuraciones=configuraciones;this.vinculos=vinculos;
+  this.servicios=servicios;this.configuraciones=configuraciones;this.vinculos=vinculos;this.parentescos=parentescos;
   this.horarios=horarios;this.bloqueos=bloqueos;this.historial=historial;
  }
  public record NuevaReserva(String adultoMayorDni,String acompananteDni,Long servicioId,
@@ -164,6 +165,7 @@ public class ReservaLocalService {
   Usuario u=actor(dni);List<Reserva> lista;
   if("ADMINISTRADOR".equals(rol(u)))lista=reservas.findAll();
   else if("ACOMPANANTE".equals(rol(u)))lista=reservas.findByAcompananteDni(dni);
+  else if("FAMILIAR".equals(rol(u)))lista=reservas.findAll();
   else lista=reservas.visiblesCliente(dni);
   return lista.stream().filter(r->puedeVer(dni,r)).peek(this::expirar)
    .sorted(Comparator.comparing(Reserva::getId).reversed()).map(this::vista).toList();
@@ -251,9 +253,8 @@ public class ReservaLocalService {
   VinculacionFamiliarAdulto v=new VinculacionFamiliarAdulto();
   v.setFamiliar(f);v.setAdultoMayor(a);
   // Parentesco definido en el catálogo; el adulto autoriza permisos después.
-  v.setParentesco(new Parentesco());
-  Parentesco p=new Parentesco();p.setId(parentescoId==null?(short)13:parentescoId);
-  v.setParentesco(p);v.setEstado("PENDIENTE");vinculos.save(v);
+  v.setParentesco(parentescos.findById(parentescoId==null?(short)13:parentescoId)
+   .orElseThrow(()->bad("Parentesco inexistente")));v.setEstado("PENDIENTE");vinculos.save(v);
   return vistaVinculo(v);
  }
  public VinculoVista responderVinculo(String dni,Long id,boolean aprobar){
