@@ -50,7 +50,7 @@ public class FotoPerfilService {
     }
 
     private String detectarFormato(byte[] bytes) throws IOException {
-        if (bytes.length < 12) return null;
+        if (bytes.length < 16) return null;
         String tipo = null;
         if ((bytes[0] & 255) == 255 && (bytes[1] & 255) == 216 && (bytes[2] & 255) == 255)
             tipo = "jpg";
@@ -92,7 +92,7 @@ public class FotoPerfilService {
             Files.createDirectories(dir);
             Path temporal = Files.createTempFile(dir, "nueva-", ".tmp");
             try {
-                Files.write(temporal, datos, StandardOpenOption.TRUNCATE_EXISTING);
+                Files.write(temporal, datos, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
                 Path destino = dir.resolve("perfil." + extension);
                 try {
                     Files.move(temporal, destino, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
