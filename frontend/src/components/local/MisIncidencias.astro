@@ -35,6 +35,7 @@ const {rol}=Astro.props;
 </style>
 <script>
  import {apiLocal,horaLocal} from '../../lib/local-api';
+ import {consultarRecibos,reciboDeReserva,botonRecibo,type Recibo} from '../../lib/recibos';
  type Reserva={id:number,estado:string,inicio:string,acompananteNombre:string,adultoMayorNombre:string};
  type Incidencia={id:number,reservaId:number|null,estado:string,descripcion:string,resolucion?:string,creadoEn:string};
  const form=document.querySelector<HTMLFormElement>('#customer-incident-form')!;
@@ -45,6 +46,7 @@ const {rol}=Astro.props;
  const status=document.querySelector<HTMLElement>('#customer-list-status')!;
  const buscar=document.querySelector<HTMLInputElement>('#customer-buscar')!;
  const tabs=Array.from(document.querySelectorAll<HTMLButtonElement>('[data-customer-filter]'));
+ let recibos:Recibo[]=[];
  let datos:Incidencia[]=[];let filtro='TODAS';let cargado=false;
  const normalizar=(v:unknown)=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
  const nodo=(tag:string,valor:string)=>{const e=document.createElement(tag);e.textContent=valor;return e;};
@@ -63,10 +65,12 @@ const {rol}=Astro.props;
    card.append(head,nodo('p',(i.reservaId?'Reserva #'+i.reservaId:'Consulta general')+' · '+horaLocal(i.creadoEn)),nodo('p',i.descripcion));
    if(i.resolucion){const response=document.createElement('div');response.className='customer-incident-response';response.append(nodo('strong','Respuesta del equipo de soporte'),nodo('p',i.resolucion));card.append(response);}
    else card.append(nodo('p','El equipo de soporte revisará tu solicitud.'));
+   const recibo=reciboDeReserva(recibos,i.reservaId);
+   if(recibo)card.append(botonRecibo(recibo));
    list.append(card);
   }
  }
- async function cargarIncidencias(){try{datos=await apiLocal('/incidencias');cargado=true;render();}catch(e){status.textContent=e instanceof Error?e.message:String(e);}}
+ async function cargarIncidencias(){try{datos=await apiLocal('/incidencias');recibos=await consultarRecibos().catch(e=>{console.error('No se pudieron consultar recibos',e);return [];});cargado=true;render();}catch(e){status.textContent=e instanceof Error?e.message:String(e);}}
  async function cargarReservas(){try{
   const datos:Reserva[]=await apiLocal('/reservas');reserva.replaceChildren(new Option('Selecciona una reserva',''));
   for(const r of datos){reserva.append(new Option('#'+r.id+' · '+r.acompananteNombre+' · '+horaLocal(r.inicio)+' · '+r.estado.replaceAll('_',' '),String(r.id)));}
