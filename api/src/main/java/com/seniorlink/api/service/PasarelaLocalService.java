@@ -27,15 +27,16 @@ public class PasarelaLocalService {
  private final TransaccionRepository transacciones;
  private final MovimientoTarjetaRepository movimientos;
  private final PagoRepository pagos;
+ private final IncidenciaReservaRepository incidencias;
  private final ReservaLocalService motor;
  private final PasswordEncoder encoder;
  public PasarelaLocalService(UsuarioRepository usuarios,TarjetaRepository tarjetas,
   TokenTarjetaRepository tokens,MetodoPagoRepository metodos,ReservaRepository reservas,
   TransaccionRepository transacciones,MovimientoTarjetaRepository movimientos,
-  PagoRepository pagos,ReservaLocalService motor,PasswordEncoder encoder){
+  PagoRepository pagos,ReservaLocalService motor,PasswordEncoder encoder,IncidenciaReservaRepository incidencias){
   this.usuarios=usuarios;this.tarjetas=tarjetas;this.tokens=tokens;this.metodos=metodos;
   this.reservas=reservas;this.transacciones=transacciones;this.movimientos=movimientos;
-  this.pagos=pagos;this.motor=motor;this.encoder=encoder;
+  this.pagos=pagos;this.motor=motor;this.encoder=encoder;this.incidencias=incidencias;
  }
  public record NuevaTarjeta(String numeroDemo,String nombreTitular,String tipo,
   Short mesVencimiento,Short anioVencimiento,String cvv){}
@@ -154,14 +155,39 @@ public class PasarelaLocalService {
   motor.cambiar(r,EstadoReserva.CONFIRMADA,"Pago simulado acreditado",usuarios.getReferenceById(dni));
   return resultado(tr);
  }
- public record Recibo(UUID referencia,Long reservaId,String estado,BigDecimal monto,String moneda,OffsetDateTime fecha,String metodo,String ultimosCuatro){}
+ public record Recibo(String referencia,Long reservaId,String estado,BigDecimal monto,String moneda,OffsetDateTime fecha,String metodo,String ultimosCuatro){}
  @Transactional(readOnly=true)
  public List<Recibo> recibos(String dni){
-  actor(dni);
-  return motor.listar(dni).stream().flatMap(r->transacciones.findByReservaIdAndEstadoInOrderByCreadoEnDesc(r.id(),List.of("APROBADO","REEMBOLSADO")).stream())
-   .filter(t->dni.equals(t.getTarjeta().getTitularDni()))
-   .map(t->{String numero=t.getTarjeta().getNumeroTarjeta();return new Recibo(t.getId(),t.getReservaId(),t.getEstado(),t.getMonto(),"PEN",t.getCreadoEn(),t.getTarjeta().getTipoTarjeta(),numero.substring(numero.length()-4));})
-   .toList();
+  Usuario u=usuarios.findById(dni).orElseThrow(this::no);
+  if(!Boolean.TRUE.equals(u.getEstaActivo()))throw no();
+  String rol=u.getRol().getNombre();
+  if(!Set.of("ADMINISTRADOR","SOPORTE","ACOMPANANTE","ADULTO_MAYOR","FAMILIAR").contains(rol))throw no();
+  Set<Long> autorizadas=new HashSet<>();
+  if("SOPORTE".equals(rol)){
+   // Soporte consulta únicamente reservas relacionadas con casos registrados.
+   autorizadas.addAll(incidencias.findAll().stream().map(i->i.getReserva().getId()).toList());
+  }else{
+   autorizadas.addAll(motor.listar(dni).stream().map(ReservaLocalService.ReservaVista::id).toList());
+  }
+  List<Recibo> resultado=new ArrayList<>();
+  for(Long id:autorizadas){
+   var operaciones=transacciones.findByReservaIdAndEstadoInOrderByCreadoEnDesc(id,List.of("APROBADO","REEMBOLSADO"));
+   if(!operaciones.isEmpty()){
+    for(Transaccion t:operaciones){
+     Tarjeta tarjeta=t.getTarjeta();
+     boolean titular=dni.equals(tarjeta.getTitularDni());
+     String numero=tarjeta.getNumeroTarjeta();
+     resultado.add(new Recibo(t.getId().toString(),id,t.getEstado(),t.getMonto(),"PEN",t.getCreadoEn(),
+      titular?tarjeta.getTipoTarjeta():null,titular&&numero!=null&&numero.length()>=4?numero.substring(numero.length()-4):null));
+    }
+   }else{
+    // Compatibilidad con pagos históricos sin una transacción de la pasarela local.
+    pagos.findByReservaId(id).filter(p->p.getMpEstado()==EstadoPasarelaPago.APROBADO||p.getMpEstado()==EstadoPasarelaPago.REEMBOLSADO)
+     .ifPresent(p->resultado.add(new Recibo(p.getMpPagoId()!=null?p.getMpPagoId():"PAGO-"+p.getId(),
+      id,p.getMpEstado().name(),p.getMonto(),p.getMoneda(),p.getCreadoEn(),null,null)));
+   }
+  }
+  return resultado.stream().sorted(Comparator.comparing(Recibo::fecha,Comparator.nullsLast(Comparator.reverseOrder()))).toList();
  }
  private void movimiento(Tarjeta tarjeta,Transaccion tr,String tipo,BigDecimal monto,BigDecimal antes,BigDecimal despues){
   MovimientoTarjeta mv=new MovimientoTarjeta();mv.setTarjeta(tarjeta);mv.setTransaccion(tr);
