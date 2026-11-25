@@ -7,9 +7,16 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
  <h2>{cliente?'Solicitar acompañamiento':rol==='ACOMPANANTE'?'Solicitudes y agenda':'Reservas registradas'}</h2>
  {cliente && <form id="reserva-local-form" class="local-form">
   {rol==='FAMILIAR' && <label>Adulto mayor autorizado<select name="adultoMayorDni" id="reserva-local-adulto" required><option value="">Selecciona un adulto autorizado</option></select></label>}
-  <label>Buscar acompañante<input id="reserva-local-buscar" type="search" placeholder="Nombre, carrera o institución" autocomplete="off" aria-describedby="reserva-local-resultados"/></label>
-  <p id="reserva-local-resultados" role="status" class="local-muted"></p>
-  <label>Acompañante<select name="acompananteDni" id="reserva-local-acompanante" required><option value="">Selecciona un acompañante</option></select></label>
+  <div class="companion-picker" id="reserva-local-picker">
+   <label for="reserva-local-buscar">Acompañante</label>
+   <div class="companion-picker-field">
+    <input id="reserva-local-buscar" type="text" placeholder="Busca o selecciona un acompañante" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="reserva-local-opciones" required disabled/>
+    <button id="reserva-local-toggle" type="button" aria-label="Mostrar acompañantes" aria-controls="reserva-local-opciones" disabled><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+   </div>
+   <input type="hidden" name="acompananteDni" id="reserva-local-acompanante"/>
+   <div id="reserva-local-opciones" class="companion-options" role="listbox" aria-label="Acompañantes disponibles" hidden></div>
+   <span id="reserva-local-resultados" class="companion-sr-only" role="status" aria-live="polite"></span>
+  </div>
   <section id="reserva-local-ficha" class="local-companion-card" aria-live="polite" hidden>
     <div class="local-companion-heading">
       <img id="reserva-local-foto" alt="Fotografía del acompañante seleccionado" hidden />
@@ -34,6 +41,20 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
  {cliente && <p>Modo de prueba: para pagar, registra una tarjeta en <a href={rol==='FAMILIAR'?'/familiar/metodos-pago':'/adulto-mayor/metodos-pago'}>Mis métodos de pago</a>.</p>}
 </section>
 <style>
+ .companion-picker{position:relative;display:grid;gap:5px;min-width:0}
+ .companion-picker-field{position:relative}
+ .companion-picker-field input{padding-right:48px}
+ .companion-picker-field button{position:absolute;right:4px;top:4px;bottom:4px;width:38px;display:grid;place-items:center;background:transparent;color:#365b51;padding:0}
+ .companion-picker-field button:hover{background:#eaf4ef;color:#087a70}
+ .companion-options{position:absolute;top:100%;left:0;right:0;z-index:30;max-height:300px;overflow-y:auto;background:#fff;border:1px solid #cbdad5;border-radius:10px;box-shadow:0 8px 24px #163d3520;padding:5px}
+ .companion-options[hidden]{display:none}
+ :global(.companion-option){display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 12px;border-radius:7px;cursor:pointer;color:#173d35}
+ :global(.companion-option[aria-selected=true]),:global(.companion-option:hover){background:#e9f5f0}
+ :global(.companion-option strong),:global(.companion-option small){display:block;overflow-wrap:anywhere}
+ :global(.companion-option small){font-size:12px;color:#52665f;margin-top:3px}
+ :global(.companion-option-price){white-space:nowrap;font-size:13px;font-weight:600}
+ :global(.companion-empty){padding:12px;font-size:13px;color:#52665f}
+ .companion-sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
  .local-companion-card{border:1px solid #cbe6db;background:#f5fbf8;padding:17px;border-radius:15px;display:grid;gap:7px}
  .local-companion-card[hidden]{display:none}
  .local-companion-heading{display:flex;align-items:center;gap:13px}
@@ -187,21 +208,67 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
  if(form){
   (async()=>{
    const [personas,servicios]=await Promise.all([apiLocal('/acompanantes'),apiLocal('/servicios')]);
-   const acomp=form.querySelector<HTMLSelectElement>('#reserva-local-acompanante')!;
+   type Persona={dni:string,nombre:string,carrera?:string,institucion?:string,tarifaHora:number};
+   const catalogo:Persona[]=personas;
+   const acomp=form.querySelector<HTMLInputElement>('#reserva-local-acompanante')!;
    const buscar=form.querySelector<HTMLInputElement>('#reserva-local-buscar')!;
+   const picker=form.querySelector<HTMLElement>('#reserva-local-picker')!;
+   const opciones=form.querySelector<HTMLElement>('#reserva-local-opciones')!;
+   const toggle=form.querySelector<HTMLButtonElement>('#reserva-local-toggle')!;
    const resultados=form.querySelector<HTMLElement>('#reserva-local-resultados')!;
    const normalizar=(v:unknown)=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-   const filtrar=()=>{
-    const anterior=acomp.value;
-    const q=normalizar(buscar.value).split(/\s+/).filter(Boolean);
-    const coincidencias=personas.filter((x:any)=>q.every(t=>normalizar([x.nombre,x.carrera,x.institucion].join(' ')).includes(t)));
-    acomp.replaceChildren(new Option('Selecciona un acompañante',''));
-    for(const x of coincidencias)acomp.append(new Option(x.nombre+' · '+importe(x.tarifaHora)+'/h',x.dni));
-    acomp.value=coincidencias.some((x:any)=>x.dni===anterior)?anterior:'';
-    resultados.textContent=coincidencias.length?coincidencias.length+' acompañante(s) disponible(s) en el catálogo':'No se encontraron acompañantes con esos criterios.';
-    if(anterior!==acomp.value)acomp.dispatchEvent(new Event('change'));
+   let coincidencias:Persona[]=[];let activo=-1;
+   const cerrar=()=>{opciones.hidden=true;buscar.setAttribute('aria-expanded','false');buscar.removeAttribute('aria-activedescendant');activo=-1;};
+   const marcar=(i:number)=>{
+    activo=i;
+    opciones.querySelectorAll<HTMLElement>('[role=option]').forEach((el,j)=>el.setAttribute('aria-selected',String(i===j)));
+    const el=opciones.children[i] as HTMLElement|undefined;
+    if(el){buscar.setAttribute('aria-activedescendant',el.id);el.scrollIntoView({block:'nearest'});}
+    else buscar.removeAttribute('aria-activedescendant');
    };
-   buscar.addEventListener('input',filtrar);filtrar();
+   const elegir=(x:Persona)=>{
+    acomp.value=x.dni;buscar.value=x.nombre;buscar.setCustomValidity('');cerrar();
+    acomp.dispatchEvent(new Event('change'));buscar.focus();cerrar();
+   };
+   const filtrar=(todos=false)=>{
+    const q=todos?[]:normalizar(buscar.value).split(/\s+/).filter(Boolean);
+    coincidencias=catalogo.filter(x=>q.every(t=>normalizar([x.nombre,x.carrera,x.institucion].join(' ')).includes(t)));
+    opciones.replaceChildren();activo=-1;buscar.removeAttribute('aria-activedescendant');
+    coincidencias.forEach((x,i)=>{
+     const item=document.createElement('div');item.className='companion-option';item.id='reserva-opcion-'+i;
+     item.setAttribute('role','option');item.setAttribute('aria-selected','false');
+     const info=document.createElement('div');
+     info.append(nuevo('strong',x.nombre),nuevo('small',[x.carrera,x.institucion].filter(Boolean).join(' · ')));
+     const tarifa=nuevo('span',importe(x.tarifaHora)+'/h');tarifa.className='companion-option-price';
+     item.append(info,tarifa);
+     item.addEventListener('pointerdown',ev=>ev.preventDefault());
+     item.addEventListener('click',()=>elegir(x));opciones.append(item);
+    });
+    if(!coincidencias.length){const vacio=nuevo('div','No se encontraron acompañantes.');vacio.className='companion-empty';opciones.append(vacio);}
+    resultados.textContent=coincidencias.length+' resultados';
+    opciones.hidden=false;buscar.setAttribute('aria-expanded','true');
+   };
+   buscar.disabled=false;toggle.disabled=false;
+   buscar.addEventListener('focus',()=>filtrar(Boolean(acomp.value)));
+   buscar.addEventListener('click',()=>{if(opciones.hidden)filtrar(Boolean(acomp.value));});
+   buscar.addEventListener('input',()=>{
+    if(acomp.value){acomp.value='';acomp.dispatchEvent(new Event('change'));}
+    buscar.setCustomValidity(buscar.value?'Selecciona un acompañante de la lista.':'');
+    filtrar();
+   });
+   toggle.addEventListener('click',()=>{if(!opciones.hidden)cerrar();else{buscar.focus();filtrar(Boolean(acomp.value));}});
+   buscar.addEventListener('keydown',ev=>{
+    if(ev.key==='Escape'){cerrar();return;}
+    if(ev.key==='Tab'){cerrar();return;}
+    if(ev.key==='ArrowDown'||ev.key==='ArrowUp'){
+     ev.preventDefault();if(opciones.hidden)filtrar(Boolean(acomp.value));
+     if(coincidencias.length)marcar(ev.key==='ArrowDown'?(activo+1)%coincidencias.length:(activo<0?coincidencias.length-1:(activo-1+coincidencias.length)%coincidencias.length));
+    }
+    if(ev.key==='Enter'&&!opciones.hidden){ev.preventDefault();if(activo>=0)elegir(coincidencias[activo]);else if(coincidencias.length===1)elegir(coincidencias[0]);}
+   });
+   document.addEventListener('pointerdown',ev=>{if(ev.target instanceof Node&&!picker.contains(ev.target))cerrar();});
+   picker.addEventListener('focusout',ev=>{if(!(ev.relatedTarget instanceof Node)||!picker.contains(ev.relatedTarget))cerrar();});
+   form.addEventListener('reset',()=>{cerrar();buscar.setCustomValidity('');queueMicrotask(()=>{acomp.value='';acomp.dispatchEvent(new Event('change'));});});
    const ficha=form.querySelector<HTMLElement>('#reserva-local-ficha')!;
    const foto=form.querySelector<HTMLImageElement>('#reserva-local-foto')!;
    const campo=(id:string,valor:string)=>{const e=form.querySelector<HTMLElement>('#'+id);if(e)e.textContent=valor;};
@@ -242,6 +309,7 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
   })().catch(e=>estado.textContent=String(e));
   form.addEventListener('submit',async ev=>{
    ev.preventDefault();const fd=new FormData(form);
+   if(!fd.get('acompananteDni')){const input=form.querySelector<HTMLInputElement>('#reserva-local-buscar');input?.setCustomValidity('Selecciona un acompañante de la lista.');input?.reportValidity();return;}
    const inicio=new Date(String(fd.get('inicio'))),fin=new Date(String(fd.get('fin')));
    if(!Number.isFinite(inicio.getTime())||!Number.isFinite(fin.getTime())){estado.textContent='Fechas inválidas';return;}
    try{estado.textContent='Registrando solicitud…';
@@ -250,7 +318,7 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
      acompananteDni:String(fd.get('acompananteDni')),servicioId:Number(fd.get('servicioId')),
      inicio:inicio.toISOString(),fin:fin.toISOString(),
      direccion:String(fd.get('direccion')),indicaciones:String(fd.get('indicaciones')||'')
-    })});form.reset();form.querySelector('#reserva-local-buscar')?.dispatchEvent(new Event('input'));form.querySelector('#reserva-local-acompanante')?.dispatchEvent(new Event('change'));estado.textContent='Solicitud enviada al acompañante.';await refrescar();
+    })});form.reset();estado.textContent='Solicitud enviada al acompañante.';await refrescar();
    }catch(e){estado.textContent=e instanceof Error?e.message:String(e);}
   });
  }
