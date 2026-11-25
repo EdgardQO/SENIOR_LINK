@@ -195,7 +195,7 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
    }
    if((rol==='ADULTO_MAYOR'||rol==='FAMILIAR')&&b.estado==='PENDIENTE_CONFIRMACION')accion('Confirmar servicio','confirmar');
    if(['PENDIENTE_ACEPTACION','PENDIENTE_PAGO','CONFIRMADA','EN_PROGRESO','PENDIENTE_CONFIRMACION'].includes(b.estado) && rol!=='ADMINISTRADOR')
-    accion('Cancelar / reportar','cancelar');
+    accion('Cancelar reserva','cancelar');
    if(rol==='ADMINISTRADOR' && (b.estado==='CANCELADA'||b.estado==='EN_DISPUTA')){
     const refund=nuevo('button','Reembolsar pago') as HTMLButtonElement;
     refund.addEventListener('click',async()=>{
@@ -254,7 +254,10 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
      }catch(err){estado.textContent=err instanceof Error?err.message:String(err);}
     });acciones.append(review);
    }
-   if(rol!=='ADMINISTRADOR'&&['CONFIRMADA','EN_PROGRESO','PENDIENTE_CONFIRMACION'].includes(b.estado)){
+   if(rol==='ADULTO_MAYOR'||rol==='FAMILIAR'){
+    const ayuda=nuevo('a','Reportar incidencia') as HTMLAnchorElement;ayuda.className='local-secondary-action';ayuda.href=(rol==='FAMILIAR'?'/familiar':'/adulto-mayor')+'/incidencias?reserva='+encodeURIComponent(String(b.id));acciones.append(ayuda);
+   }
+   if(rol==='ACOMPANANTE'&&['CONFIRMADA','EN_PROGRESO','PENDIENTE_CONFIRMACION','COMPLETADA'].includes(b.estado)){
     const inc=nuevo('button','Reportar incidencia') as HTMLButtonElement;
     inc.addEventListener('click',async()=>{
      const descripcion=prompt('Describe el problema con esta reserva:');
