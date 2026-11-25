@@ -158,6 +158,9 @@ const pasos=rol==='ACOMPANANTE'?[
  :global(.reserva-etapas li[data-paso="hecho"]){background:#d4ede0;color:#087a70}
  :global(.reserva-etapas li[data-paso="actual"]){background:#087a70;color:white;font-weight:600}
  :global(.reserva-seguimiento p){font-size:13px;margin:8px 0 0}
+ :global(.reserva-contacto){margin:12px 0;padding:14px;border:1px solid #d5ebe1;background:#f5fbf8;border-radius:12px;color:#174e42}
+ :global(.reserva-contacto p){font-size:13px;line-height:1.5;margin:8px 0}
+ :global(.reserva-wa){display:inline-flex;align-items:center;padding:10px 14px;border-radius:8px;background:#087a70;color:white;text-decoration:none;font-weight:600}
  </style>
 <script>
  import {apiLocal,apiPagoLocal,horaLocal,importe,sesionRequerida} from '../../lib/local-api';
@@ -245,6 +248,36 @@ const pasos=rol==='ACOMPANANTE'?[
     }
    if(b.direccion)div.append(nuevo('p','Lugar de encuentro: '+b.direccion));
    const acciones=document.createElement('div');acciones.className='local-actions';
+   if((rol==='ACOMPANANTE'&&session.dni===b.acompananteDni||['FAMILIAR','ADULTO_MAYOR'].includes(rol)&&session.dni===b.solicitanteDni)&&['PENDIENTE_ACEPTACION','PENDIENTE_PAGO','CONFIRMADA','EN_PROGRESO','PENDIENTE_CONFIRMACION'].includes(b.estado)){
+    const contacto=document.createElement('section');contacto.className='reserva-contacto';
+    const titulo=nuevo('strong','Contacto por WhatsApp · Reserva #'+b.id);
+    const detalle=nuevo('p','Consultando autorización de contacto…');detalle.setAttribute('role','status');
+    const controles=document.createElement('div');controles.className='local-actions';
+    contacto.append(titulo,detalle,controles);div.append(contacto);
+    const ruta='/reservas/'+b.id+'/whatsapp';
+    const mostrar=(v:any)=>{
+     controles.replaceChildren();
+     if(!v.activo){detalle.textContent='Contacto no disponible para esta contratación.';return;}
+     if(v.url){
+      detalle.textContent='Ambos participantes autorizaron el contacto. Coordina únicamente el servicio; no compartas datos sensibles ni realices pagos por chat.';
+      const link=document.createElement('a');link.className='reserva-wa';link.textContent=rol==='ACOMPANANTE'?'Contactar al solicitante por WhatsApp':'Contactar al acompañante por WhatsApp';
+      link.href=v.url;link.target='_blank';link.rel='noopener noreferrer';controles.append(link);
+     }else if(v.autorizadoPorMi)detalle.textContent='Tu autorización está activa. Espera que el otro participante autorice el contacto.';
+     else detalle.textContent='Contacto opcional entre adultos. Autoriza compartir el teléfono registrado para esta reserva.';
+     const btn=nuevo('button',v.autorizadoPorMi?'Revocar autorización':'Autorizar WhatsApp') as HTMLButtonElement;btn.type='button';
+     if(!v.telefonoPropioValido&&!v.autorizadoPorMi){btn.disabled=true;detalle.textContent='Registra un teléfono válido en Mi perfil para habilitar el contacto.';}
+     btn.addEventListener('click',async()=>{
+      const autorizar=!v.autorizadoPorMi;
+      if(autorizar&&!confirm('Confirmo que tengo 18 años o más y autorizo compartir mi teléfono registrado con el otro participante adulto de esta reserva.'))return;
+      btn.disabled=true;
+      try{mostrar(await apiLocal(ruta,{method:'PUT',body:JSON.stringify({autorizar,mayorDeEdad:autorizar})}));}
+      catch(e){detalle.textContent=e instanceof Error?e.message:String(e);btn.disabled=false;}
+     });controles.append(btn);
+     const recargar=nuevo('button','Actualizar contacto') as HTMLButtonElement;recargar.type='button';recargar.addEventListener('click',()=>void consultar());controles.append(recargar);
+    };
+    async function consultar(){try{mostrar(await apiLocal(ruta));}catch(e){detalle.textContent=e instanceof Error?e.message:String(e);}}
+    void consultar();
+   }
    const recibo=reciboDeReserva(recibos,b.id);
    if(recibo)acciones.append(botonRecibo({...recibo,acompanante:b.acompananteNombre,adultoMayor:b.adultoMayorNombre,jornadas:js.length?js:[b],totalHoras:b.totalHoras}));
    const accion=(nombre:string,ruta:string)=>{

@@ -176,6 +176,55 @@ public class ReservaLocalService {
    r.getVencePagoEn(),r.getMontoTotal(),r.getTarifaPorHora(),r.getDireccionEncuentro(),
    solicitante.getNombres()+" "+solicitante.getApellidos(),fotoUrl(r,a),fotoUrl(r,acomp),fotoUrl(r,solicitante),opinionReserva(r.getId()),r.getJornadas().stream().map(j->new JornadaVista(j.getId(),j.getFechaHoraInicio(),j.getFechaHoraFin(),j.getEstado())).toList(),r.getTotalHoras(),r.getSubtotal(),r.getComisionPlataforma());
  }
+ public record ContactoWhatsapp(boolean autorizadoPorMi,boolean autorizadoPorOtro,boolean telefonoPropioValido,boolean activo,String url){}
+ private String normalizarWhatsapp(String raw){
+  if(raw==null||!raw.trim().matches("[+0-9 ()-]+"))return null;
+  String n=raw.replaceAll("[^0-9]","");
+  if(n.matches("9[0-9]{8}"))return "51"+n;
+  if(n.matches("519[0-9]{8}"))return n;
+  if(raw.trim().startsWith("+")&&n.matches("[1-9][0-9]{7,14}"))return n;
+  return null;
+ }
+ private Usuario solicitanteWhatsapp(Reserva r){return r.getSolicitante()==null?r.getCliente():r.getSolicitante();}
+ private boolean contactoAcompanante(String dni,Reserva r){
+  Usuario u=actor(dni);
+  Usuario solicitante=solicitanteWhatsapp(r),acompanante=r.getAcompanante();
+  if(!Boolean.TRUE.equals(solicitante.getEstaActivo())||!Boolean.TRUE.equals(acompanante.getEstaActivo()))throw no();
+  if("FAMILIAR".equals(rol(solicitante))){
+   String adulto=r.getAdultoMayor()==null?r.getCliente().getDni():r.getAdultoMayor().getDni();
+   if(!permisoFamiliar(solicitante.getDni(),adulto,"RESERVAR")&&!permisoFamiliar(solicitante.getDni(),adulto,"GESTIONAR"))throw no();
+  }
+  if(dni.equals(acompanante.getDni())&&"ACOMPANANTE".equals(rol(u)))return true;
+  if(dni.equals(solicitante.getDni())&&Set.of("FAMILIAR","ADULTO_MAYOR").contains(rol(u)))return false;
+  throw no();
+ }
+ private boolean contactoActivo(Reserva r){
+  return !plazoVencido(r,OffsetDateTime.now())&&Set.of(EstadoReserva.PENDIENTE_ACEPTACION,EstadoReserva.PENDIENTE_PAGO,EstadoReserva.CONFIRMADA,EstadoReserva.EN_PROGRESO,EstadoReserva.PENDIENTE_CONFIRMACION).contains(r.getEstadoActual());
+ }
+ private ContactoWhatsapp vistaWhatsapp(String dni,Reserva r){
+  boolean acomp=contactoAcompanante(dni,r),activo=contactoActivo(r);
+  Usuario propio=acomp?r.getAcompanante():solicitanteWhatsapp(r),otro=acomp?solicitanteWhatsapp(r):r.getAcompanante();
+  boolean mio=acomp?r.isWhatsappAcompananteAutorizado():r.isWhatsappSolicitanteAutorizado();
+  boolean ajeno=acomp?r.isWhatsappSolicitanteAutorizado():r.isWhatsappAcompananteAutorizado();
+  String numero=normalizarWhatsapp(otro.getTelefono()),url=null;
+  boolean valido=normalizarWhatsapp(propio.getTelefono())!=null;
+  if(activo&&mio&&ajeno&&valido&&numero!=null){
+   String mensaje="Hola, quisiera coordinar el acompañamiento de la reserva #"+r.getId()+" de SeniorLink.";
+   url="https://wa.me/"+numero+"?text="+java.net.URLEncoder.encode(mensaje,java.nio.charset.StandardCharsets.UTF_8).replace("+","%20");
+  }
+  return new ContactoWhatsapp(mio,ajeno,valido,activo,url);
+ }
+ @Transactional(readOnly=true)
+ public ContactoWhatsapp consultarWhatsapp(String dni,Long id){return vistaWhatsapp(dni,buscar(id));}
+ public ContactoWhatsapp autorizarWhatsapp(String dni,Long id,boolean autorizar,boolean mayorDeEdad){
+  Reserva r=bloquearParaAgenda(id);
+  boolean acomp=contactoAcompanante(dni,r);
+  if(autorizar&&(!mayorDeEdad||!contactoActivo(r)))throw bad("Solo participantes adultos pueden autorizar contacto en reservas activas");
+  if(autorizar&&normalizarWhatsapp(actor(dni).getTelefono())==null)throw bad("Registra un teléfono válido en Mi perfil");
+  if(acomp)r.setWhatsappAcompananteAutorizado(autorizar);else r.setWhatsappSolicitanteAutorizado(autorizar);
+  reservas.save(r);
+  return vistaWhatsapp(dni,r);
+ }
  private String fotoUrl(Reserva r,Usuario u){
   return u.getFotoPerfilRuta()==null?null:"/api/v1/reservas/"+r.getId()+"/participantes/"+u.getDni()+"/foto";
  }

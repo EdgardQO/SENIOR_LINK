@@ -83,6 +83,18 @@ public class Reserva {
     @OneToMany(mappedBy="reserva",cascade=CascadeType.ALL)
     @OrderBy("fechaHoraInicio ASC")
     private List<ReservaJornada> jornadas=new ArrayList<>();
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @Column(name="whatsapp_solicitante_autorizado")
+    private Boolean whatsappSolicitanteAutorizado;
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @Column(name="whatsapp_acompanante_autorizado")
+    private Boolean whatsappAcompananteAutorizado;
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public boolean isWhatsappSolicitanteAutorizado(){return Boolean.TRUE.equals(whatsappSolicitanteAutorizado);}
+    public void setWhatsappSolicitanteAutorizado(boolean v){whatsappSolicitanteAutorizado=v;}
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public boolean isWhatsappAcompananteAutorizado(){return Boolean.TRUE.equals(whatsappAcompananteAutorizado);}
+    public void setWhatsappAcompananteAutorizado(boolean v){whatsappAcompananteAutorizado=v;}
     public List<ReservaJornada> getJornadas(){return jornadas;}
     public void agregarJornada(OffsetDateTime inicio,OffsetDateTime fin){
         jornadas.add(new ReservaJornada(this,inicio,fin));

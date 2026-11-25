@@ -92,6 +92,17 @@ public class OperacionesController {
  public ReservaLocalService.ReservaVista cambiarJornada(Authentication auth,@PathVariable Long id,@PathVariable Long jornadaId,@PathVariable String accion){
   return reservas.accionJornada(auth.getName(),id,jornadaId,accion.toUpperCase(Locale.ROOT));
  }
+ public record WhatsappConsentimiento(boolean autorizar,boolean mayorDeEdad){}
+ @GetMapping("/reservas/{id}/whatsapp")
+ @PreAuthorize("hasAnyRole('ADULTO_MAYOR','FAMILIAR','ACOMPANANTE')")
+ public ReservaLocalService.ContactoWhatsapp consultarWhatsapp(Authentication auth,@PathVariable Long id){
+  return reservas.consultarWhatsapp(auth.getName(),id);
+ }
+ @PutMapping("/reservas/{id}/whatsapp")
+ @PreAuthorize("hasAnyRole('ADULTO_MAYOR','FAMILIAR','ACOMPANANTE')")
+ public ReservaLocalService.ContactoWhatsapp autorizarWhatsapp(Authentication auth,@PathVariable Long id,@RequestBody WhatsappConsentimiento input){
+  return reservas.autorizarWhatsapp(auth.getName(),id,input.autorizar(),input.mayorDeEdad());
+ }
  @GetMapping("/vinculos")
  @PreAuthorize("hasAnyRole('ADULTO_MAYOR','FAMILIAR')")
  public List<ReservaLocalService.VinculoVista> vinculos(Authentication auth){
