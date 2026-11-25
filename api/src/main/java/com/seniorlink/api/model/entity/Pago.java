@@ -32,6 +32,7 @@ public class Pago {
     @Column(name = "mp_pago_id", unique = true, length = 150)
     private String mpPagoId;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "mp_estado", nullable = false)
     private EstadoPasarelaPago mpEstado = EstadoPasarelaPago.PENDIENTE;
 
