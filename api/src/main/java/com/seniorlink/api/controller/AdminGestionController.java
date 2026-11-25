@@ -33,15 +33,18 @@ public class AdminGestionController {
     private final PersonalInternoService personal;
     private final VinculacionFamiliarAdultoRepository vinculaciones;
     private final ReservaLocalService agenda;
+    private final ConfiguracionLocalService configuracionReservas;
 
     public AdminGestionController(UsuarioRepository usuarios, ReservaRepository reservas,
             InstitucionAliadaRepository instituciones, DescuentoRepository descuentos,
             HistorialEstadoReservaRepository historial, UsuarioService usuarioService,
             RegistroUsuarioService registro, PersonalInternoService personal,
-            VinculacionFamiliarAdultoRepository vinculaciones, ReservaLocalService agenda) {
+            VinculacionFamiliarAdultoRepository vinculaciones, ReservaLocalService agenda,
+            ConfiguracionLocalService configuracionReservas) {
         this.usuarios = usuarios; this.reservas = reservas; this.instituciones = instituciones;
         this.descuentos = descuentos; this.historial = historial; this.usuarioService = usuarioService;
         this.registro = registro; this.personal = personal; this.vinculaciones = vinculaciones; this.agenda = agenda;
+        this.configuracionReservas = configuracionReservas;
     }
 
     public record Resumen(long usuarios, long usuariosActivos, long acompanantes,
@@ -320,6 +323,19 @@ public class AdminGestionController {
         Descuento d = descuentos.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         d.setEstaActivo(false);
         descuentos.save(d);
+    }
+
+    // Configuración de reservas disponible en producción, protegida por ROLE_ADMINISTRADOR.
+    @GetMapping("/configuracion-reservas")
+    @Transactional(readOnly = true)
+    public ConfiguracionLocalService.Parametros configuracionReservas() {
+        return configuracionReservas.obtener();
+    }
+
+    @PutMapping("/configuracion-reservas")
+    public ConfiguracionLocalService.Parametros actualizarConfiguracionReservas(
+            @RequestBody ConfiguracionLocalService.Parametros parametros) {
+        return configuracionReservas.guardar(parametros);
     }
 
     private ResponseStatusException bad(String message) {

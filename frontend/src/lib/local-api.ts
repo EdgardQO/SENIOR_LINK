@@ -5,9 +5,9 @@ export function sesionRequerida() {
  if (!session) { window.location.href='/login'; throw new Error('Inicia sesión'); }
  return session;
 }
-export async function apiLocal(path: string, options: RequestInit = {}) {
+async function consultarApi(base: string, path: string, options: RequestInit = {}) {
  const sesion=sesionRequerida();
- const res=await fetch(API_URL+'/api/v1/local'+path,{
+ const res=await fetch(API_URL+base+path,{
   ...options,
   headers:{Authorization:'Bearer '+sesion.accessToken,
    ...(options.body?{'Content-Type':'application/json'}:{}),...options.headers}
@@ -22,6 +22,12 @@ export async function apiLocal(path: string, options: RequestInit = {}) {
   throw new Error(err);
  }
  return res.status===204?null:res.json();
+}
+export function apiLocal(path: string, options: RequestInit = {}) {
+ return consultarApi('/api/v1/local', path, options);
+}
+export function apiSegura(path: string, options: RequestInit = {}) {
+ return consultarApi('/api/v1', path, options);
 }
 export function horaLocal(iso: string|null|undefined) {
  return iso?new Date(iso).toLocaleString('es-PE',{dateStyle:'short',timeStyle:'short',timeZone:'America/Lima'}):'—';

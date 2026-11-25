@@ -1,7 +1,7 @@
 ---
 import RoleLayout from '../../layouts/RoleLayout.astro';
 ---
-<RoleLayout role="ADMINISTRADOR" label="Administrador" description="Configuración del motor de reservas · Entorno local.">
+<RoleLayout role="ADMINISTRADOR" label="Administrador" description="Configuración del motor de reservas.">
  <section class="local-card">
   <h2>Parámetros de reservas</h2>
   <p>Estos valores se aplican a solicitudes nuevas. La modificación no cambia automáticamente el precio de las reservas existentes.</p>
@@ -13,7 +13,7 @@ import RoleLayout from '../../layouts/RoleLayout.astro';
  </section>
 </RoleLayout>
 <script>
- import {apiLocal} from '../../lib/local-api';
+ import {adminRequest} from '../../lib/admin-api';
  const campos=[
   ['minutosAceptacion','Plazo para aceptar (min)',5,180,1],
   ['minutosPago','Plazo para pagar (min)',5,120,1],
@@ -36,7 +36,7 @@ import RoleLayout from '../../layouts/RoleLayout.astro';
   label.append(input);cont.append(label);
  }
  (async()=>{
-  const p=await apiLocal('/admin/configuracion-reservas');
+  const p=await adminRequest('/configuracion-reservas');
   for(const [nombre] of campos){
    const input=form.elements.namedItem(nombre) as HTMLInputElement|null;
    if(input)input.value=String(p[nombre]);
@@ -48,7 +48,7 @@ import RoleLayout from '../../layouts/RoleLayout.astro';
   for(const [nombre] of campos){
    body[nombre]=Number((form.elements.namedItem(nombre) as HTMLInputElement).value);
   }
-  try{await apiLocal('/admin/configuracion-reservas',{method:'PUT',body:JSON.stringify(body)});
+  try{await adminRequest('/configuracion-reservas',{method:'PUT',body:JSON.stringify(body)});
    estado.textContent='Configuración de reservas actualizada correctamente.';
   }catch(e){estado.textContent=e instanceof Error?e.message:String(e);}
  });

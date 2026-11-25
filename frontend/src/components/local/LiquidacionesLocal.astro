@@ -1,15 +1,15 @@
 <section class="local-card">
- <h2>Liquidaciones manuales ficticias</h2>
- <p>Registro interno de los importes del acompañante. No genera transferencias bancarias ni movimientos de dinero real.</p>
+ <h2>Liquidaciones registradas</h2>
+ <p>Consulta de liquidaciones registradas. Esta pantalla no realiza transferencias bancarias.</p>
  <p id="liquidaciones-local-status" role="status" aria-live="polite"></p>
  <div id="liquidaciones-local-list" class="local-list"></div>
 </section>
 <script>
- import {apiLocal,horaLocal,importe} from '../../lib/local-api';
+ import {apiSegura,horaLocal,importe} from '../../lib/local-api';
  const list=document.querySelector<HTMLElement>('#liquidaciones-local-list')!;
  const estado=document.querySelector<HTMLElement>('#liquidaciones-local-status')!;
  const cargar=async()=>{
-  const datos=await apiLocal('/liquidaciones');list.replaceChildren();
+  const datos=await apiSegura('/liquidaciones');list.replaceChildren();
   if(!datos.length){list.textContent='Aún no se registran liquidaciones.';return;}
   for(const l of datos){
    const box=document.createElement('div');box.className='local-item';
