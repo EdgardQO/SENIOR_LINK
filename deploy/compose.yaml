@@ -13,6 +13,8 @@ services:
       HIBERNATE_DDL_AUTO: ${HIBERNATE_DDL_AUTO:-update}
       JPA_SHOW_SQL: "false"
       FRONTEND_ALLOWED_ORIGINS: ${FRONTEND_ALLOWED_ORIGINS:-http://localhost:4321,http://127.0.0.1:4321,http://localhost:5173,http://127.0.0.1:5173}
+    volumes:
+      - seniorlink_fotos:/app/uploads
     ports:
       - "127.0.0.1:8080:8080"
     networks:
@@ -35,3 +37,6 @@ networks:
     external: true
   proxy:
     external: true
+
+volumes:
+  seniorlink_fotos:

@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import '../styles/local.css';
+import FotoPerfilEditor from '../components/profile/FotoPerfilEditor.astro';
 interface Props {
   role: string;
   label: string;
@@ -45,6 +46,7 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
       </div>
       <div class="panel-header-actions">
         {role !== 'ADMINISTRADOR' && <span class="panel-role">{label}</span>}
+        <FotoPerfilEditor />
         <button id="logout" type="button" class="panel-logout">Cerrar sesión</button>
       </div>
     </header>

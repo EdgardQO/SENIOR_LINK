@@ -32,6 +32,12 @@
       <input id="rEmail" type="email" placeholder="nombre@correo.com" autocomplete="email" />
     </div>
 
+    <div class="field">
+      <label for="rFoto">Foto de perfil (obligatoria)</label>
+      <input id="rFoto" type="file" accept="image/jpeg,image/png,image/webp" required />
+      <p class="hint">Formatos JPG, PNG o WebP. Tamaño máximo 5 MB. Podrás actualizarla desde tu perfil.</p>
+    </div>
+
     <!-- Acompañante -->
     <div class="extra" data-role="acompanante" hidden>
       <h3>Datos del perfil de acompañante</h3><p class="hint section-hint">Estos datos se guardarán junto con tu cuenta en el perfil de acompañante.</p>
@@ -153,6 +159,7 @@ label {
 .field {
   margin-bottom: 22px;
 }
+input[type="file"] { width: 100%; padding: 12px; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-bg-card); color: var(--color-text-main); }
 input[type="text"],
 input[type="email"],
 input[type="tel"],
@@ -656,6 +663,11 @@ g('registerForm')?.addEventListener('submit', async event => {
   if (!/^\d{8}$/.test(val('rDni'))) return fail('El DNI debe tener 8 dígitos.', 'rDni');
   if (digits(val('rPhone')).length < 9) return fail('Ingresa un celular válido.', 'rPhone');
   if (!emailOk(val('rEmail'))) return fail('Ingresa un correo válido.', 'rEmail');
+  const foto = g('rFoto').files?.[0];
+  if (!foto) return fail('Selecciona una fotografía de perfil.', 'rFoto');
+  if (foto.size === 0 || foto.size > 5 * 1024 * 1024 ||
+      !['image/jpeg','image/png','image/webp'].includes(foto.type))
+    return fail('La fotografía debe ser JPG, PNG o WebP y pesar hasta 5 MB.', 'rFoto');
   if (val('rPass').length < 8 || val('rPass').length > 72 || !/[a-z]/i.test(val('rPass')) || !/\d/.test(val('rPass'))) return fail('La contraseña debe tener entre 8 y 72 caracteres, letras y números.', 'rPass');
   if (val('rPassConfirm') !== val('rPass')) return fail('Las contraseñas no coinciden.', 'rPassConfirm');
   if (!g('rTerms').checked) return fail('Debes aceptar los términos para continuar.', 'rTerms');
@@ -690,8 +702,11 @@ g('registerForm')?.addEventListener('submit', async event => {
   button.disabled = true;
   button.textContent = 'Creando cuenta...';
   try {
+    const datosRegistro = new FormData();
+    datosRegistro.append('datos', new Blob([JSON.stringify(payload)], { type: 'application/json' }), 'registro.json');
+    datosRegistro.append('foto', foto);
     const response = await fetch(apiUrl + '/api/v1/auth/registro', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+      method: 'POST', body: datosRegistro
     });
     const contentType = response.headers.get('content-type') || '';
     const responseText = await response.text();

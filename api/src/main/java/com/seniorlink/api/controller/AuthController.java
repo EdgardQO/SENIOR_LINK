@@ -6,6 +6,8 @@ import com.seniorlink.api.dto.RegistroUsuarioDTO;
 import com.seniorlink.api.dto.UsuarioDTO;
 import com.seniorlink.api.service.AuthService;
 import com.seniorlink.api.service.RegistroUsuarioService;
+import com.seniorlink.api.service.FotoPerfilService;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,15 +20,20 @@ public class AuthController {
 
     private final AuthService authService;
     private final RegistroUsuarioService registroUsuarioService;
+    private final FotoPerfilService fotos;
 
-    public AuthController(AuthService authService, RegistroUsuarioService registroUsuarioService) {
+    public AuthController(AuthService authService, RegistroUsuarioService registroUsuarioService, FotoPerfilService fotos) {
         this.authService = authService;
         this.registroUsuarioService = registroUsuarioService;
+        this.fotos = fotos;
     }
 
-    @PostMapping("/registro")
-    public ResponseEntity<UsuarioDTO> registrar(@RequestBody RegistroUsuarioDTO request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(registroUsuarioService.registrar(request));
+    @PostMapping(value = "/registro", consumes = "multipart/form-data")
+    public ResponseEntity<UsuarioDTO> registrarConFoto(
+            @RequestPart("datos") RegistroUsuarioDTO solicitud,
+            @RequestPart("foto") MultipartFile foto) {
+        fotos.validar(foto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(registroUsuarioService.registrarConFoto(solicitud, foto));
     }
 
     @PostMapping("/login")

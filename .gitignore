@@ -6,3 +6,6 @@
 *.key
 # IDE
 .idea/
+
+# Fotos de usuarios: nunca subir imágenes personales a Git
+**/uploads/

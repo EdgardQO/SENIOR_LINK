@@ -7,6 +7,7 @@ import com.seniorlink.api.repository.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -25,6 +26,7 @@ public class RegistroUsuarioService {
     private final ParentescoRepository parentescoRepository;
     private final InstitucionAliadaRepository institucionRepository;
     private final PasswordEncoder passwordEncoder;
+    private final FotoPerfilService fotos;
 
     public RegistroUsuarioService(
             UsuarioRepository usuarioRepository,
@@ -34,7 +36,7 @@ public class RegistroUsuarioService {
             PerfilAcompananteRepository acompananteRepository,
             ParentescoRepository parentescoRepository,
             InstitucionAliadaRepository institucionRepository,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder, FotoPerfilService fotos) {
         this.usuarioRepository = usuarioRepository;
         this.rolRepository = rolRepository;
         this.adultoMayorRepository = adultoMayorRepository;
@@ -43,6 +45,15 @@ public class RegistroUsuarioService {
         this.parentescoRepository = parentescoRepository;
         this.institucionRepository = institucionRepository;
         this.passwordEncoder = passwordEncoder;
+        this.fotos = fotos;
+    }
+
+    @Transactional
+    public UsuarioDTO registrarConFoto(RegistroUsuarioDTO dto, MultipartFile foto) {
+        fotos.validar(foto);
+        UsuarioDTO creado = registrar(dto);
+        fotos.guardar(creado.dni(), foto);
+        return UsuarioDTO.desdeEntidad(usuarioRepository.findById(creado.dni()).orElseThrow());
     }
 
     @Transactional
