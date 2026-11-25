@@ -54,7 +54,7 @@
    form.reset();preview();estado.textContent='Tarjeta guardada correctamente.';await cargar();
   }catch(err){estado.textContent=err instanceof Error?err.message:String(err);}finally{(form.elements.namedItem('cvv') as HTMLInputElement).value='';submit.disabled=false;}
  });
- if(!import.meta.env.DEV){
+ if(!(import.meta.env.DEV || import.meta.env.PUBLIC_PAGOS_SIMULADOS === 'true')){
   form.querySelectorAll('input,select,button').forEach(el=>(el as HTMLInputElement).disabled=true);
   estado.textContent='Los métodos de pago simulados solo están disponibles en localhost. No se admiten tarjetas desde este servidor.';
   list.textContent='No hay gestión de tarjetas de prueba en este entorno.';
