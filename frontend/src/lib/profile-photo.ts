@@ -3,7 +3,7 @@ import { API_URL, getSession } from './auth.js';
 const direcciones = new WeakMap<HTMLImageElement, string>();
 const solicitudes = new WeakMap<HTMLImageElement, number>();
 
-export async function mostrarFotoProtegida(dni: string, imagen: HTMLImageElement): Promise<boolean> {
+export async function mostrarFotoProtegida(dni: string, imagen: HTMLImageElement, reservaId?: number): Promise<boolean> {
   const sesion = getSession();
   const secuencia = (solicitudes.get(imagen) || 0) + 1;
   solicitudes.set(imagen, secuencia);
@@ -11,13 +11,17 @@ export async function mostrarFotoProtegida(dni: string, imagen: HTMLImageElement
     imagen.hidden = true;
     return false;
   }
+  if (reservaId !== undefined && (!Number.isSafeInteger(reservaId) || reservaId <= 0)) return false;
+  const ruta = reservaId === undefined
+    ? '/api/v1/usuarios/' + encodeURIComponent(dni) + '/foto'
+    : '/api/v1/reservas/' + reservaId + '/participantes/' + encodeURIComponent(dni) + '/foto';
   try {
-    const respuesta = await fetch(API_URL + '/api/v1/usuarios/' + encodeURIComponent(dni) + '/foto', {
+    const respuesta = await fetch(API_URL + ruta, {
       headers: { Authorization: 'Bearer ' + sesion.accessToken },
       cache: 'no-store'
     });
     if (!respuesta.ok || !respuesta.headers.get('content-type')?.startsWith('image/')) {
-      imagen.hidden = true;
+      if (solicitudes.get(imagen) === secuencia) imagen.hidden = true;
       return false;
     }
     const nueva = URL.createObjectURL(await respuesta.blob());
@@ -32,7 +36,7 @@ export async function mostrarFotoProtegida(dni: string, imagen: HTMLImageElement
     if (previa) URL.revokeObjectURL(previa);
     return true;
   } catch {
-    imagen.hidden = true;
+    if (solicitudes.get(imagen) === secuencia) imagen.hidden = true;
     return false;
   }
 }
