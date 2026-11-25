@@ -23,6 +23,16 @@ public class Reserva {
     @JoinColumn(name = "acompanante_dni", nullable = false)
     private Usuario acompanante;
 
+    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name="solicitante_dni")
+    private Usuario solicitante;
+    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name="adulto_mayor_dni")
+    private Usuario adultoMayor;
+    @Column(name="vence_aceptacion_en") private OffsetDateTime venceAceptacionEn;
+    @Column(name="aceptado_en") private OffsetDateTime aceptadoEn;
+    @Column(name="vence_pago_en") private OffsetDateTime vencePagoEn;
+    @Column(name="inicio_real_en") private OffsetDateTime inicioRealEn;
+    @Column(name="fin_real_en") private OffsetDateTime finRealEn;
+    @Column(name="confirmado_en") private OffsetDateTime confirmadoEn;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "descuento_id")
     private Descuento descuento;
@@ -77,6 +87,22 @@ public class Reserva {
         this.servicios.add(item);
     }
 
+    public Usuario getSolicitante(){return solicitante;}
+    public void setSolicitante(Usuario v){solicitante=v;}
+    public Usuario getAdultoMayor(){return adultoMayor;}
+    public void setAdultoMayor(Usuario v){adultoMayor=v;}
+    public OffsetDateTime getVenceAceptacionEn(){return venceAceptacionEn;}
+    public void setVenceAceptacionEn(OffsetDateTime v){venceAceptacionEn=v;}
+    public OffsetDateTime getAceptadoEn(){return aceptadoEn;}
+    public void setAceptadoEn(OffsetDateTime v){aceptadoEn=v;}
+    public OffsetDateTime getVencePagoEn(){return vencePagoEn;}
+    public void setVencePagoEn(OffsetDateTime v){vencePagoEn=v;}
+    public OffsetDateTime getInicioRealEn(){return inicioRealEn;}
+    public void setInicioRealEn(OffsetDateTime v){inicioRealEn=v;}
+    public OffsetDateTime getFinRealEn(){return finRealEn;}
+    public void setFinRealEn(OffsetDateTime v){finRealEn=v;}
+    public OffsetDateTime getConfirmadoEn(){return confirmadoEn;}
+    public void setConfirmadoEn(OffsetDateTime v){confirmadoEn=v;}
     // Getters y Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
