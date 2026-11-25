@@ -21,8 +21,9 @@ public class OperacionesLocalesController {
  private final ReservaLocalService reservas;
  private final PasarelaLocalService pagos;
  private final PostServicioLocalService postServicio;
- public OperacionesLocalesController(ReservaLocalService reservas,PasarelaLocalService pagos,PostServicioLocalService postServicio){
-  this.reservas=reservas;this.pagos=pagos;this.postServicio=postServicio;
+ private final ConfiguracionLocalService configuracion;
+ public OperacionesLocalesController(ReservaLocalService reservas,PasarelaLocalService pagos,PostServicioLocalService postServicio,ConfiguracionLocalService configuracion){
+  this.reservas=reservas;this.pagos=pagos;this.postServicio=postServicio;this.configuracion=configuracion;
  }
  @GetMapping("/servicios")
  public List<Servicio> servicios(){return reservas.servicios();}
@@ -149,5 +150,13 @@ public class OperacionesLocalesController {
   @RequestBody ValoracionInput input){
   return postServicio.valorar(auth.getName(),id,input.puntuacion(),input.comentario());
  }
+
+ @GetMapping("/admin/configuracion-reservas")
+ @PreAuthorize("hasRole('ADMINISTRADOR')")
+ public ConfiguracionLocalService.Parametros obtenerConfiguracion(){return configuracion.obtener();}
+ @PutMapping("/admin/configuracion-reservas")
+ @PreAuthorize("hasRole('ADMINISTRADOR')")
+ public ConfiguracionLocalService.Parametros actualizarConfiguracion(
+  @RequestBody ConfiguracionLocalService.Parametros input){return configuracion.guardar(input);}
 
 }
