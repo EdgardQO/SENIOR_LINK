@@ -31,6 +31,9 @@ public class Usuario {
     @Column(name = "telefono", length = 20)
     private String telefono;
 
+    @Column(name = "foto_perfil_ruta", length = 255)
+    private String fotoPerfilRuta;
+
     @Column(name = "esta_activo", nullable = false)
     private Boolean estaActivo = true;
 
@@ -55,6 +58,8 @@ public class Usuario {
     public void setApellidos(String apellidos) { this.apellidos = apellidos; }
     public String getTelefono() { return telefono; }
     public void setTelefono(String telefono) { this.telefono = telefono; }
+    public String getFotoPerfilRuta() { return fotoPerfilRuta; }
+    public void setFotoPerfilRuta(String ruta) { this.fotoPerfilRuta = ruta; }
     public Boolean getEstaActivo() { return estaActivo; }
     public void setEstaActivo(Boolean estaActivo) { this.estaActivo = estaActivo; }
     public OffsetDateTime getCreadoEn() { return creadoEn; }
