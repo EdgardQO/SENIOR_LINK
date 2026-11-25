@@ -1,17 +1,18 @@
 ---
 import RoleLayout from '../layouts/RoleLayout.astro';
 const indicadores=[
- {id:'pendientes',titulo:'Solicitudes pendientes',ruta:'/familiar/reservas',icono:'calendar',tono:'verde'},
- {id:'activas',titulo:'Servicios activos',ruta:'/familiar/reservas',icono:'users',tono:'verde'},
- {id:'completadas',titulo:'Servicios completados',ruta:'/familiar/reservas',icono:'check',tono:'verde'},
- {id:'canceladas',titulo:'Reservas canceladas',ruta:'/familiar/reservas',icono:'cancel',tono:'rojo'},
+ {id:'pendientes',titulo:'Solicitudes pendientes',ruta:'/familiar/mis-reservas',icono:'calendar',tono:'verde'},
+ {id:'activas',titulo:'Servicios activos',ruta:'/familiar/mis-reservas',icono:'users',tono:'verde'},
+ {id:'completadas',titulo:'Servicios completados',ruta:'/familiar/mis-reservas',icono:'check',tono:'verde'},
+ {id:'canceladas',titulo:'Reservas canceladas',ruta:'/familiar/mis-reservas',icono:'cancel',tono:'rojo'},
  {id:'vinculos',titulo:'Vinculaciones aceptadas',ruta:'/familiar/vinculaciones',icono:'link',tono:'verde'},
  {id:'incidencias',titulo:'Incidencias abiertas',ruta:'/familiar/incidencias',icono:'alert',tono:'ambar'}
 ];
 const accesos=[
+ {titulo:'Nueva reserva',ruta:'/familiar/reservas',icono:'calendar'},
  {titulo:'Buscar acompañante',ruta:'/familiar/acompanantes',icono:'search'},
  {titulo:'Vincular adulto mayor',ruta:'/familiar/vinculaciones',icono:'users'},
- {titulo:'Mis reservas',ruta:'/familiar/reservas',icono:'calendar'},
+ {titulo:'Mis reservas',ruta:'/familiar/mis-reservas',icono:'calendar'},
  {titulo:'Métodos de pago',ruta:'/familiar/metodos-pago',icono:'card'}
 ];
 const trazos:Record<string,string>={calendar:'M5 5h14v16H5zM8 3v4M16 3v4M5 10h14',users:'M8 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21v-3a6 6 0 0 1 12 0v3M16 4a3 3 0 0 1 0 6M17 14a5 5 0 0 1 5 5v2',check:'M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18zM8 12l3 3 5-6',cancel:'M5 5h14v16H5zM8 3v4M16 3v4M5 10h14M9 13l6 5m0-5-6 5',link:'M10 13a4 4 0 0 0 6 1l4-4a4 4 0 0 0-6-6l-2 2M14 11a4 4 0 0 0-6-1l-4 4a4 4 0 0 0 6 6l2-2',alert:'M12 3 2 21h20zM12 9v4m0 4h.01',search:'M10 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM15 15l6 6',card:'M3 5h18v14H3zM3 10h18M7 15h5'};
@@ -23,7 +24,7 @@ const trazos:Record<string,string>={calendar:'M5 5h14v16H5zM8 3v4M16 3v4M5 10h14
   </div>
   <p id="familiar-resumen-status" role="status" aria-live="polite"></p>
   <div class="familiar-bottom">
-   <section class="familiar-pane"><div class="familiar-heading"><h2>Próxima reserva</h2><a href="/familiar/reservas">Ver mis reservas</a></div><div id="familiar-proximas" class="local-list" aria-live="polite">Consultando reservas...</div></section>
+   <section class="familiar-pane"><div class="familiar-heading"><h2>Próxima reserva</h2><a href="/familiar/mis-reservas">Ver mis reservas</a></div><div id="familiar-proximas" class="local-list" aria-live="polite">Consultando reservas...</div></section>
    <section class="familiar-pane"><div class="familiar-heading"><h2>Accesos rápidos</h2></div><div class="familiar-quick">{accesos.map(a=><a href={a.ruta}><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={trazos[a.icono]}/></svg><span>{a.titulo}</span><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></a>)}</div></section>
   </div>
  </section>
