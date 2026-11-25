@@ -19,6 +19,15 @@ class PasarelaLocalIntegrationTests {
  @Autowired RegistroUsuarioService registro;
  @Autowired com.seniorlink.api.repository.UsuarioRepository usuarios;
  @Autowired ReservaLocalService reservas;
+ @Autowired com.seniorlink.api.repository.TarjetaRepository tarjetas;
+ @Autowired org.springframework.security.crypto.password.PasswordEncoder encoder;
+ private String provisionarTarjeta(){
+  var t=new com.seniorlink.api.model.entity.Tarjeta();
+  t.setTitularDni("95000001");t.setNumeroTarjeta("DEMO-97000001");t.setNombreTitular("Adulto Demo");
+  t.setTipoTarjeta("DEBITO");t.setMesVencimiento((short)12);t.setAnioVencimiento((short)2090);
+  t.setCvvHash(encoder.encode("123"));t.setSaldo(new BigDecimal("500.00"));tarjetas.saveAndFlush(t);
+  return t.getNumeroTarjeta();
+ }
  @Autowired PasarelaLocalService pasarela;
 
  @Test void pagoSimuladoExitosoYRechazoPorFondosInsuficientes() {
@@ -48,7 +57,7 @@ class PasarelaLocalIntegrationTests {
   assertEquals("PENDIENTE_ACEPTACION",primera.estado());
   assertEquals("PENDIENTE_PAGO",reservas.accion("95000002",primera.id(),"ACEPTAR").estado());
   var tarjeta=pasarela.agregar("95000001",new PasarelaLocalService.NuevaTarjeta(
-   null,"Adulto Demo","DEBITO",(short)12,(short)2090,"123"));
+   provisionarTarjeta(),"Adulto Demo","DEBITO",(short)12,(short)2090,"123"));
   UUID clave=UUID.randomUUID();
   var pago=pasarela.pagar("95000001",primera.id(),
    new PasarelaLocalService.PagoRequest(tarjeta.id(),clave,"123"));
