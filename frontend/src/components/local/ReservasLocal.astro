@@ -17,7 +17,7 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
  </form>}
  <p id="reserva-local-status" role="status" aria-live="polite"></p>
  <div id="reserva-local-list" class="local-list"></div>
- {cliente && <p>Para pagar, registra una tarjeta ficticia en <a href={rol==='FAMILIAR'?'/familiar/metodos-pago':'/adulto-mayor/metodos-pago'}>Mis métodos de pago</a>.</p>}
+ {cliente && <p>Modo de prueba: para pagar, registra una tarjeta en <a href={rol==='FAMILIAR'?'/familiar/metodos-pago':'/adulto-mayor/metodos-pago'}>Mis métodos de pago</a>.</p>}
 </section>
 <script>
  import {apiLocal,horaLocal,importe,sesionRequerida} from '../../lib/local-api';
@@ -55,9 +55,9 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
    if(['PENDIENTE_ACEPTACION','PENDIENTE_PAGO','CONFIRMADA','EN_PROGRESO','PENDIENTE_CONFIRMACION'].includes(b.estado) && rol!=='ADMINISTRADOR')
     accion('Cancelar / reportar','cancelar');
    if(rol==='ADMINISTRADOR' && (b.estado==='CANCELADA'||b.estado==='EN_DISPUTA')){
-    const refund=nuevo('button','Reembolsar pago ficticio') as HTMLButtonElement;
+    const refund=nuevo('button','Reembolsar pago') as HTMLButtonElement;
     refund.addEventListener('click',async()=>{
-     if(!confirm('¿Registrar el reembolso ficticio de esta reserva?'))return;
+     if(!confirm('¿Registrar el reembolso de esta reserva?'))return;
      try{const res=await apiLocal('/admin/reservas/'+b.id+'/reembolsar',{method:'POST'});
       estado.textContent='Resultado del reembolso: '+res.estado;await refrescar();
      }catch(e){estado.textContent=e instanceof Error?e.message:String(e);}
@@ -66,16 +66,16 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
    if((rol==='ADULTO_MAYOR'||rol==='FAMILIAR')&&b.estado==='PENDIENTE_PAGO'){
     const pago=document.createElement('form');pago.className='local-form';
     const sel=document.createElement('select');sel.required=true;
-    const n=document.createElement('option');n.value='';n.textContent='Seleccionar tarjeta ficticia';sel.append(n);
+    const n=document.createElement('option');n.value='';n.textContent='Seleccionar tarjeta';sel.append(n);
     for(const m of medios){const opt=document.createElement('option');opt.value=m.id;opt.textContent=m.tipo+' '+m.numeroEnmascarado;sel.append(opt);}
-    const cvv=document.createElement('input');cvv.type='password';cvv.placeholder='CVV ficticio';cvv.required=true;cvv.pattern='[0-9]{3,4}';cvv.autocomplete='off';
+    const cvv=document.createElement('input');cvv.type='password';cvv.placeholder='CVV';cvv.required=true;cvv.pattern='[0-9]{3,4}';cvv.autocomplete='off';
     const btn=nuevo('button','Pagar '+importe(b.montoTotal)) as HTMLButtonElement;btn.type='submit';
     const clave=crypto.randomUUID();
     pago.append(sel,cvv,btn);
     pago.addEventListener('submit',async ev=>{
      ev.preventDefault();
      try{
-      estado.textContent='Procesando el cobro ficticio…';
+      estado.textContent='Procesando el cobro…';
       const res=await apiLocal('/reservas/'+b.id+'/pagar',{method:'POST',body:JSON.stringify({
        metodoId:sel.value,claveIdempotencia:clave,cvv:cvv.value
       })});
@@ -110,7 +110,7 @@ const cliente=rol==='ADULTO_MAYOR'||rol==='FAMILIAR';
     });acciones.append(inc);
    }
    if(rol==='ADMINISTRADOR'&&b.estado==='COMPLETADA'){
-    const settle=nuevo('button','Registrar liquidación ficticia') as HTMLButtonElement;
+    const settle=nuevo('button','Registrar liquidación') as HTMLButtonElement;
     settle.addEventListener('click',async()=>{
      try{await apiLocal('/liquidaciones/'+b.id,{method:'POST'});
       estado.textContent='Liquidación manual registrada.';await refrescar();
