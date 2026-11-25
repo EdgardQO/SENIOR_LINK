@@ -7,7 +7,6 @@ import com.seniorlink.api.dto.UsuarioDTO;
 import com.seniorlink.api.service.AuthService;
 import com.seniorlink.api.service.RegistroUsuarioService;
 import com.seniorlink.api.service.FotoPerfilService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,21 +21,18 @@ public class AuthController {
     private final AuthService authService;
     private final RegistroUsuarioService registroUsuarioService;
     private final FotoPerfilService fotos;
-    private final ObjectMapper objectMapper;
 
-    public AuthController(AuthService authService, RegistroUsuarioService registroUsuarioService, FotoPerfilService fotos, ObjectMapper objectMapper) {
+    public AuthController(AuthService authService, RegistroUsuarioService registroUsuarioService, FotoPerfilService fotos) {
         this.authService = authService;
         this.registroUsuarioService = registroUsuarioService;
         this.fotos = fotos;
-        this.objectMapper = objectMapper;
     }
 
     @PostMapping(value = "/registro", consumes = "multipart/form-data")
     public ResponseEntity<UsuarioDTO> registrarConFoto(
-            @RequestPart("datos") String datos,
-            @RequestPart("foto") MultipartFile foto) throws com.fasterxml.jackson.core.JsonProcessingException {
+            @RequestPart("datos") RegistroUsuarioDTO solicitud,
+            @RequestPart("foto") MultipartFile foto) {
         fotos.validar(foto);
-        RegistroUsuarioDTO solicitud = objectMapper.readValue(datos, RegistroUsuarioDTO.class);
         return ResponseEntity.status(HttpStatus.CREATED).body(registroUsuarioService.registrarConFoto(solicitud, foto));
     }
 
