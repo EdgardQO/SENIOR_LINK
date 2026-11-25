@@ -107,8 +107,8 @@ public class PasarelaLocalService {
   actor(dni);
   if(req==null||req.metodoId()==null||req.claveIdempotencia()==null||
    req.cvv()==null||!req.cvv().matches("[0-9]{3,4}"))throw bad("Solicitud de pago incompleta");
-  // Bloqueamos primero reserva, después tarjeta, siempre en ese orden.
-  Reserva r=reservas.bloquear(reservaId).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Reserva no encontrada"));
+  // Orden único: acompañante, reserva y tarjeta.
+  Reserva r=motor.bloquearParaAgenda(reservaId);
   if(!motor.puedePagar(dni,r))throw no();
   MetodoPago m=metodos.findByIdAndUsuarioDniAndActivoTrue(req.metodoId(),dni).orElseThrow(this::no);
   TokenTarjeta vinculo=tokens.findById(m.getToken()).orElseThrow(this::no);
@@ -121,7 +121,7 @@ public class PasarelaLocalService {
    return resultado(t);
   }
   if(r.getEstadoActual()!=EstadoReserva.PENDIENTE_PAGO||
-   r.getVencePagoEn()==null||!OffsetDateTime.now().isBefore(r.getVencePagoEn()))
+   r.getVencePagoEn()==null||!OffsetDateTime.now().isBefore(r.getVencePagoEn())||!OffsetDateTime.now().isBefore(r.getFechaHoraInicio()))
    throw new ResponseStatusException(HttpStatus.CONFLICT,"La reserva no está habilitada para pago");
   if(transacciones.existsByReservaIdAndEstado(reservaId,"APROBADO")||
    pagos.findByReservaId(reservaId).filter(p->p.getMpEstado()==EstadoPasarelaPago.APROBADO).isPresent())
@@ -166,7 +166,7 @@ public class PasarelaLocalService {
  public Resultado reembolsar(String adminDni,Long reservaId){
   Usuario admin=usuarios.findById(adminDni).orElseThrow(this::no);
   if(!"ADMINISTRADOR".equals(admin.getRol().getNombre()))throw no();
-  Reserva r=reservas.bloquear(reservaId).orElseThrow(()->bad("Reserva inexistente"));
+  Reserva r=motor.bloquearParaAgenda(reservaId);
   if(r.getEstadoActual()!=EstadoReserva.CANCELADA && r.getEstadoActual()!=EstadoReserva.EN_DISPUTA)
    throw new ResponseStatusException(HttpStatus.CONFLICT,"El reembolso requiere cancelación o disputa");
   Transaccion tr=transacciones.findAll().stream().filter(x->x.getReservaId().equals(reservaId)&&
