@@ -124,27 +124,34 @@ public class PostServicioLocalService {
    .map(this::vista).toList();
  }
  private boolean puedeValorar(String dni,Reserva r){
-  if(dni.equals(r.getCliente().getDni()))return true;
+  String adulto=r.getAdultoMayor()!=null?r.getAdultoMayor().getDni():r.getCliente().getDni();
+  if(dni.equals(adulto))return true;
   return vinculos.findByFamiliarDni(dni).stream().anyMatch(v->
    "ACEPTADO".equals(v.getEstado())&&v.isPermiteGestionar()&&
-    v.getAdultoMayor().getDni().equals(r.getCliente().getDni()));
+    v.getAdultoMayor().getDni().equals(adulto));
  }
  public ValoracionVista valorar(String dni,Long id,short puntuacion,String comentario){
   Usuario actor=usuario(dni);
-  Reserva r=reserva(id);
-  if(!puedeValorar(dni,r))throw no();
+  Reserva r=motor.bloquearParaAgenda(id);
+  if(!esRol(actor,"ADULTO_MAYOR","FAMILIAR")||!puedeValorar(dni,r))throw no();
   if(r.getEstadoActual()!=EstadoReserva.COMPLETADA)
    throw new ResponseStatusException(HttpStatus.CONFLICT,"Primero debe completarse el servicio");
   if(puntuacion<1||puntuacion>5||comentario!=null&&comentario.length()>1000)throw bad("Valoración inválida");
-  if(valoraciones.findByReservaId(id).isPresent())
-   throw new ResponseStatusException(HttpStatus.CONFLICT,"La reserva ya fue valorada");
+  var existente=valoraciones.findByReservaId(id);
+  if(existente.isPresent()){
+   Valoracion v=existente.get();
+   return new ValoracionVista(v.getId(),r.getId(),v.getPuntuacion(),v.getComentario());
+  }
+  var historica=motor.opinionReserva(id);
+  if(historica!=null)return new ValoracionVista(null,r.getId(),historica.puntuacion(),historica.comentario());
   Valoracion v=new Valoracion(r,actor,r.getAcompanante(),puntuacion,comentario);
   valoraciones.saveAndFlush(v);
   PerfilAcompanante p=perfiles.findById(r.getAcompanante().getDni()).orElseThrow(()->bad("Perfil no encontrado"));
-  int total=p.getTotalCalificaciones();
-  BigDecimal nueva=p.getPromedioCalificacion().multiply(BigDecimal.valueOf(total))
-   .add(BigDecimal.valueOf(puntuacion)).divide(BigDecimal.valueOf(total+1),2,RoundingMode.HALF_UP);
-  p.setPromedioCalificacion(nueva);p.setTotalCalificaciones(total+1);perfiles.save(p);
+  var opiniones=motor.opiniones(r.getAcompanante().getDni());
+  int total=opiniones.size();
+  BigDecimal nueva=total==0?BigDecimal.ZERO:BigDecimal.valueOf(opiniones.stream().mapToInt(ReservaLocalService.OpinionVista::puntuacion).sum())
+   .divide(BigDecimal.valueOf(total),2,RoundingMode.HALF_UP);
+  p.setPromedioCalificacion(nueva);p.setTotalCalificaciones(total);perfiles.save(p);
   return new ValoracionVista(v.getId(),r.getId(),v.getPuntuacion(),v.getComentario());
  }
 }
