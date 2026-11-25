@@ -254,11 +254,11 @@ public class ReservaLocalService {
  }
  public List<AcompananteVista> acompanantes(){
   return perfiles.findAll().stream().filter(p->Boolean.TRUE.equals(p.getUsuario().getEstaActivo()) && p.getUsuario().isFotoVerificada())
-   .map(p->new AcompananteVista(p.getUsuarioDni(),p.getUsuario().getNombres()+" "+p.getUsuario().getApellidos(),
+   .map(p->new AcompananteVista(p.getUsuario().getDni(),p.getUsuario().getNombres()+" "+p.getUsuario().getApellidos(),
     p.getTarifaActualPorHora(),p.getCarrera(),p.getCiclo(),p.getBiografia(),
     p.getInstitucionAliada()==null?null:p.getInstitucionAliada().getNombre(),
     p.getPromedioCalificacion(),p.getTotalCalificaciones(),
-    "/api/v1/usuarios/"+p.getUsuarioDni()+"/foto")).toList();
+    "/api/v1/usuarios/"+p.getUsuario().getDni()+"/foto")).toList();
  }
  public List<Servicio> servicios(){return servicios.findAll().stream().filter(s->Boolean.TRUE.equals(s.getEstaActivo())).toList();}
  public List<Horario> disponibilidad(String dni){return horarios.findByAcompananteDniAndEstaActivoTrue(dni).stream()
