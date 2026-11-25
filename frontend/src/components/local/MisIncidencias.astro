@@ -1,0 +1,88 @@
+---
+interface Props {rol:'ADULTO_MAYOR'|'FAMILIAR'}
+const {rol}=Astro.props;
+---
+<section class="local-card customer-support" data-customer-support={rol}>
+ <header class="section-heading"><div><h2>Registrar incidencia</h2><p>Describe el inconveniente para que el equipo de soporte pueda ayudarte.</p></div></header>
+ <form id="customer-incident-form" class="local-form">
+  <label for="customer-reserva">Reserva relacionada<select id="customer-reserva" name="reserva" required disabled><option value="">Consultando reservas...</option></select></label>
+  <label for="customer-descripcion">Descripción<textarea id="customer-descripcion" name="descripcion" rows="5" minlength="1" maxlength="2000" required placeholder="Explica qué ocurrió y qué ayuda necesitas."></textarea></label>
+  <p class="local-muted">No incluyas contraseñas, códigos de seguridad ni datos bancarios. Para una emergencia, contacta directamente a los servicios de emergencia.</p>
+  <button type="submit" id="customer-enviar" disabled>Enviar incidencia</button>
+ </form>
+ <p id="customer-form-status" role="status" aria-live="polite"></p>
+</section>
+<section class="local-card customer-support">
+ <header class="section-heading"><h2>Mis incidencias</h2><button type="button" class="customer-refresh" id="customer-refresh">Actualizar</button></header>
+ <div class="customer-tabs" role="group" aria-label="Estado de incidencia">
+  {['Todas','Abiertas','Resueltas'].map((n,i)=><button type="button" data-customer-filter={['TODAS','ABIERTA','RESUELTA'][i]} aria-pressed={i===0?'true':'false'}>{n} <span>0</span></button>)}
+ </div>
+ <label class="customer-search">Buscar incidencia<input type="search" id="customer-buscar" placeholder="Número de incidencia, reserva o descripción" autocomplete="off"/></label>
+ <p id="customer-list-status" role="status" aria-live="polite">Consultando incidencias...</p>
+ <div class="local-list" id="customer-incidents"></div>
+</section>
+<style>
+.customer-support .section-heading{margin:0 0 18px;align-items:center}.customer-support .section-heading p{margin:7px 0 0}
+.customer-support .local-form{max-width:760px}.customer-support textarea{resize:vertical;min-height:130px}.customer-support .local-form button{justify-self:start}
+.customer-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}.customer-tabs button,.customer-refresh{border:1px solid #cbded6;border-radius:9px;background:white;color:#175b50;padding:10px 14px;font:inherit;cursor:pointer}.customer-tabs button[aria-pressed=true]{background:#087a70;color:white;border-color:#087a70}.customer-tabs span{font-size:12px;margin-left:5px}
+.customer-search{display:grid;gap:6px;font-size:14px;font-weight:600}.customer-search input{border:1px solid #cbded6;border-radius:9px;padding:12px;min-width:0;width:100%;font:inherit}
+:global(.customer-incident-head){display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+:global(.customer-incident-state){background:#edf3f1;border-radius:6px;padding:5px 9px;font-size:12px;font-weight:600;color:#355e53}
+:global(.customer-incident-state[data-state=ABIERTA]){background:#fff4dc;color:#80580c}
+:global(.customer-incident-response){border-left:3px solid #087a70;background:#f2f8f5;padding:12px;border-radius:4px;margin-top:12px}
+.customer-support :is(button,input,select,textarea):focus-visible{outline:2px solid #087a70;outline-offset:2px}
+@media(max-width:520px){.customer-support .local-form button{width:100%}.customer-tabs button{flex:1 1 auto}}
+</style>
+<script>
+ import {apiLocal,horaLocal} from '../../lib/local-api';
+ type Reserva={id:number,estado:string,inicio:string,acompananteNombre:string,adultoMayorNombre:string};
+ type Incidencia={id:number,reservaId:number|null,estado:string,descripcion:string,resolucion?:string,creadoEn:string};
+ const form=document.querySelector<HTMLFormElement>('#customer-incident-form')!;
+ const reserva=document.querySelector<HTMLSelectElement>('#customer-reserva')!;
+ const enviar=document.querySelector<HTMLButtonElement>('#customer-enviar')!;
+ const estado=document.querySelector<HTMLElement>('#customer-form-status')!;
+ const list=document.querySelector<HTMLElement>('#customer-incidents')!;
+ const status=document.querySelector<HTMLElement>('#customer-list-status')!;
+ const buscar=document.querySelector<HTMLInputElement>('#customer-buscar')!;
+ const tabs=Array.from(document.querySelectorAll<HTMLButtonElement>('[data-customer-filter]'));
+ let datos:Incidencia[]=[];let filtro='TODAS';let cargado=false;
+ const normalizar=(v:unknown)=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+ const nodo=(tag:string,valor:string)=>{const e=document.createElement(tag);e.textContent=valor;return e;};
+ function render(){
+  if(!cargado)return;
+  const q=normalizar(buscar.value).trim().split(/\s+/).filter(Boolean);
+  for(const tab of tabs){const g=tab.dataset.customerFilter;tab.setAttribute('aria-pressed',String(g===filtro));tab.querySelector('span')!.textContent=String(datos.filter(i=>g==='TODAS'||i.estado===g).length);}
+  const visibles=datos.filter(i=>(filtro==='TODAS'||i.estado===filtro)&&q.every(t=>normalizar([i.id,i.reservaId,i.descripcion,i.resolucion,i.estado].join(' ')).includes(t))).sort((a,b)=>Date.parse(b.creadoEn)-Date.parse(a.creadoEn));
+  list.replaceChildren();status.textContent=visibles.length+' de '+datos.length+' incidencias';
+  if(!visibles.length){list.textContent=datos.length?'No se encontraron incidencias con estos filtros.':'Todavía no tienes incidencias registradas.';return;}
+  for(const i of visibles){
+   const card=document.createElement('article');card.className='local-item local-booking';
+   const head=document.createElement('div');head.className='customer-incident-head';
+   const badge=nodo('span',i.estado==='ABIERTA'?'Abierta':i.estado==='RESUELTA'?'Resuelta':i.estado);badge.className='customer-incident-state';badge.dataset.state=i.estado;
+   head.append(nodo('strong','Incidencia #'+i.id),badge);
+   card.append(head,nodo('p',(i.reservaId?'Reserva #'+i.reservaId:'Consulta general')+' · '+horaLocal(i.creadoEn)),nodo('p',i.descripcion));
+   if(i.resolucion){const response=document.createElement('div');response.className='customer-incident-response';response.append(nodo('strong','Respuesta del equipo de soporte'),nodo('p',i.resolucion));card.append(response);}
+   else card.append(nodo('p','El equipo de soporte revisará tu solicitud.'));
+   list.append(card);
+  }
+ }
+ async function cargarIncidencias(){try{datos=await apiLocal('/incidencias');cargado=true;render();}catch(e){status.textContent=e instanceof Error?e.message:String(e);}}
+ async function cargarReservas(){try{
+  const datos:Reserva[]=await apiLocal('/reservas');reserva.replaceChildren(new Option('Selecciona una reserva',''));
+  for(const r of datos){reserva.append(new Option('#'+r.id+' · '+r.acompananteNombre+' · '+horaLocal(r.inicio)+' · '+r.estado.replaceAll('_',' '),String(r.id)));}
+  reserva.disabled=false;enviar.disabled=false;
+  if(!datos.length){reserva.replaceChildren(new Option('No tienes reservas relacionadas',''));reserva.disabled=true;enviar.disabled=true;estado.textContent='Todavía no tienes reservas para reportar una incidencia.';}
+  const previa=new URLSearchParams(location.search).get('reserva');if(previa&&datos.some(r=>String(r.id)===previa))reserva.value=previa;
+ }catch(e){estado.textContent=e instanceof Error?e.message:String(e);}}
+ form.addEventListener('submit',async e=>{
+  e.preventDefault();if(enviar.disabled)return;const descripcion=String(new FormData(form).get('descripcion')||'').trim();if(!descripcion){estado.textContent='Describe el inconveniente.';return;}
+  enviar.disabled=true;estado.textContent='Enviando incidencia...';
+  try{const i=await apiLocal('/reservas/'+encodeURIComponent(reserva.value)+'/incidencias',{method:'POST',body:JSON.stringify({descripcion})});form.reset();filtro='TODAS';buscar.value='';estado.textContent='Incidencia #'+i.id+' registrada. El equipo de soporte podrá revisarla.';await cargarIncidencias();}
+  catch(e){estado.textContent=e instanceof Error?e.message:String(e);}finally{enviar.disabled=false;}
+ });
+ for(const tab of tabs)tab.addEventListener('click',()=>{filtro=tab.dataset.customerFilter||'TODAS';render();});
+ buscar.addEventListener('input',render);
+ document.querySelector('#customer-refresh')?.addEventListener('click',()=>void cargarIncidencias());
+ document.addEventListener('seniorlink:profile',()=>{void cargarReservas();void cargarIncidencias();},{once:true});
+ if(document.documentElement.dataset.profileReady==='true'){void cargarReservas();void cargarIncidencias();}
+</script>
