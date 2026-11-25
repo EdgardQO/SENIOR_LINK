@@ -29,6 +29,11 @@ public class OperacionesLocalesController {
  public List<Servicio> servicios(){return reservas.servicios();}
  @GetMapping("/acompanantes")
  public List<ReservaLocalService.AcompananteVista> acompanantes(){return reservas.acompanantes();}
+ @GetMapping("/acompanantes/{dni}/resenas")
+ @PreAuthorize("hasAnyRole('ADULTO_MAYOR','FAMILIAR','ADMINISTRADOR')")
+ public List<PostServicioLocalService.ResenaPublica> resenas(@PathVariable String dni){
+  return postServicio.resenasAcompanante(dni);
+ }
  @GetMapping("/acompanantes/{dni}/disponibilidad")
  public List<ReservaLocalService.Horario> disponibilidadDe(@PathVariable String dni){
   return reservas.disponibilidad(dni);
