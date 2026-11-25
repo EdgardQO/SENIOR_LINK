@@ -1,0 +1,25 @@
+---
+import RoleLayout from '../../layouts/RoleLayout.astro';
+const accesos=[
+ {titulo:'Acompañantes',detalle:'Busca, compara y solicita acompañamiento.',ruta:'/adulto-mayor/acompanantes',accion:'Ver acompañantes'},
+ {titulo:'Reservas',detalle:'Consulta tus solicitudes y el estado de tus servicios.',ruta:'/adulto-mayor/reservas',accion:'Mis reservas'},
+ {titulo:'Métodos de pago',detalle:'Administra tus tarjetas guardadas.',ruta:'/adulto-mayor/metodos-pago',accion:'Administrar tarjetas'},
+ {titulo:'Familiares',detalle:'Consulta y administra las vinculaciones familiares.',ruta:'/adulto-mayor/vinculaciones',accion:'Ver familiares'}
+];
+---
+<RoleLayout role="ADULTO_MAYOR" label="Adulto mayor" description="Accede a las funciones disponibles de tu cuenta.">
+ <section id="herramientas" class="adult-tools">
+  <div class="section-heading"><h2>Herramientas</h2></div>
+  <div class="dashboard-grid">
+   {accesos.map(a=><article class="dashboard-card adult-tool"><h3>{a.titulo}</h3><p>{a.detalle}</p><a href={a.ruta}>{a.accion}</a></article>)}
+   <article class="dashboard-card adult-tool"><h3>Contacto de emergencia</h3><p data-field="adultoMayor.contactoEmergencia">Cargando...</p><p data-field="adultoMayor.telefonoEmergencia">Cargando...</p><a href="/adulto-mayor/mi-perfil">Consultar datos de contacto</a></article>
+  </div>
+ </section>
+</RoleLayout>
+<style>
+.adult-tool{display:flex;flex-direction:column;gap:10px}.adult-tool a{margin-top:auto;display:block;color:#087a70;font-weight:600;padding:10px 0;text-decoration:underline;text-underline-offset:3px}.adult-tool a:focus-visible{outline:2px solid #087a70;outline-offset:3px}
+</style>
+<script>
+ import {renderProfileFields} from '../../lib/profile-fields';
+ document.addEventListener('seniorlink:profile',(event:Event)=>renderProfileFields((event as CustomEvent).detail));
+</script>
