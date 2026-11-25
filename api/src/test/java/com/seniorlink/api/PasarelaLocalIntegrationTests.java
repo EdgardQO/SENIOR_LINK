@@ -17,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @Transactional
 class PasarelaLocalIntegrationTests {
  @Autowired RegistroUsuarioService registro;
+ @Autowired com.seniorlink.api.repository.UsuarioRepository usuarios;
  @Autowired ReservaLocalService reservas;
  @Autowired PasarelaLocalService pasarela;
 
@@ -31,6 +32,10 @@ class PasarelaLocalIntegrationTests {
     new BigDecimal("50.00"),new BigDecimal("50.00"),null));
   registro.registrar(adulto);
   registro.registrar(acomp);
+  var verificado=usuarios.findById("95000002").orElseThrow();
+  verificado.setFotoPerfilRuta("95000002/perfil-test.png");
+  verificado.revisarFoto("VERIFICADO","95000001",null);
+  usuarios.saveAndFlush(verificado);
 
   List<ReservaLocalService.Horario> semana=new ArrayList<>();
   for(short d=1;d<=7;d++)

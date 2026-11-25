@@ -43,6 +43,33 @@ public class Usuario {
     @Column(name = "actualizado_en", nullable = false)
     private OffsetDateTime actualizadoEn = OffsetDateTime.now();
 
+    @Column(name = "estado_verificacion", length = 20)
+    private String estadoVerificacion;
+    @Column(name = "fecha_verificacion")
+    private OffsetDateTime fechaVerificacion;
+    @Column(name = "verificado_por", length = 8)
+    private String verificadoPor;
+    @Column(name = "motivo_rechazo", length = 500)
+    private String motivoRechazo;
+    @Column(name = "foto_actualizada_en")
+    private OffsetDateTime fotoActualizadaEn;
+
+    public String getEstadoVerificacion() { return estadoVerificacion == null ? "PENDIENTE" : estadoVerificacion; }
+    public OffsetDateTime getFechaVerificacion() { return fechaVerificacion; }
+    public String getVerificadoPor() { return verificadoPor; }
+    public String getMotivoRechazo() { return motivoRechazo; }
+    public OffsetDateTime getFotoActualizadaEn() { return fotoActualizadaEn; }
+    public void registrarCambioFoto() {
+        estadoVerificacion = "PENDIENTE"; fechaVerificacion = null; verificadoPor = null;
+        motivoRechazo = null; fotoActualizadaEn = OffsetDateTime.now();
+    }
+    public void revisarFoto(String estado, String actor, String motivo) {
+        estadoVerificacion = estado; verificadoPor = actor; motivoRechazo = motivo;
+        fechaVerificacion = OffsetDateTime.now();
+    }
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public boolean isFotoVerificada() { return fotoPerfilRuta != null && "VERIFICADO".equals(getEstadoVerificacion()); }
+
     // Getters y Setters
     public String getDni() { return dni; }
     public void setDni(String dni) { this.dni = dni; }

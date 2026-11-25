@@ -1,4 +1,5 @@
 import { adminRequest } from './admin-api';
+import { mostrarFotoProtegida, limpiarFoto } from './profile-photo';
 import { API_URL, getSession } from './auth.js';
 
 type AnyRecord = Record<string, any>;
@@ -246,6 +247,10 @@ function createUserModal(root: HTMLElement, initialRole: string, refresh: () => 
     if(key==='correoElectronico')input.autocomplete='email';
     commonGrid.append(element);
   }
+  const photoField=field('foto','Fotografía de perfil obligatoria','file',true);
+  const photoInput=photoField.querySelector('input')!;
+  photoInput.accept='image/jpeg,image/png,image/webp';
+  commonGrid.append(photoField);
   commonSection.append(commonGrid);
   const profileSection=node('section','','admin-create-section');
   const profileHeading=node('h3','03 · Información del perfil');
@@ -335,12 +340,18 @@ function createUserModal(root: HTMLElement, initialRole: string, refresh: () => 
       const profile:AnyRecord={};
       for(const [key] of PROFILE_FIELDS[role])if('profile_'+key in vals)profile[key]=vals['profile_'+key];
       if(role==='ACOMPANANTE'&&vals.profile_institucionRuc)profile.institucionRuc=vals.profile_institucionRuc;
+      const foto=photoInput.files?.[0];
+      if(!foto || foto.size===0 || foto.size>5*1024*1024) throw new Error('Selecciona una fotografía de hasta 5 MB.');
+      const multipart=new FormData();
+      multipart.append('foto',foto);
       if(role==='ADMINISTRADOR'||role==='SOPORTE'){
         Object.assign(data,profile);
-        await adminRequest('/personal',{method:'POST',body:JSON.stringify(data)});
+        multipart.append('datos',new Blob([JSON.stringify(data)],{type:'application/json'}));
+        await adminRequest('/personal',{method:'POST',body:multipart});
       }else{
         data[PROFILE_KEY[role]]=profile;
-        await adminRequest('/usuarios',{method:'POST',body:JSON.stringify(data)});
+        multipart.append('datos',new Blob([JSON.stringify(data)],{type:'application/json'}));
+        await adminRequest('/usuarios',{method:'POST',body:multipart});
       }
       await refresh();
       busy=false;close();status(root,'Cuenta de '+LABELS[role].toLowerCase()+' creada correctamente.');
@@ -547,6 +558,7 @@ async function usersModule(root: HTMLElement) {
       actions.className='admin-actions-cell';
       const buttons=node('div','','admin-actions-group');
       buttons.append(action('Ver perfil',()=>void viewUser(u.dni)));
+      buttons.append(action('Revisar foto',()=>void revisarFotoUsuario(u.dni,root),'admin-secondary'));
       buttons.append(action('Editar',()=>void editUser(u.dni),'admin-secondary'));
       buttons.append(action(u.estaActivo?'Desactivar':'Activar',()=>void toggleUser(u),'admin-danger'));
       actions.appendChild(buttons);
@@ -729,4 +741,31 @@ export async function initAdminModule(root:HTMLElement):Promise<void>{
       case 'promociones':await promotionsModule(root);break;
     }
   } catch(e){status(root,e instanceof Error?e.message:'No se pudo cargar el módulo.',true);}
+}
+
+async function revisarFotoUsuario(dni:string,root:HTMLElement){
+  const panel=document.createElement('dialog');
+  panel.style.cssText='max-width:min(92vw,480px);border:1px solid #cde6de;border-radius:14px;padding:24px';
+  document.body.append(panel);
+  const img=document.createElement('img');img.alt='Fotografía registrada';img.hidden=true;
+  panel.addEventListener('close',()=>{limpiarFoto(img);panel.remove();},{once:true});
+  try{
+    const info=await adminRequest('/verificaciones/'+encodeURIComponent(dni));
+    img.style.cssText='max-width:100%;max-height:280px;object-fit:contain';
+    const nota=node('p','Estado: '+info.estado+' · Comprueba la identidad mediante un procedimiento autorizado, no solo la imagen.');
+    const motivo=document.createElement('textarea');motivo.placeholder='Motivo si se rechaza';motivo.maxLength=500;
+    const mensaje=node('p');
+    const enviar=async(estado:string)=>{
+      try{
+        await adminRequest('/verificaciones/'+encodeURIComponent(dni),{method:'PUT',body:JSON.stringify({estado,motivo:motivo.value,version:info.version})});
+        panel.close();status(root,'Revisión registrada.');
+      }catch(e){mensaje.textContent=e instanceof Error?e.message:String(e);}
+    };
+    const ok=await mostrarFotoProtegida(dni,img);
+    panel.append(node('h2','Revisión de identidad'),nota,img,motivo,mensaje);
+    if(ok)panel.append(action('Confirmar identidad',()=>void enviar('VERIFICADO')),action('Rechazar',()=>void enviar('RECHAZADO'),'admin-danger'));
+    else panel.append(node('p','No hay una fotografía disponible para revisar.'));
+    panel.append(action('Cerrar',()=>panel.close(),'admin-secondary'));
+    panel.showModal();
+  }catch(e){limpiarFoto(img);panel.remove();status(root,e instanceof Error?e.message:String(e),true);}
 }

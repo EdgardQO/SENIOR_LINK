@@ -20,15 +20,25 @@ public class PersonalInternoService {
     private final PerfilAdminRepository administradores;
     private final PerfilSoporteRepository soportes;
     private final PasswordEncoder encoder;
+    private final FotoPerfilService fotos;
 
     public PersonalInternoService(UsuarioRepository usuarios, RolRepository roles,
                                   PerfilAdminRepository administradores, PerfilSoporteRepository soportes,
-                                  PasswordEncoder encoder) {
+                                  PasswordEncoder encoder, FotoPerfilService fotos) {
         this.usuarios = usuarios;
         this.roles = roles;
         this.administradores = administradores;
         this.soportes = soportes;
         this.encoder = encoder;
+        this.fotos = fotos;
+    }
+
+    @Transactional
+    public UsuarioDTO crearConFoto(CrearPersonalInternoDTO dto, org.springframework.web.multipart.MultipartFile foto) {
+        fotos.validar(foto);
+        UsuarioDTO creado = crear(dto);
+        fotos.guardar(creado.dni(), foto);
+        return UsuarioDTO.desdeEntidad(usuarios.findById(creado.dni()).orElseThrow());
     }
 
     @Transactional
@@ -90,7 +100,7 @@ public class PersonalInternoService {
         usuario.setTelefono(telefono);
         usuario.setRol(rol);
         usuario.setEstaActivo(true);
-        usuarios.save(usuario);
+        usuarios.saveAndFlush(usuario);
 
         if (rolNombre.equals("ADMINISTRADOR")) {
             administradores.save(new PerfilAdmin(usuario, area, nivel));

@@ -45,6 +45,8 @@ public class ReservaService {
         Usuario acompanante = usuarioRepository.findById(dto.acompananteDni())
                 .orElseThrow(() -> new IllegalArgumentException("Acompañante con DNI " + dto.acompananteDni() + " no encontrado"));
 
+        if (!Boolean.TRUE.equals(acompanante.getEstaActivo()) || !acompanante.isFotoVerificada())
+            throw new IllegalArgumentException("Acompañante no disponible o sin verificación");
         PerfilAcompanante perfilAcomp = acompananteRepository.findById(dto.acompananteDni())
                 .orElseThrow(() -> new IllegalArgumentException("Perfil del acompañante no encontrado"));
 

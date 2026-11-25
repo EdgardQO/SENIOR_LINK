@@ -131,10 +131,10 @@ public class AdminGestionController {
             }).toList();
     }
 
-    @PostMapping("/usuarios")
+    @PostMapping(value = "/usuarios", consumes = "multipart/form-data")
     @ResponseStatus(HttpStatus.CREATED)
-    public UsuarioDTO crearPublico(@RequestBody RegistroUsuarioDTO dto) {
-        return registro.registrar(dto);
+    public UsuarioDTO crearPublico(@RequestPart("datos") RegistroUsuarioDTO dto, @RequestPart("foto") org.springframework.web.multipart.MultipartFile foto) {
+        return registro.registrarConFoto(dto, foto);
     }
 
     @PutMapping("/usuarios/{dni}")

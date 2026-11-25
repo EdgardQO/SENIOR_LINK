@@ -123,7 +123,7 @@ public class ReservaLocalService {
   }else throw no();
   // Bloquear la cuenta del acompañante antes de comprobar cruces, serializando reservas simultáneas.
   Usuario acomp=usuarios.bloquear(input.acompananteDni()).orElseThrow(()->bad("Acompañante no encontrado"));
-  if(!"ACOMPANANTE".equals(rol(acomp))||!Boolean.TRUE.equals(acomp.getEstaActivo()))throw bad("Acompañante no disponible");
+  if(!"ACOMPANANTE".equals(rol(acomp))||!Boolean.TRUE.equals(acomp.getEstaActivo())||!acomp.isFotoVerificada())throw bad("Acompañante no disponible");
   ConfiguracionReservas c=cfg();
   long minutos=Duration.between(input.inicio().toInstant(),input.fin().toInstant()).toMinutes();
   if(minutos<c.getMinutosDuracionMinima()||minutos>c.getMinutosDuracionMaxima()||
@@ -234,7 +234,7 @@ public class ReservaLocalService {
   }
  }
  public List<AcompananteVista> acompanantes(){
-  return perfiles.findAll().stream().filter(p->Boolean.TRUE.equals(p.getUsuario().getEstaActivo()))
+  return perfiles.findAll().stream().filter(p->Boolean.TRUE.equals(p.getUsuario().getEstaActivo()) && p.getUsuario().isFotoVerificada())
    .map(p->new AcompananteVista(p.getUsuarioDni(),p.getUsuario().getNombres()+" "+p.getUsuario().getApellidos(),
     p.getTarifaActualPorHora(),p.getCarrera(),p.getCiclo(),p.getBiografia(),
     p.getInstitucionAliada()==null?null:p.getInstitucionAliada().getNombre(),

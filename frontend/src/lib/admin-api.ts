@@ -12,7 +12,7 @@ export async function adminRequest<T = any>(path: string, options: RequestInit =
     response = await fetch(API_URL + '/api/v1/admin' + path, {
     ...options,
     headers: {
-      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(options.body && !(options.body instanceof FormData) ? { 'Content-Type': 'application/json' } : {}),
       Authorization: 'Bearer ' + session.accessToken,
       ...options.headers
     }
