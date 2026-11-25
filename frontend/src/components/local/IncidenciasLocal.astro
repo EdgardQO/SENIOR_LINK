@@ -1,0 +1,37 @@
+<section class="local-card">
+ <h2>Incidencias y cancelaciones</h2>
+ <p>Las incidencias se revisan por soporte. Registrar la resolución no produce automáticamente un reembolso: administración debe autorizarlo.</p>
+ <p id="incidencia-local-estado" role="status" aria-live="polite"></p>
+ <div id="incidencia-local-list" class="local-list"></div>
+</section>
+<script>
+ import {apiLocal,horaLocal} from '../../lib/local-api';
+ const list=document.querySelector<HTMLElement>('#incidencia-local-list')!;
+ const estado=document.querySelector<HTMLElement>('#incidencia-local-estado')!;
+ const cargar=async()=>{
+  const datos=await apiLocal('/incidencias');list.replaceChildren();
+  if(!datos.length){list.textContent='No hay incidencias registradas.';return;}
+  for(const i of datos){
+   const box=document.createElement('article');box.className='local-item local-booking';
+   const title=document.createElement('strong');title.textContent='Incidencia #'+i.id+' · reserva #'+i.reservaId+' · '+i.estado;
+   const detalle=document.createElement('p');detalle.textContent=i.descripcion;
+   const meta=document.createElement('p');meta.textContent='Reportada por '+i.reportadoPor+' · '+horaLocal(i.creadoEn);
+   box.append(title,detalle,meta);
+   if(i.resolucion){const p=document.createElement('p');p.textContent='Resolución: '+i.resolucion;box.append(p);}
+   if(i.estado==='ABIERTA'){
+    const form=document.createElement('form');form.className='local-form';
+    const campo=document.createElement('textarea');campo.required=true;campo.maxLength=2000;
+    campo.placeholder='Conclusión de la revisión de soporte';
+    const boton=document.createElement('button');boton.type='submit';boton.textContent='Registrar resolución';
+    form.append(campo,boton);
+    form.addEventListener('submit',async e=>{
+     e.preventDefault();
+     try{await apiLocal('/incidencias/'+i.id+'/resolver',{method:'POST',body:JSON.stringify({resolucion:campo.value})});
+      estado.textContent='Resolución registrada.';await cargar();
+     }catch(err){estado.textContent=err instanceof Error?err.message:String(err);}
+    });box.append(form);
+   }list.append(box);
+  }
+ };
+ cargar().catch(e=>estado.textContent=String(e));
+</script>
