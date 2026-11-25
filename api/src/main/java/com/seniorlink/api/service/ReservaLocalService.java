@@ -15,10 +15,45 @@ import java.util.*;
 @Transactional
 public class ReservaLocalService {
  private static final ZoneId LIMA=ZoneId.of("America/Lima");
- private static final Set<EstadoReserva> OCUPADAS=EnumSet.of(
-  EstadoReserva.PENDIENTE_ACEPTACION,EstadoReserva.PENDIENTE_PAGO,
-  EstadoReserva.CONFIRMADA,EstadoReserva.EN_PROGRESO,
-  EstadoReserva.PENDIENTE_CONFIRMACION,EstadoReserva.EN_DISPUTA);
+ private static final Set<EstadoReserva> FIRMES=EnumSet.of(EstadoReserva.CONFIRMADA,EstadoReserva.EN_PROGRESO);
+ public record IntervaloOcupado(OffsetDateTime inicio,OffsetDateTime fin){}
+ private List<Reserva> ocupacion(String dni,OffsetDateTime inicio,OffsetDateTime fin,Long excluir){
+  return reservas.ocupacion(dni,inicio,fin,excluir==null?-1L:excluir,OffsetDateTime.now(),FIRMES,
+   EstadoReserva.PENDIENTE_PAGO,EstadoReserva.EN_DISPUTA,EstadoReserva.COMPLETADA,EstadoReserva.CANCELADA);
+ }
+ private OffsetDateTime antesDe(OffsetDateTime limite,OffsetDateTime inicio){
+  return limite.isBefore(inicio)?limite:inicio;
+ }
+ public Usuario bloquearAcompanante(String dni){
+  return usuarios.bloquear(dni).orElseThrow(()->bad("Acompañante no encontrado"));
+ }
+ public Reserva bloquearParaAgenda(Long id){
+  String dni=reservas.dniAcompanante(id).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Reserva no encontrada"));
+  bloquearAcompanante(dni);
+  return bloquear(id);
+ }
+ public void validarHorario(String dni,OffsetDateTime inicio,OffsetDateTime fin,Long excluir){
+  if(inicio==null||fin==null||!fin.isAfter(inicio)||!fin.isAfter(OffsetDateTime.now()))throw bad("Horario inválido o vencido");
+  ZonedDateTime i=inicio.atZoneSameInstant(LIMA),f=fin.atZoneSameInstant(LIMA);
+  if(!i.toLocalDate().equals(f.toLocalDate()))throw bad("El horario debe estar dentro de un mismo día");
+  boolean disponible=horarios.findByAcompananteDniAndEstaActivoTrue(dni).stream()
+   .anyMatch(h->h.getDiaSemana()==i.getDayOfWeek().getValue()&&!i.toLocalTime().isBefore(h.getHoraInicio())&&!f.toLocalTime().isAfter(h.getHoraFin()));
+  if(!disponible||bloqueos.existsByAcompananteDniAndFechaHoraInicioLessThanAndFechaHoraFinGreaterThan(dni,fin,inicio))
+   throw new ResponseStatusException(HttpStatus.CONFLICT,"Horario fuera de la disponibilidad del acompañante");
+  if(!ocupacion(dni,inicio,fin,excluir).isEmpty())
+   throw new ResponseStatusException(HttpStatus.CONFLICT,"El acompañante ya tiene una reserva aceptada en ese horario");
+ }
+ @Transactional(readOnly=true)
+ public List<IntervaloOcupado> horariosOcupados(String dni,OffsetDateTime inicio,OffsetDateTime fin){
+  if(inicio==null||fin==null||!fin.isAfter(inicio)||Duration.between(inicio,fin).compareTo(Duration.ofDays(31))>0)throw bad("Indica un intervalo de hasta 31 días");
+  Usuario u=usuarios.findById(dni).orElseThrow(()->bad("Acompañante no encontrado"));
+  if(!"ACOMPANANTE".equals(rol(u))||!Boolean.TRUE.equals(u.getEstaActivo())||!u.isFotoVerificada())throw no();
+  List<IntervaloOcupado> resultado=new ArrayList<>();
+  ocupacion(dni,inicio,fin,null).forEach(r->resultado.add(new IntervaloOcupado(r.getFechaHoraInicio(),r.getFechaHoraFin())));
+  bloqueos.findByAcompananteDni(dni).stream().filter(b->b.getFechaHoraInicio().isBefore(fin)&&b.getFechaHoraFin().isAfter(inicio))
+   .forEach(b->resultado.add(new IntervaloOcupado(b.getFechaHoraInicio(),b.getFechaHoraFin())));
+  return resultado.stream().sorted(Comparator.comparing(IntervaloOcupado::inicio)).toList();
+ }
  private final ReservaRepository reservas;
  private final UsuarioRepository usuarios;
  private final PerfilAcompananteRepository perfiles;
@@ -153,17 +188,8 @@ public class ReservaLocalService {
    throw bad("Duración fuera de los límites configurados");
   if(Duration.between(Instant.now(),input.inicio().toInstant()).toMinutes()<c.getMinutosAnticipacion())
    throw bad("La reserva requiere al menos 2 horas de anticipación");
-  ZonedDateTime i=input.inicio().atZoneSameInstant(LIMA),f=input.fin().atZoneSameInstant(LIMA);
-  if(!i.toLocalDate().equals(f.toLocalDate()))throw bad("El horario debe estar dentro de un mismo día");
-  int dia=i.getDayOfWeek().getValue();
-  boolean disponible=horarios.findByAcompananteDniAndEstaActivoTrue(acomp.getDni()).stream()
-   .anyMatch(h->h.getDiaSemana()==dia && !i.toLocalTime().isBefore(h.getHoraInicio())
-    && !f.toLocalTime().isAfter(h.getHoraFin()));
-  if(!disponible || bloqueos.existsByAcompananteDniAndFechaHoraInicioLessThanAndFechaHoraFinGreaterThan(
-   acomp.getDni(),input.fin(),input.inicio()))throw new ResponseStatusException(HttpStatus.CONFLICT,"Horario no disponible");
-  for(Reserva previa:reservas.findByAcompananteDni(acomp.getDni()))expirar(previa);
-  if(reservas.hayCruce(acomp.getDni(),input.inicio(),input.fin(),OCUPADAS))
-   throw new ResponseStatusException(HttpStatus.CONFLICT,"Ya existe una reserva en ese horario");
+  if(!input.inicio().isAfter(OffsetDateTime.now()))throw bad("La reserva debe comenzar en el futuro");
+  validarHorario(acomp.getDni(),input.inicio(),input.fin(),null);
   PerfilAcompanante perfil=perfiles.findById(acomp.getDni()).orElseThrow(()->bad("Perfil incompleto"));
   BigDecimal tarifa=perfil.getTarifaActualPorHora();
   if(tarifa==null||tarifa.compareTo(c.getTarifaMinimaHora())<0||tarifa.compareTo(c.getTarifaMaximaHora())>0)
@@ -179,7 +205,7 @@ public class ReservaLocalService {
   r.setTarifaPorHora(tarifa);r.setTotalHoras(horas);r.setSubtotal(subtotal);
   r.setMontoDescuento(BigDecimal.ZERO);r.setComisionPlataforma(comision);
   r.setMontoTotal(subtotal.add(comision));r.setDireccionEncuentro(input.direccion().trim());
-  r.setIndicacionesAdicionales(input.indicaciones());r.setVenceAceptacionEn(OffsetDateTime.now().plusMinutes(c.getMinutosAceptacion()));
+  r.setIndicacionesAdicionales(input.indicaciones());r.setVenceAceptacionEn(antesDe(OffsetDateTime.now().plusMinutes(c.getMinutosAceptacion()),input.inicio()));
   r.setEstadoActual(EstadoReserva.PENDIENTE_ACEPTACION);
   r.agregarServicio(servicio,horas);
   reservas.saveAndFlush(r);cambiar(r,EstadoReserva.PENDIENTE_ACEPTACION,"Solicitud creada",solicitante);
@@ -199,19 +225,27 @@ public class ReservaLocalService {
  }
  public ReservaVista accion(String dni,Long id,String accion){
   Usuario u=actor(dni),rActor=u;
-  Reserva r=bloquear(id);expirar(r);
+  Reserva r=bloquearParaAgenda(id);expirar(r);
   OffsetDateTime ahora=OffsetDateTime.now();
   if(accion.equals("ACEPTAR")||accion.equals("RECHAZAR")){
    if(!dni.equals(r.getAcompanante().getDni()))throw no();
    if(r.getEstadoActual()!=EstadoReserva.PENDIENTE_ACEPTACION)throw new ResponseStatusException(HttpStatus.CONFLICT,"La solicitud no está pendiente");
    if(accion.equals("RECHAZAR"))cambiar(r,EstadoReserva.RECHAZADA,"Rechazada por el acompañante",rActor);
-   else{r.setAceptadoEn(ahora);r.setVencePagoEn(ahora.plusMinutes(cfg().getMinutosPago()));
+   else{
+    if(!r.getFechaHoraInicio().isAfter(ahora))throw new ResponseStatusException(HttpStatus.CONFLICT,"El horario solicitado ya comenzó");
+    validarHorario(dni,r.getFechaHoraInicio(),r.getFechaHoraFin(),r.getId());
+    r.setAceptadoEn(ahora);r.setVencePagoEn(antesDe(ahora.plusMinutes(cfg().getMinutosPago()),r.getFechaHoraInicio()));
     cambiar(r,EstadoReserva.PENDIENTE_PAGO,"Aceptada, pendiente de pago",rActor);}
   }else if(accion.equals("INICIAR")){
    if(!dni.equals(r.getAcompanante().getDni()))throw no();
    if(r.getEstadoActual()!=EstadoReserva.CONFIRMADA)throw new ResponseStatusException(HttpStatus.CONFLICT,"La reserva no está confirmada");
    if(ahora.isBefore(r.getFechaHoraInicio().minusMinutes(cfg().getMinutosInicioAnticipado())))
     throw bad("Aún no se permite iniciar el servicio");
+   if(!ahora.isBefore(r.getFechaHoraFin()))throw bad("El horario del servicio ya terminó");
+   if(reservas.existeOtroEnEstado(dni,r.getId(),EstadoReserva.EN_PROGRESO))
+    throw new ResponseStatusException(HttpStatus.CONFLICT,"Finaliza el servicio que está en progreso antes de iniciar otro");
+   if(ahora.isBefore(r.getFechaHoraInicio())&&!ocupacion(dni,ahora,r.getFechaHoraInicio(),r.getId()).isEmpty())
+    throw new ResponseStatusException(HttpStatus.CONFLICT,"El inicio anticipado coincide con otro servicio");
    r.setInicioRealEn(ahora);cambiar(r,EstadoReserva.EN_PROGRESO,"Servicio iniciado",rActor);
   }else if(accion.equals("FINALIZAR")){
    if(!dni.equals(r.getAcompanante().getDni()))throw no();
@@ -233,8 +267,8 @@ public class ReservaLocalService {
     throw new ResponseStatusException(HttpStatus.CONFLICT,"La reserva ya terminó");
    boolean cobrada=EnumSet.of(EstadoReserva.CONFIRMADA,EstadoReserva.EN_PROGRESO,
      EstadoReserva.PENDIENTE_CONFIRMACION,EstadoReserva.EN_DISPUTA).contains(r.getEstadoActual());
-   cambiar(r,cobrada?EstadoReserva.EN_DISPUTA:EstadoReserva.CANCELADA,
-    cobrada?"Cancelación con pago: requiere evaluación de soporte":"Cancelación sin cobro",rActor);
+   cambiar(r,EstadoReserva.CANCELADA,
+    cobrada?"Cancelación con pago: requiere evaluación de soporte y reembolso":"Cancelación sin cobro",rActor);
   }else throw bad("Acción desconocida");
   return vista(r);
  }
@@ -282,9 +316,16 @@ public class ReservaLocalService {
   .map(h->new Horario(h.getDiaSemana(),h.getHoraInicio(),h.getHoraFin())).toList();}
  public List<Horario> guardarDisponibilidad(String dni,List<Horario> entrada){
   if(!"ACOMPANANTE".equals(rol(actor(dni))))throw no();
+  bloquearAcompanante(dni);
   if(entrada==null||entrada.size()>21)throw bad("Horarios inválidos");
   for(Horario h:entrada)if(h==null||h.diaSemana()<1||h.diaSemana()>7||h.horaInicio()==null
    ||h.horaFin()==null||!h.horaFin().isAfter(h.horaInicio()))throw bad("Horario inválido");
+  OffsetDateTime ahora=OffsetDateTime.now();
+  for(Reserva r:ocupacion(dni,ahora,ahora.plusYears(10),null)){
+   ZonedDateTime i=r.getFechaHoraInicio().atZoneSameInstant(LIMA),f=r.getFechaHoraFin().atZoneSameInstant(LIMA);
+   if(!entrada.stream().anyMatch(h->h.diaSemana()==i.getDayOfWeek().getValue()&&!i.toLocalTime().isBefore(h.horaInicio())&&!f.toLocalTime().isAfter(h.horaFin())))
+    throw new ResponseStatusException(HttpStatus.CONFLICT,"No puedes retirar un horario que contiene una reserva aceptada");
+  }
   horarios.deleteByAcompananteDni(dni);horarios.flush();
   Usuario u=usuarios.getReferenceById(dni);
   for(Horario h:entrada){DisponibilidadAcompanante d=new DisponibilidadAcompanante();
