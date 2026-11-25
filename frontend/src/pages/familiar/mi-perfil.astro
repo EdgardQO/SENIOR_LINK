@@ -1,0 +1,28 @@
+---
+import RoleLayout from '../../layouts/RoleLayout.astro';
+---
+<RoleLayout role="FAMILIAR" label="Familiar" description="Consulta tus datos personales y tu información familiar.">
+ <section id="mi-perfil">
+    <div class="section-heading"><h2>Mi información</h2><small>Datos de tu cuenta</small></div>
+    <div class="profile-box">
+      <div class="profile-grid">
+        <div><div class="profile-key">Nombre completo</div><div class="profile-value" data-field="usuario.nombreCompleto">Cargando...</div></div>
+        <div><div class="profile-key">Correo electrónico</div><div class="profile-value" data-field="usuario.correoElectronico">Cargando...</div></div>
+        <div><div class="profile-key">DNI</div><div class="profile-value" data-field="usuario.dni">Cargando...</div></div>
+        <div><div class="profile-key">Teléfono</div><div class="profile-value" data-field="usuario.telefono">Cargando...</div></div>
+        <div><div class="profile-key">Parentesco principal</div><div class="profile-value" data-field="familiar.parentescoPrincipalNombre">Cargando...</div></div>
+<div><div class="profile-key">Teléfono alternativo</div><div class="profile-value" data-field="familiar.telefonoAlternativo">Cargando...</div></div>
+      </div>
+      <button type="button" id="familiar-editar-foto" class="familiar-profile-action">Actualizar fotografía</button>
+      <p class="profile-note">Esta información proviene de tu perfil registrado en SeniorLink.</p>
+    </div>
+  </section>
+</RoleLayout>
+<style>
+.familiar-profile-action{background:#087a70;color:white;border:0;border-radius:9px;padding:12px 16px;font:inherit;cursor:pointer;margin-top:20px}
+</style>
+<script>
+ import {renderProfileFields} from '../../lib/profile-fields';
+ document.addEventListener('seniorlink:profile',(event:Event)=>renderProfileFields((event as CustomEvent).detail));
+ document.querySelector('#familiar-editar-foto')?.addEventListener('click',()=>document.querySelector<HTMLButtonElement>('#photo-profile-trigger')?.click());
+</script>
