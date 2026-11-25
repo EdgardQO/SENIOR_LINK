@@ -1,51 +1,166 @@
 ---
 import RoleLayout from '../../layouts/RoleLayout.astro';
 ---
-<RoleLayout role="ADMINISTRADOR" label="Administrador" description="Consulta de pagos registrados y su estado.">
+<RoleLayout role="ADMINISTRADOR" label="Administrador" description="Consulta y búsqueda de pagos y participantes de cada reserva.">
   <section class="pagos-admin">
-    <h2>Pagos registrados</h2>
-    <p>Consulta de operaciones guardadas en SENIOR_LINK. Esta pantalla no realiza cobros ni reembolsos.</p>
+    <header class="pagos-admin-heading">
+      <div>
+        <h2>Pagos registrados</h2>
+        <p>Consulta los pagos vinculados a cada reserva y sus participantes. Esta vista no realiza cobros ni reembolsos.</p>
+      </div>
+      <span id="pagos-admin-total" class="pagos-total" aria-live="polite"></span>
+    </header>
+
+    <form id="pagos-admin-filtros" class="pagos-filtros" role="search">
+      <label class="pagos-busqueda">Buscar pago, reserva o persona
+        <input name="buscar" type="search" placeholder="N.° de pago, reserva, nombre o DNI" autocomplete="off" />
+      </label>
+      <label>Estado
+        <select name="estado"><option value="">Todos los estados</option></select>
+      </label>
+      <label>Desde
+        <input name="desde" type="date" />
+      </label>
+      <label>Hasta
+        <input name="hasta" type="date" />
+      </label>
+      <label>Ordenar
+        <select name="orden">
+          <option value="recientes">Más recientes</option>
+          <option value="antiguos">Más antiguos</option>
+          <option value="mayor">Mayor importe</option>
+          <option value="menor">Menor importe</option>
+        </select>
+      </label>
+      <button type="reset" class="pagos-limpiar">Limpiar filtros</button>
+    </form>
+
     <p id="pagos-admin-estado" role="status" aria-live="polite">Cargando pagos…</p>
     <div class="pagos-tabla-wrap" id="pagos-admin-tabla"></div>
   </section>
 </RoleLayout>
 <style>
-.pagos-admin{padding:22px;border:1px solid #dcece6;background:#fff;border-radius:16px;margin-top:20px}
-.pagos-admin h2{margin:0 0 10px;font-size:20px}
-.pagos-admin p{color:#526b62}
+.pagos-admin{padding:24px;border:1px solid #dcece6;background:#fff;border-radius:17px;margin-top:20px}
+.pagos-admin h2{margin:0 0 8px;font-size:21px;color:#183d36}
+.pagos-admin p{color:#526b62;font-size:13px;line-height:1.6}
+.pagos-admin-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:18px}
+.pagos-total{white-space:nowrap;font-size:12px;font-weight:700;color:#136b59;background:#e8f6ef;border-radius:999px;padding:8px 12px}
+.pagos-filtros{display:grid;grid-template-columns:minmax(240px,2fr) repeat(4,minmax(125px,1fr)) auto;gap:12px;align-items:end;margin:20px 0;padding:18px;background:#f5faf8;border:1px solid #dcece6;border-radius:13px}
+.pagos-filtros label{display:grid;gap:7px;min-width:0;font-size:12px;font-weight:650;color:#345a4d}
+.pagos-filtros input,.pagos-filtros select{width:100%;min-width:0;border:1px solid #cadfd5;background:#fff;border-radius:9px;padding:11px;font:inherit;font-size:12px;color:#173d35}
+.pagos-limpiar{border:0;border-radius:9px;padding:11px 14px;background:#e0f1e9;color:#116553;font:600 12px inherit;cursor:pointer;min-height:41px}
 .pagos-tabla-wrap{overflow-x:auto}
-:global(.pagos-admin-table){border-collapse:collapse;width:100%;text-align:left;font-size:13px;min-width:650px}
-:global(.pagos-admin-table th),:global(.pagos-admin-table td){padding:12px;border-bottom:1px solid #e0ede7}
-:global(.pagos-admin-table th){background:#edf7f2;color:#285b4f}
+:global(.pagos-admin-table){border-collapse:collapse;width:100%;text-align:left;font-size:12px;min-width:880px}
+:global(.pagos-admin-table th),:global(.pagos-admin-table td){padding:14px 12px;border-bottom:1px solid #e0ede7;vertical-align:middle}
+:global(.pagos-admin-table th){background:#edf7f2;color:#285b4f;font-weight:700}
+:global(.pagos-admin-table tbody tr:nth-child(even)){background:#f7fbf9}
+:global(.pagos-participantes){display:grid;gap:10px;min-width:250px}
+:global(.pagos-persona){display:flex;gap:10px;align-items:center}
+:global(.pagos-avatar){width:38px;height:38px;flex:none;border-radius:50%;background:#def1e8;color:#146b5a;display:grid;place-items:center;font-weight:800;font-size:12px;overflow:hidden}
+:global(.pagos-avatar img){width:100%;height:100%;object-fit:cover;display:block}
+:global(.pagos-persona-info){display:grid;gap:2px;min-width:0}
+:global(.pagos-persona-info strong){font-size:12px;color:#183d36;overflow-wrap:anywhere}
+:global(.pagos-persona-info small){font-size:11px;color:#668278}
+:global(.pagos-estado){display:inline-flex;border-radius:100px;padding:6px 10px;background:#eaf4ed;color:#236346;font-weight:700;font-size:11px}
+:global(.pagos-estado[data-estado="rechazado"]),:global(.pagos-estado[data-estado="cancelado"]){background:#fcebea;color:#a33333}
+:global(.pagos-estado[data-estado="pendiente"]),:global(.pagos-estado[data-estado="en proceso"]){background:#fff4dd;color:#86601c}
+@media(max-width:1200px){.pagos-filtros{grid-template-columns:repeat(3,minmax(0,1fr))}.pagos-busqueda{grid-column:span 2}}
+@media(max-width:650px){.pagos-admin{padding:14px}.pagos-filtros{grid-template-columns:1fr 1fr;gap:10px;padding:12px}.pagos-busqueda{grid-column:1/-1}.pagos-limpiar{grid-column:1/-1}}
 </style>
 <script>
  import {adminRequest} from '../../lib/admin-api';
  import {horaLocal,importe} from '../../lib/local-api';
- type Pago={id:number;reservaId:number;monto:number;moneda:string;estado:string;metodo:string|null;creadoEn:string|null};
+ import {mostrarFotoProtegida,limpiarFoto} from '../../lib/profile-photo';
+ type Participante={dni:string;nombre:string;relacion:string;tieneFoto:boolean};
+ type Pago={id:number;reservaId:number;monto:number;moneda:string;estado:string;creadoEn:string|null;participantes:Participante[]};
  const estado=document.querySelector<HTMLElement>('#pagos-admin-estado')!;
  const destino=document.querySelector<HTMLElement>('#pagos-admin-tabla')!;
+ const total=document.querySelector<HTMLElement>('#pagos-admin-total')!;
+ const filtros=document.querySelector<HTMLFormElement>('#pagos-admin-filtros')!;
+ const estadoFiltro=filtros.elements.namedItem('estado') as HTMLSelectElement;
+ let pagos:Pago[]=[];
+ const fotosMostradas=new Set<HTMLImageElement>();
+ const limpiarFotos=()=>{fotosMostradas.forEach(limpiarFoto);fotosMostradas.clear();};
+ const normalizar=(valor:unknown)=>String(valor??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+ const fechaPeru=(valor:string|null)=>{
+   if(!valor||Number.isNaN(Date.parse(valor)))return '';
+   const partes=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Lima',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(valor));
+   const datos=Object.fromEntries(partes.map(p=>[p.type,p.value]));
+   return datos.year+'-'+datos.month+'-'+datos.day;
+ };
+ const elemento=(tag:string,valor:string)=>{
+   const el=document.createElement(tag);el.textContent=valor;return el;
+ };
+ const agregarPersona=(celda:HTMLElement,persona:Participante)=>{
+   const item=document.createElement('div');item.className='pagos-persona';
+   const avatar=document.createElement('span');avatar.className='pagos-avatar';
+   const iniciales=elemento('span',(persona.nombre||'?').split(/\s+/).slice(0,2).map(v=>v[0]||'').join('').toUpperCase());
+   const foto=document.createElement('img');foto.alt='Foto de '+persona.nombre;foto.hidden=true;
+   avatar.append(iniciales,foto);
+   const info=document.createElement('span');info.className='pagos-persona-info';
+   info.append(elemento('strong',persona.nombre||'Sin nombre'),elemento('small',persona.relacion+' · DNI '+persona.dni));
+   item.append(avatar,info);celda.append(item);
+   if(persona.tieneFoto){
+     fotosMostradas.add(foto);
+     void mostrarFotoProtegida(persona.dni,foto).then(ok=>{if(foto.isConnected)iniciales.hidden=ok;});
+   }
+ };
+ const render=()=>{
+   limpiarFotos();destino.replaceChildren();
+   const form=new FormData(filtros);
+   const busqueda=normalizar(form.get('buscar')).split(/\s+/).filter(Boolean);
+   const filtroEstado=String(form.get('estado')||'');
+   const desde=String(form.get('desde')||'');
+   const hasta=String(form.get('hasta')||'');
+   const orden=String(form.get('orden')||'recientes');
+   const encontrados=pagos.filter(p=>{
+     const texto=normalizar([p.id,p.reservaId,...(p.participantes||[]).flatMap(x=>[x.nombre,x.dni,x.relacion])].join(' '));
+     const fecha=fechaPeru(p.creadoEn);
+     return (!filtroEstado||p.estado===filtroEstado)
+       && (!desde||fecha>=desde)&&(!hasta||fecha<=hasta)
+       && busqueda.every(palabra=>texto.includes(palabra));
+   });
+   encontrados.sort((a,b)=>{
+     if(orden==='mayor')return Number(b.monto)-Number(a.monto);
+     if(orden==='menor')return Number(a.monto)-Number(b.monto);
+     return orden==='antiguos'?Date.parse(a.creadoEn||'')-Date.parse(b.creadoEn||''):Date.parse(b.creadoEn||'')-Date.parse(a.creadoEn||'');
+   });
+   total.textContent=pagos.length+' pagos';
+   if(desde&&hasta&&desde>hasta){estado.textContent='El rango de fechas es inválido.';return;}
+   estado.textContent=encontrados.length+' de '+pagos.length+' pagos registrados.';
+   if(!encontrados.length){destino.textContent=pagos.length?'No hay pagos que coincidan con los filtros.':'No hay pagos registrados.';return;}
+   const tabla=document.createElement('table');tabla.className='pagos-admin-table';
+   const cabecera=document.createElement('thead');const fila=document.createElement('tr');
+   for(const titulo of ['Pago','Reserva','Participantes','Importe','Estado','Registrado']){
+     const th=elemento('th',titulo);th.scope='col';fila.append(th);
+   }
+   cabecera.append(fila);tabla.append(cabecera);
+   const cuerpo=document.createElement('tbody');
+   for(const pago of encontrados){
+     const fila=document.createElement('tr');
+     const tdPago=elemento('td','#'+pago.id);
+     const tdReserva=document.createElement('td');
+     const enlace=document.createElement('a');enlace.href='/admin/reservas';enlace.textContent='#'+pago.reservaId;tdReserva.append(enlace);
+     const tdParticipantes=document.createElement('td');tdParticipantes.className='pagos-participantes';
+     for(const persona of pago.participantes||[])agregarPersona(tdParticipantes,persona);
+     const tdImporte=elemento('td',importe(pago.monto));
+     const tdEstado=document.createElement('td');const insignia=elemento('span',pago.estado||'—');insignia.className='pagos-estado';insignia.dataset.estado=String(pago.estado||'').toLowerCase();tdEstado.append(insignia);
+     const tdFecha=elemento('td',horaLocal(pago.creadoEn));
+     fila.append(tdPago,tdReserva,tdParticipantes,tdImporte,tdEstado,tdFecha);cuerpo.append(fila);
+   }
+   tabla.append(cuerpo);destino.append(tabla);
+ };
  const cargar=async()=>{
-   const pagos=await adminRequest<Pago[]>('/pagos');
-   destino.replaceChildren();
-   if(!pagos.length){estado.textContent='No hay pagos registrados.';return;}
-   estado.textContent=pagos.length+' pagos registrados.';
-   const table=document.createElement('table');table.className='pagos-admin-table';
-   const head=document.createElement('thead');const row=document.createElement('tr');
-   for(const label of ['Pago','Reserva','Importe','Estado','Método','Registrado']){
-     const th=document.createElement('th');th.textContent=label;row.append(th);
-   }
-   head.append(row);table.append(head);
-   const body=document.createElement('tbody');
-   for(const pago of pagos){
-     const tr=document.createElement('tr');
-     for(const value of ['#'+pago.id,'#'+pago.reservaId,importe(pago.monto),pago.estado,pago.metodo||'—',horaLocal(pago.creadoEn)]){
-       const td=document.createElement('td');td.textContent=value;tr.append(td);
-     }
-     body.append(tr);
-   }
-   table.append(body);destino.append(table);
+   pagos=await adminRequest<Pago[]>('/pagos');
+   estadoFiltro.replaceChildren(new Option('Todos los estados',''));
+   for(const valor of [...new Set(pagos.map(p=>p.estado))].sort())estadoFiltro.add(new Option(valor,valor));
+   render();
  };
  const comenzar=()=>{void cargar().catch(e=>{estado.textContent=e instanceof Error?e.message:String(e);});};
+ filtros.addEventListener('input',render);
+ filtros.addEventListener('change',render);
+ filtros.addEventListener('reset',()=>queueMicrotask(render));
+ window.addEventListener('pagehide',limpiarFotos,{once:true});
  if(document.documentElement.dataset.profileReady==='true')comenzar();
  else document.addEventListener('seniorlink:profile',comenzar,{once:true});
 </script>

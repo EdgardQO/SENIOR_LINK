@@ -164,17 +164,45 @@ public class AdminGestionController {
         usuarios.save(u);
     }
 
-    // Consulta de pagos existentes, sin procesar cargos ni reembolsos.
+    // Consulta de pagos y participantes vinculados a cada reserva, exclusiva de administración.
+    // Solo expone datos identificativos mínimos; las fotografías se obtienen
+    // por el endpoint protegido /api/v1/usuarios/{dni}/foto.
+    public record ParticipantePago(String dni, String nombre, String relacion, boolean tieneFoto) {}
     public record PagoAdmin(Long id, Long reservaId, BigDecimal monto, String moneda,
-            String estado, String metodo, OffsetDateTime creadoEn) {}
+            String estado, OffsetDateTime creadoEn, List<ParticipantePago> participantes) {}
+
+    private static void agregarParticipantePago(Map<String, ParticipantePago> personas,
+            Usuario usuario, String relacion) {
+        if (usuario == null) return;
+        personas.putIfAbsent(usuario.getDni(),
+            new ParticipantePago(usuario.getDni(),
+                (usuario.getNombres() + " " + usuario.getApellidos()).trim(),
+                relacion, usuario.getFotoPerfilRuta() != null
+                    && !usuario.getFotoPerfilRuta().isBlank()));
+    }
+
+    private static List<ParticipantePago> participantesPago(Reserva reserva) {
+        Map<String, ParticipantePago> personas = new LinkedHashMap<>();
+        // El solicitante puede ser un familiar distinto del adulto mayor.
+        agregarParticipantePago(personas,
+            reserva.getAdultoMayor() != null ? reserva.getAdultoMayor() : reserva.getCliente(),
+            "Adulto mayor");
+        agregarParticipantePago(personas, reserva.getAcompanante(), "Acompañante");
+        agregarParticipantePago(personas, reserva.getSolicitante(), "Solicitante");
+        agregarParticipantePago(personas, reserva.getCliente(), "Cliente");
+        return List.copyOf(personas.values());
+    }
 
     @GetMapping("/pagos")
     @Transactional(readOnly = true)
     public List<PagoAdmin> pagosRegistrados() {
         return pagos.findAll().stream()
-            .map(p -> new PagoAdmin(
-                p.getId(), p.getReserva().getId(), p.getMonto(), p.getMoneda(),
-                p.getMpEstado().getValor(), p.getMpMetodoPago(), p.getCreadoEn()))
+            .map(p -> {
+                Reserva reserva = p.getReserva();
+                return new PagoAdmin(
+                    p.getId(), reserva.getId(), p.getMonto(), p.getMoneda(),
+                    p.getMpEstado().getValor(), p.getCreadoEn(), participantesPago(reserva));
+            })
             .sorted(Comparator.comparing(PagoAdmin::id).reversed())
             .toList();
     }
