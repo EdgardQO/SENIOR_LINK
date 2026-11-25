@@ -33,7 +33,8 @@ public class PostServicioLocalService {
   this.perfiles=perfiles;this.vinculos=vinculos;this.pagos=pagos;
  }
  public record IncidenciaVista(Long id,Long reservaId,String reportadoPor,
-  String descripcion,String estado,String resolucion,OffsetDateTime creadoEn){}
+  String descripcion,String estado,String resolucion,OffsetDateTime creadoEn,
+  String reportanteNombre,String reportanteTelefono){}
  public record LiquidacionVista(Long id,Long reservaId,String acompananteDni,
   BigDecimal monto,String moneda,String estado,OffsetDateTime registradoEn){}
  public record ValoracionVista(Long id,Long reservaId,short puntuacion,String comentario){}
@@ -54,8 +55,14 @@ public class PostServicioLocalService {
  private Reserva reserva(Long id){return reservas.bloquear(id)
   .orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Reserva no encontrada"));}
  private IncidenciaVista vista(IncidenciaReserva i){
-  return new IncidenciaVista(i.getId(),i.getReserva().getId(),i.getReportadoPor().getDni(),
-   i.getDescripcion(),i.getEstado(),i.getResolucion(),i.getCreadoEn());
+  return vista(i,false);
+ }
+ private IncidenciaVista vista(IncidenciaReserva i,boolean contactoAutorizado){
+  Usuario reportante=i.getReportadoPor();
+  return new IncidenciaVista(i.getId(),i.getReserva().getId(),reportante.getDni(),
+   i.getDescripcion(),i.getEstado(),i.getResolucion(),i.getCreadoEn(),
+   contactoAutorizado?(reportante.getNombres()+" "+reportante.getApellidos()).trim():null,
+   contactoAutorizado?reportante.getTelefono():null);
  }
  private LiquidacionVista vista(LiquidacionAcompanante l){
   return new LiquidacionVista(l.getId(),l.getReserva().getId(),l.getAcompanante().getDni(),
@@ -79,8 +86,8 @@ public class PostServicioLocalService {
  }
  public List<IncidenciaVista> incidencias(String dni){
   Usuario u=usuario(dni);
-  if(esRol(u,"ADMINISTRADOR","SOPORTE"))
-   return incidencias.findAll().stream().map(this::vista).toList();
+  if(Boolean.TRUE.equals(u.getEstaActivo()) && esRol(u,"ADMINISTRADOR","SOPORTE"))
+   return incidencias.findAll().stream().map(i->vista(i,true)).toList();
   return incidencias.findAll().stream().filter(i->{
    try{motor.obtener(dni,i.getReserva().getId());return true;}
    catch(ResponseStatusException ex){return false;}
@@ -93,7 +100,7 @@ public class PostServicioLocalService {
   if(!"ABIERTA".equals(i.getEstado()))throw new ResponseStatusException(HttpStatus.CONFLICT,"Incidencia ya cerrada");
   i.setEstado("RESUELTA");i.setResolucion(resolucion.trim());
   i.setResueltoPor(u);i.setResueltoEn(OffsetDateTime.now());
-  return vista(incidencias.save(i));
+  return vista(incidencias.save(i),Boolean.TRUE.equals(u.getEstaActivo()));
  }
  public LiquidacionVista liquidar(String dni,Long id){
   Usuario admin=usuario(dni);if(!esRol(admin,"ADMINISTRADOR"))throw no();
