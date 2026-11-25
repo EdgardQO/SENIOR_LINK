@@ -35,7 +35,7 @@ public class VinculacionFamiliarAdulto {
     public void setPermitePagar(boolean v){permitePagar=v;}
     public boolean isPermiteGestionar(){return permiteGestionar;}
     public void setPermiteGestionar(boolean v){permiteGestionar=v;}
-    @Column(name = "solicitado_en", nullable = false, updatable = false)
+    @Column(name = "solicitado_en", nullable = false)
     private OffsetDateTime solicitadoEn = OffsetDateTime.now();
 
     @Column(name = "respondido_en")
@@ -52,6 +52,7 @@ public class VinculacionFamiliarAdulto {
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }
     public OffsetDateTime getSolicitadoEn() { return solicitadoEn; }
+    public void setSolicitadoEn(OffsetDateTime valor) { solicitadoEn=valor; }
     public OffsetDateTime getRespondidoEn() { return respondidoEn; }
     public void setRespondidoEn(OffsetDateTime respondidoEn) { this.respondidoEn = respondidoEn; }
 }

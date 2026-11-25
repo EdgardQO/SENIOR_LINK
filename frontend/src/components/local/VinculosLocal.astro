@@ -15,8 +15,8 @@ const pasos=[{titulo:'Cuenta registrada',detalle:'El adulto mayor debe tener una
  <section class="local-card"><h2>Solicitar vinculación</h2><p>Envía una solicitud para vincular las cuentas.</p>
  <form id="vinculo-form" class="local-form">
   <label>{rol==='FAMILIAR'?'DNI del adulto mayor':'DNI del familiar'}<input name="otroDni" placeholder="Ingresa el DNI (8 dígitos)" inputmode="numeric" pattern="[0-9]{8}" maxlength="8" required /></label>
-  <label>Parentesco<select name="parentescoId" required><option value="">Selecciona tu parentesco</option><option value="1">Hijo/a</option><option value="2">Nieto/a</option><option value="3">Hermano/a</option><option value="4">Sobrino/a</option><option value="5">Cónyuge</option><option value="13">Otro</option></select></label>
-  <button type="submit">Solicitar vinculación</button>
+  <label>Parentesco<select name="parentescoId" required disabled><option value="">Cargando parentescos…</option></select></label>
+  <button type="submit" disabled>Solicitar vinculación</button>
  </form><p id="vinculos-status" aria-live="polite" role="status"></p>
  </section>
  <section class="local-card"><h2>Mis vinculaciones</h2><p>Consulta el estado y los permisos de tus vínculos familiares.</p><div id="vinculos-list" class="local-list"></div></section>
@@ -43,6 +43,16 @@ const pasos=[{titulo:'Cuenta registrada',detalle:'El adulto mayor debe tener una
  const estado=root.querySelector<HTMLElement>('#vinculos-status')!;
  const list=root.querySelector<HTMLElement>('#vinculos-list')!;
  const form=root.querySelector<HTMLFormElement>('#vinculo-form')!;
+ const parentesco=form.querySelector<HTMLSelectElement>('select[name="parentescoId"]')!;
+ const enviar=form.querySelector<HTMLButtonElement>('button[type=submit]')!;
+ async function cargarCatalogo(){
+  try{const datos=await apiLocal('/parentescos');parentesco.replaceChildren(new Option('Selecciona tu parentesco',''));
+   for(const p of datos)parentesco.add(new Option(p.nombre,String(p.id)));
+   if(!datos.length)throw new Error('No hay parentescos configurados. Contacta con soporte.');
+   parentesco.disabled=false;enviar.disabled=false;
+  }catch(e){estado.textContent=e instanceof Error?e.message:String(e);parentesco.disabled=true;enviar.disabled=true;
+   const reintentar=document.createElement('button');reintentar.type='button';reintentar.textContent='Reintentar catálogo';reintentar.onclick=()=>{reintentar.remove();void cargarCatalogo();};estado.append(' ',reintentar);}
+ }
  const cargar=async()=>{
   const datos=await apiLocal('/vinculos');list.replaceChildren();
   if(!datos.length){list.textContent='Aún no hay solicitudes.';return;}
@@ -60,6 +70,10 @@ const pasos=[{titulo:'Cuenta registrada',detalle:'El adulto mayor debe tener una
     const permisos=document.createElement('div');permisos.className='vinculo-permisos';permisos.append('Permisos otorgados: ');
     for(const [nombre,activo] of [['Reserva',v.permiteReservar],['Pago',v.permitePagar],['Gestión',v.permiteGestionar]]){const p=document.createElement('span');p.textContent=nombre+(activo?'':' (no autorizado)');p.dataset.activo=String(Boolean(activo));permisos.append(p);}row.append(permisos);
    }else if(v.estado==='PENDIENTE'){const aviso=document.createElement('p');aviso.className='vinculo-espera';aviso.textContent='En espera de la aprobación del adulto mayor.';row.append(aviso);}
+   if(v.estado==='RECHAZADO'){
+    const aviso=document.createElement('p');aviso.className='vinculo-espera';aviso.textContent=role==='ADULTO_MAYOR'?'Puedes iniciar una nueva solicitud si deseas reconsiderar tu decisión.':'La decisión del adulto mayor se mantiene. Solo él puede iniciar una nueva solicitud.';row.append(aviso);
+    if(role==='ADULTO_MAYOR'){const b=document.createElement('button');b.type='button';b.textContent='Preparar nueva solicitud';b.onclick=()=>{(form.elements.namedItem('otroDni') as HTMLInputElement).value=dni;form.scrollIntoView({block:'center'});parentesco.focus();};row.append(b);}
+   }
    if(role==='ADULTO_MAYOR'&&v.estado==='PENDIENTE'){
     for(const [nombre,aprobar] of [['Autorizar',true],['Rechazar',false]] as const){
      const b=document.createElement('button');b.textContent=nombre;b.type='button';
@@ -80,5 +94,6 @@ const pasos=[{titulo:'Cuenta registrada',detalle:'El adulto mayor debe tener una
   })});form.reset();estado.textContent='Solicitud registrada.';await cargar();
   }catch(err){estado.textContent=err instanceof Error?err.message:String(err);}finally{btn.disabled=false;}
  });
+ void cargarCatalogo();
  cargar().catch(e=>estado.textContent=String(e));
 </script>

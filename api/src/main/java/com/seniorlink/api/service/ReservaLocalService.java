@@ -504,6 +504,11 @@ public class ReservaLocalService {
    v.getAdultoMayor().getDni(),v.getAdultoMayor().getNombres()+" "+v.getAdultoMayor().getApellidos(),v.getEstado(),
    v.isPermiteReservar(),v.isPermitePagar(),v.isPermiteGestionar(),v.getParentesco()==null?null:v.getParentesco().getNombre());
  }
+ @Transactional(readOnly=true)
+ public List<Map<String,Object>> catalogoParentescos(){
+  return parentescos.findAll().stream().sorted(Comparator.comparing(Parentesco::getNombre))
+   .map(p->Map.<String,Object>of("id",p.getId(),"nombre",p.getNombre())).toList();
+ }
  public VinculoVista solicitarVinculo(String dni,String otroDni,Short parentescoId){
   Usuario actor=actor(dni);
   Usuario otro=usuarios.findById(otroDni).orElseThrow(()->bad("Usuario no encontrado"));
@@ -511,17 +516,27 @@ public class ReservaLocalService {
   if(!familiar && !"ADULTO_MAYOR".equals(rol(actor)))throw no();
   Usuario f=familiar?actor:otro,a=familiar?otro:actor;
   if(!"FAMILIAR".equals(rol(f))||!"ADULTO_MAYOR".equals(rol(a)))throw bad("Roles incompatibles");
-  if(vinculos.existsByFamiliarDniAndAdultoMayorDni(f.getDni(),a.getDni()))
-   throw new ResponseStatusException(HttpStatus.CONFLICT,"Ya existe una solicitud");
-  VinculacionFamiliarAdulto v=new VinculacionFamiliarAdulto();
-  v.setFamiliar(f);v.setAdultoMayor(a);
-  // Parentesco definido en el catálogo; el adulto autoriza permisos después.
-  v.setParentesco(parentescos.findById(parentescoId==null?(short)13:parentescoId)
-   .orElseThrow(()->bad("Parentesco inexistente")));v.setEstado("PENDIENTE");vinculos.save(v);
+  if(!Boolean.TRUE.equals(otro.getEstaActivo()))throw bad("La otra cuenta no está activa");
+  if(parentescoId==null)throw bad("Selecciona un parentesco del catálogo");
+  Parentesco parentesco=parentescos.findById(parentescoId).orElseThrow(()->bad("Parentesco inexistente"));
+  usuarios.bloquear(a.getDni()).orElseThrow(this::no);
+  var existentes=vinculos.findByFamiliarDni(f.getDni()).stream()
+   .filter(x->x.getAdultoMayor().getDni().equals(a.getDni())).toList();
+  if(existentes.size()>1)throw new ResponseStatusException(HttpStatus.CONFLICT,"Existen vinculaciones duplicadas; solicita una revisión a soporte");
+  VinculacionFamiliarAdulto v;
+  if(!existentes.isEmpty()){
+   v=existentes.getFirst();
+   if(!"RECHAZADO".equals(v.getEstado()))throw new ResponseStatusException(HttpStatus.CONFLICT,"Ya existe una vinculación activa o pendiente");
+   if(familiar)throw new ResponseStatusException(HttpStatus.CONFLICT,"La solicitud fue rechazada. El adulto mayor puede iniciar una nueva solicitud si lo desea.");
+   v.setSolicitadoEn(OffsetDateTime.now());v.setRespondidoEn(null);
+  }else{v=new VinculacionFamiliarAdulto();v.setFamiliar(f);v.setAdultoMayor(a);}
+  v.setPermiteReservar(false);v.setPermitePagar(false);v.setPermiteGestionar(false);
+  v.setParentesco(parentesco);v.setEstado("PENDIENTE");vinculos.save(v);
   return vistaVinculo(v);
  }
  public VinculoVista responderVinculo(String dni,Long id,boolean aprobar){
   Usuario u=actor(dni);
+  usuarios.bloquear(dni).orElseThrow(this::no);
   VinculacionFamiliarAdulto v=vinculos.findByIdAndAdultoMayorDni(id,dni).orElseThrow(this::no);
   if(!"ADULTO_MAYOR".equals(rol(u)))throw no();
   if(!"PENDIENTE".equals(v.getEstado()))throw bad("Solicitud ya respondida");

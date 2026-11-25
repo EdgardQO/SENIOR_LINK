@@ -103,6 +103,9 @@ public class OperacionesController {
  public ReservaLocalService.ContactoWhatsapp autorizarWhatsapp(Authentication auth,@PathVariable Long id,@RequestBody WhatsappConsentimiento input){
   return reservas.autorizarWhatsapp(auth.getName(),id,input.autorizar(),input.mayorDeEdad());
  }
+ @GetMapping("/parentescos")
+ @PreAuthorize("hasAnyRole('ADULTO_MAYOR','FAMILIAR')")
+ public List<Map<String,Object>> parentescos(){return reservas.catalogoParentescos();}
  @GetMapping("/vinculos")
  @PreAuthorize("hasAnyRole('ADULTO_MAYOR','FAMILIAR')")
  public List<ReservaLocalService.VinculoVista> vinculos(Authentication auth){
