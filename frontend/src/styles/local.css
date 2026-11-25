@@ -25,3 +25,20 @@
 .local-actions .local-checkout input,.local-actions .local-checkout select{width:100%;min-width:0}
 .local-checkout .checkout-total{font-size:1.55rem;color:#173d35}
 @media(max-width:700px){.local-payment-grid,.local-actions .local-checkout{grid-template-columns:1fr}.local-booking{padding:14px}}
+
+/* Professional operational system: consistent readable surfaces, controls and spacing. */
+.role-app .local-card{max-width:none;width:100%;padding:clamp(18px,2.4vw,30px);border:1px solid #dbe7e2;border-radius:16px;background:#fff;box-shadow:0 2px 12px #173d3508}
+.role-app .local-card h2{font-size:clamp(19px,2vw,23px);font-weight:700;letter-spacing:-.35px;color:#173d35}
+.role-app .local-card p{color:#405d55;overflow-wrap:anywhere}
+.role-app .local-item{padding:18px;border-radius:12px;border-color:#dce7e2;min-width:0;overflow-wrap:anywhere}
+.role-app .local-list{gap:14px}
+.role-app .local-form label{font-size:14px;font-weight:600;color:#294940}
+.role-app .local-form :is(input,select,textarea){min-height:46px;font-size:14px;border-color:#bacfc7}
+.role-app .local-form textarea{resize:vertical}
+.role-app .local-form button,.role-app .local-actions button{min-height:42px}
+.role-app .local-secondary-action{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 14px;border:1px solid #bdd9ce;border-radius:9px;color:#075e51;background:#f0f8f4;font-weight:600;text-decoration:none}
+.role-app .local-secondary-action:hover{background:#e0f1e8}
+.role-app .local-secondary-action:focus-visible{outline:2px solid #087a70;outline-offset:3px}
+.role-app .local-item form{min-width:0;max-width:100%}
+.role-app .local-actions form input,.role-app .local-actions form select{max-width:100%}
+@media(max-width:640px){.role-app .local-card{padding:16px}.role-app .local-item{padding:14px}.role-app .local-actions{align-items:stretch}.role-app .local-actions>a,.role-app .local-actions>button{flex:1 1 auto}}
