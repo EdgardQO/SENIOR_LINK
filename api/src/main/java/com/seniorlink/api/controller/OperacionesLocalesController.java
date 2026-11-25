@@ -63,7 +63,7 @@ public class OperacionesLocalesController {
  public ReservaLocalService.ReservaVista reserva(Authentication auth,@PathVariable Long id){
   return reservas.obtener(auth.getName(),id);
  }
- @PostMapping("/reservas/{id}/{accion:aceptar|rechazar|iniciar|finalizar|confirmar}")
+ @PostMapping("/reservas/{id}/{accion:aceptar|rechazar|iniciar|finalizar|confirmar|cancelar}")
  public ReservaLocalService.ReservaVista cambiar(Authentication auth,@PathVariable Long id,
   @PathVariable String accion){
   return reservas.accion(auth.getName(),id,accion.toUpperCase(Locale.ROOT));
