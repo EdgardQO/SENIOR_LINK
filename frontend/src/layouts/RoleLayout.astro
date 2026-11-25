@@ -12,6 +12,10 @@ const roleHomes: Record<string,string> = {ADMINISTRADOR:'/admin',ADULTO_MAYOR:'/
 const roleHome = roleHomes[role] || '/';
 const adminSection = role === 'ADMINISTRADOR' && Astro.url.pathname !== '/admin';
 const sectionNames: Record<string,string> = {
+  '/acompanante/mi-perfil':'Mi perfil',
+  '/acompanante/solicitudes':'Solicitudes y agenda',
+  '/acompanante/disponibilidad':'Disponibilidad y tarifa',
+  '/acompanante/liquidaciones':'Mis liquidaciones',
   '/adulto-mayor/mi-perfil':'Mi perfil',
   '/adulto-mayor/acompanantes':'Acompañantes',
   '/adulto-mayor/reservas':'Mis reservas',
@@ -115,7 +119,7 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
         </>}
         {role === 'SOPORTE' && <a class="sidebar-link" href="/soporte/incidencias"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 21h20L12 3zM12 9v4m0 4h.01"/></svg><span>Gestionar incidencias</span></a>}
         {role !== "ADMINISTRADOR" && <a class="sidebar-link" href={roleHome}><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M9 21v-8h6v8"/></svg><span>Inicio</span></a>}
-        <a class="sidebar-link" href={role === "ADMINISTRADOR" ? "/admin/mi-perfil" : role === "ADULTO_MAYOR" ? roleHome + "/mi-perfil" : roleHome + "#mi-perfil"}><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Mi perfil</span></a>
+        <a class="sidebar-link" href={role === "ADMINISTRADOR" ? "/admin/mi-perfil" : (role === "ADULTO_MAYOR" || role === "ACOMPANANTE") ? roleHome + "/mi-perfil" : roleHome + "#mi-perfil"}><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Mi perfil</span></a>
         {role === 'ADMINISTRADOR' ? (
           <>
             <a class="sidebar-link" href="/admin"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>Dashboard</span></a>
@@ -130,7 +134,7 @@ const sectionName = sectionNames[Astro.url.pathname] || label;
             <a class="sidebar-link" href="/admin/promociones"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="2"/><circle cx="18" cy="18" r="2"/><path d="M4 20 20 4"/></svg><span>Promociones</span></a>
           </>
         ) : (
-          role !== "ADULTO_MAYOR" && <a class="sidebar-link" href={roleHome + "#herramientas"}><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 7a5 5 0 0 0-6 6L3 18l3 3 5-5a5 5 0 0 0 6-6l-3 3-3-3z"/></svg><span>Herramientas</span></a>
+          role !== "ADULTO_MAYOR" && role !== "ACOMPANANTE" && <a class="sidebar-link" href={roleHome + "#herramientas"}><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 7a5 5 0 0 0-6 6L3 18l3 3 5-5a5 5 0 0 0 6-6l-3 3-3-3z"/></svg><span>Herramientas</span></a>
         )}
         
       </aside>
