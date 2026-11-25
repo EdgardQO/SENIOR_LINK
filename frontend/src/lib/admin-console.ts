@@ -1,4 +1,5 @@
 import { adminRequest } from './admin-api';
+import {consultarRecibos,reciboDeReserva,botonRecibo} from './recibos';
 import { mostrarFotoProtegida, limpiarFoto } from './profile-photo';
 import { API_URL, getSession } from './auth.js';
 
@@ -643,6 +644,7 @@ async function usersModule(root: HTMLElement) {
 async function reservationsModule(root:HTMLElement){
   const refresh=async()=>{
     const rows=await adminRequest<AnyRecord[]>('/reservas');
+    const recibos=await consultarRecibos().catch(e=>{console.error('No se pudieron consultar recibos',e);return [];});
     root.querySelectorAll<HTMLImageElement>('.admin-reserva-foto').forEach(limpiarFoto);
     table(root,['ID','Adulto mayor','Acompañante','Solicitante','Inicio','Estado','Total','Acciones'],rows,(r,tr)=>{
       const persona=(dni:string,nombre:string)=>{
@@ -659,6 +661,8 @@ async function reservationsModule(root:HTMLElement){
       td(tr,new Date(r.fechaHoraInicio).toLocaleString('es-PE'));
       td(tr,r.estado);td(tr,'S/ '+Number(r.montoTotal||0).toFixed(2));
       const a=document.createElement('td');
+      const recibo=reciboDeReserva(recibos,r.id);
+      if(recibo)a.append(botonRecibo(recibo,'admin-btn admin-secondary'));
       a.append(action('Ver',()=>window.alert('Reserva #'+r.id+'\nCliente: '+r.clienteNombre+'\nAcompañante: '+r.acompananteNombre+'\nDirección: '+r.direccionEncuentro+'\nEstado: '+r.estado)));
       a.append(action('Cambiar estado',()=>{
         formBox(root,'Actualizar reserva #'+r.id,[['estado','Estado de reserva','select:reserva'],['motivo','Motivo','text']],{estado:r.estado.replaceAll(' ','_')},async data=>{
