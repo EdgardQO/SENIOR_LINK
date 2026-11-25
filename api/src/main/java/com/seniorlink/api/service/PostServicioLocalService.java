@@ -63,9 +63,9 @@ public class PostServicioLocalService {
  }
  public IncidenciaVista reportar(String dni,Long reservaId,String descripcion){
   Usuario actor=usuario(dni);
+  Reserva r=motor.bloquearParaAgenda(reservaId);
   motor.obtener(dni,reservaId); // Verifica autorización con los permisos de vínculos.
   if(descripcion==null||descripcion.isBlank()||descripcion.length()>2000)throw bad("Describe la incidencia (máximo 2000 caracteres)");
-  Reserva r=reserva(reservaId);
   if(!EnumSet.of(EstadoReserva.CONFIRMADA,EstadoReserva.EN_PROGRESO,
    EstadoReserva.PENDIENTE_CONFIRMACION,EstadoReserva.COMPLETADA,
    EstadoReserva.EN_DISPUTA).contains(r.getEstadoActual()))
@@ -73,7 +73,7 @@ public class PostServicioLocalService {
   IncidenciaReserva i=new IncidenciaReserva();
   i.setReserva(r);i.setReportadoPor(actor);i.setDescripcion(descripcion.trim());
   incidencias.saveAndFlush(i);
-  if(r.getEstadoActual()!=EstadoReserva.EN_DISPUTA)
+  if(r.getEstadoActual()!=EstadoReserva.EN_DISPUTA && r.getEstadoActual()!=EstadoReserva.COMPLETADA)
    motor.cambiar(r,EstadoReserva.EN_DISPUTA,"Incidencia reportada: requiere soporte",actor);
   return vista(i);
  }
