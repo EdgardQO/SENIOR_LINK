@@ -643,8 +643,19 @@ async function usersModule(root: HTMLElement) {
 async function reservationsModule(root:HTMLElement){
   const refresh=async()=>{
     const rows=await adminRequest<AnyRecord[]>('/reservas');
-    table(root,['ID','Cliente','Acompañante','Inicio','Estado','Total','Acciones'],rows,(r,tr)=>{
-      td(tr,r.id);td(tr,r.clienteNombre);td(tr,r.acompananteNombre);
+    root.querySelectorAll<HTMLImageElement>('.admin-reserva-foto').forEach(limpiarFoto);
+    table(root,['ID','Adulto mayor','Acompañante','Solicitante','Inicio','Estado','Total','Acciones'],rows,(r,tr)=>{
+      const persona=(dni:string,nombre:string)=>{
+        const cell=document.createElement('td');
+        const wrap=document.createElement('div');wrap.style.cssText='display:flex;align-items:center;gap:8px';
+        const img=document.createElement('img');img.className='admin-reserva-foto';img.alt='Foto de '+nombre;img.hidden=true;
+        img.style.cssText='width:40px;height:40px;object-fit:cover;border-radius:50%';
+        wrap.append(img,node('span',nombre||'—'));cell.append(wrap);tr.append(cell);
+        if(dni)void mostrarFotoProtegida(dni,img,Number(r.id));
+      };
+      td(tr,r.id);persona(r.clienteDni,r.clienteNombre);persona(r.acompananteDni,r.acompananteNombre);
+      if(r.solicitanteDni!==r.clienteDni)persona(r.solicitanteDni,r.solicitanteNombre);
+      else td(tr,'El propio adulto mayor');
       td(tr,new Date(r.fechaHoraInicio).toLocaleString('es-PE'));
       td(tr,r.estado);td(tr,'S/ '+Number(r.montoTotal||0).toFixed(2));
       const a=document.createElement('td');

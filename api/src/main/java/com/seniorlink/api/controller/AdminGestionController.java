@@ -160,14 +160,17 @@ public class AdminGestionController {
     public record ReservaAdmin(Long id, String clienteDni, String clienteNombre,
             String acompananteDni, String acompananteNombre, OffsetDateTime fechaHoraInicio,
             OffsetDateTime fechaHoraFin, String estado, String direccionEncuentro,
-            BigDecimal montoTotal, OffsetDateTime creadoEn) {
+            BigDecimal montoTotal, OffsetDateTime creadoEn, String solicitanteDni, String solicitanteNombre) {
         public static ReservaAdmin of(Reserva r) {
-            return new ReservaAdmin(r.getId(), r.getCliente().getDni(),
-                r.getCliente().getNombres() + " " + r.getCliente().getApellidos(),
+            Usuario solicitante = r.getSolicitante() == null ? r.getCliente() : r.getSolicitante();
+            Usuario adulto = r.getAdultoMayor() == null ? r.getCliente() : r.getAdultoMayor();
+            return new ReservaAdmin(r.getId(), adulto.getDni(),
+                adulto.getNombres() + " " + adulto.getApellidos(),
                 r.getAcompanante().getDni(),
                 r.getAcompanante().getNombres() + " " + r.getAcompanante().getApellidos(),
                 r.getFechaHoraInicio(), r.getFechaHoraFin(), r.getEstadoActual().getValor(),
-                r.getDireccionEncuentro(), r.getMontoTotal(), r.getCreadoEn());
+                r.getDireccionEncuentro(), r.getMontoTotal(), r.getCreadoEn(), solicitante.getDni(),
+                solicitante.getNombres() + " " + solicitante.getApellidos());
         }
     }
     @GetMapping("/reservas")
