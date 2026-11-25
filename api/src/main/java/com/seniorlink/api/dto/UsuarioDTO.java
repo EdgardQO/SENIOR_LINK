@@ -12,6 +12,7 @@ public record UsuarioDTO(
         String apellidos,
         String telefono,
         Boolean estaActivo,
+        String fotoUrl,
         OffsetDateTime creadoEn,
         OffsetDateTime actualizadoEn
 ) {
@@ -25,6 +26,7 @@ public record UsuarioDTO(
                 u.getApellidos(),
                 u.getTelefono(),
                 u.getEstaActivo(),
+                u.getFotoPerfilRuta() == null ? null : "/api/v1/usuarios/" + u.getDni() + "/foto",
                 u.getCreadoEn(),
                 u.getActualizadoEn()
         );
