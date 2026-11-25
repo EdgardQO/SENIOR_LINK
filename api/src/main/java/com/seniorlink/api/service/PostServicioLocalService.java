@@ -50,7 +50,7 @@ public class PostServicioLocalService {
 
  private ResponseStatusException no(){return new ResponseStatusException(HttpStatus.FORBIDDEN,"Acceso denegado");}
  private ResponseStatusException bad(String m){return new ResponseStatusException(HttpStatus.BAD_REQUEST,m);}
- private Usuario usuario(String dni){return usuarios.findById(dni).orElseThrow(this::no);}
+ private Usuario usuario(String dni){Usuario u=usuarios.findById(dni).orElseThrow(this::no);if(!Boolean.TRUE.equals(u.getEstaActivo()))throw no();return u;}
  private boolean esRol(Usuario u,String...roles){return Arrays.asList(roles).contains(u.getRol().getNombre());}
  private Reserva reserva(Long id){return reservas.bloquear(id)
   .orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Reserva no encontrada"));}
@@ -73,15 +73,13 @@ public class PostServicioLocalService {
   Reserva r=motor.bloquearParaAgenda(reservaId);
   motor.obtener(dni,reservaId); // Verifica autorización con los permisos de vínculos.
   if(descripcion==null||descripcion.isBlank()||descripcion.length()>2000)throw bad("Describe la incidencia (máximo 2000 caracteres)");
-  if(!EnumSet.of(EstadoReserva.CONFIRMADA,EstadoReserva.EN_PROGRESO,
-   EstadoReserva.PENDIENTE_CONFIRMACION,EstadoReserva.COMPLETADA,
-   EstadoReserva.EN_DISPUTA).contains(r.getEstadoActual()))
-   throw new ResponseStatusException(HttpStatus.CONFLICT,"La reserva no permite incidencias");
+  // Una consulta de soporte puede referirse a cualquier estado, incluso cancelaciones o pagos pendientes.
+  if(!esRol(actor,"ADULTO_MAYOR","FAMILIAR","ACOMPANANTE"))throw no();
   IncidenciaReserva i=new IncidenciaReserva();
   i.setReserva(r);i.setReportadoPor(actor);i.setDescripcion(descripcion.trim());
   incidencias.saveAndFlush(i);
-  if(r.getEstadoActual()!=EstadoReserva.EN_DISPUTA && r.getEstadoActual()!=EstadoReserva.COMPLETADA)
-   motor.cambiar(r,EstadoReserva.EN_DISPUTA,"Incidencia reportada: requiere soporte",actor);
+  // Registrar una incidencia no cancela, bloquea ni modifica automáticamente la reserva.
+  // Las decisiones operativas y financieras conservan su flujo independiente.
   return vista(i);
  }
  public List<IncidenciaVista> incidencias(String dni){
