@@ -198,6 +198,69 @@ public class UsuarioService {
         return construirDetalle(usuario);
     }
 
+    public record PerfilPropio(String nombres, String apellidos, String telefono,
+            ActualizarUsuarioDTO.Acompanante acompanante, ActualizarUsuarioDTO.AdultoMayor adultoMayor,
+            ActualizarUsuarioDTO.Familiar familiar, ActualizarUsuarioDTO.Soporte soporte) {}
+
+    private String validarTexto(String valor, int max, boolean requerido) {
+        if (valor == null) return null;
+        String limpio = valor.trim();
+        if ((requerido && limpio.isEmpty()) || limpio.length() > max)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Revisa los campos obligatorios y su longitud máxima");
+        return limpio;
+    }
+
+    @Transactional(readOnly = true)
+    public List<java.util.Map<String, Object>> parentescosPropios() {
+        return parentescoRepository.findAll().stream()
+            .sorted(java.util.Comparator.comparing(Parentesco::getNombre))
+            .map(p -> java.util.Map.<String,Object>of("id", p.getId(), "nombre", p.getNombre())).toList();
+    }
+
+    @Transactional
+    public UsuarioDetalleDTO actualizarPerfilPropio(String dni, PerfilPropio input) {
+        Usuario u = buscarUsuario(dni);
+        if (!Boolean.TRUE.equals(u.getEstaActivo()))
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cuenta inactiva");
+        String rol = u.getRol().getNombre();
+        if ((input.acompanante()!=null && !"ACOMPANANTE".equals(rol))
+            || (input.adultoMayor()!=null && !"ADULTO_MAYOR".equals(rol))
+            || (input.familiar()!=null && !"FAMILIAR".equals(rol))
+            || (input.soporte()!=null && !"SOPORTE".equals(rol)))
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Perfil no autorizado");
+        String telefono = input.telefono();
+        if (telefono != null && !java.util.Objects.equals(telefono.trim(), u.getTelefono())) {
+            if (normalizarTelefono(telefono)==null)
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Teléfono personal inválido");
+            telefono = "+" + normalizarTelefono(telefono);
+        } else telefono = null;
+        var a = input.acompanante();
+        var m = input.adultoMayor();
+        var f = input.familiar();
+        var t = input.soporte();
+        if (a != null && (a.tarifaBasePorHora()!=null || a.tarifaActualPorHora()!=null))
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Usa el módulo de tarifas");
+        if (m != null && m.fechaNacimiento()!=null)
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "La fecha de nacimiento requiere revisión administrativa");
+        if (t != null && t.turno()!=null)
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "El turno es administrado por la institución");
+        String alternativo = f==null?null:f.telefonoAlternativo();
+        if (alternativo!=null && !alternativo.isBlank()) {
+            if (normalizarTelefono(alternativo)==null)
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Teléfono alternativo inválido");
+            alternativo="+"+normalizarTelefono(alternativo);
+        }
+        return actualizar(dni, new ActualizarUsuarioDTO(null,
+            validarTexto(input.nombres(),100,true), validarTexto(input.apellidos(),100,true), telefono, null,
+            m==null?null:new ActualizarUsuarioDTO.AdultoMayor(null, validarTexto(m.direccionResidencia(),1000,false),
+                validarTexto(m.contactoEmergencia(),100,true), validarTexto(m.telefonoEmergencia(),20,true),
+                validarTexto(m.observacionesMedicas(),3000,false)),
+            f==null?null:new ActualizarUsuarioDTO.Familiar(f.parentescoPrincipalId(),alternativo),
+            a==null?null:new ActualizarUsuarioDTO.Acompanante(validarTexto(a.biografia(),3000,false),a.ciclo(),
+                validarTexto(a.carrera(),150,true),null,null),
+            t==null?null:new ActualizarUsuarioDTO.Soporte(null,validarTexto(t.extensionTelefonica(),20,false)),null));
+    }
+
     private void revocarContacto(String dni) {
         reservaRepository.revocarWhatsappAcompanante(dni);
         reservaRepository.revocarWhatsappSolicitante(dni);

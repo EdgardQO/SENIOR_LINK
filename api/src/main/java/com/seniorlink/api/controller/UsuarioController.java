@@ -33,6 +33,18 @@ public class UsuarioController {
         this.usuarios = usuarios;
     }
 
+    @PreAuthorize("isAuthenticated()")
+    @PutMapping("/me/perfil")
+    public ResponseEntity<UsuarioDetalleDTO> actualizarPerfilPropio(Authentication auth, @RequestBody UsuarioService.PerfilPropio input) {
+        return ResponseEntity.ok(usuarioService.actualizarPerfilPropio(auth.getName(), input));
+    }
+
+    @PreAuthorize("hasRole('FAMILIAR')")
+    @GetMapping("/me/parentescos")
+    public List<java.util.Map<String,Object>> parentescosPropios() {
+        return usuarioService.parentescosPropios();
+    }
+
     public record ContactoPropio(String telefono, String telefonoAlternativo) {}
     @PreAuthorize("hasAnyRole('ACOMPANANTE','FAMILIAR','ADULTO_MAYOR')")
     @PutMapping("/me/contacto")
