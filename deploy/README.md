@@ -35,3 +35,11 @@ Mientras mantengas ese túnel abierto, visita http://localhost:4321 en Windows. 
 Si el puerto 4321 o 8080 está ocupado en Windows, libera el puerto o modifica conjuntamente los puertos locales del túnel, la URL del frontend y CORS. El valor `PUBLIC_API_URL` queda integrado en el build de Astro.
 
 **No subas `deploy/.env` ni la contraseña de PostgreSQL.** La base de datos y n8n siguen separados por usuario, base y red. Haz backups externos antes de operar con datos reales.
+
+## Validación antes del despliegue
+- No sobrescribas el archivo .env existente al actualizar. Mantén PUBLIC_API_URL vacío para usar el proxy /api del mismo origen.
+- El endpoint autenticado GET /api/v1/operaciones/capacidades informa el estado efectivo de la simulación. Los recibos históricos se consultan por /api/v1/operaciones/recibos independientemente de ese estado.
+- La simulación se mantiene desactivada por defecto. Habilítala únicamente en una instalación de pruebas aislada con datos ficticios.
+- Ejecuta verificar-datos.sql en la base correspondiente usando psql (opción -v ON_ERROR_STOP=1). El script es de solo lectura y devuelve conteos; no corrige registros. Si faltan columnas o tablas, detén la actualización y revisa el esquema con una copia de respaldo.
+- Revisa Actions: el workflow de validación ejecuta Maven con PostgreSQL desechable y compila Astro en cada push a main. No ejecuta pruebas contra el VPS.
+- Antes de operar, verifica login, catálogo, vinculación, reserva de varias jornadas, pago simulado si está habilitado y recibos. No despliegues si el workflow falla.

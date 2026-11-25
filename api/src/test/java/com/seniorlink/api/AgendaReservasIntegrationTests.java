@@ -62,46 +62,50 @@ class AgendaReservasIntegrationTests {
  }
  private int ocupados(){return agenda.horariosOcupados(ACOMP,inicio,fin).size();}
  @Test void soloAceptacionOcupaYRechazaCruce(){
-  var a=crear(inicio,fin);var b=crear(inicio.plusHours(1),fin.plusHours(1));
+  var a=crear(inicio,fin);
+  assertEquals(HttpStatus.CONFLICT,assertThrows(ResponseStatusException.class,()->crear(inicio.plusHours(1),fin.plusHours(1))).getStatusCode());
   assertEquals(0,ocupados());
   agenda.accion(ACOMP,a.id(),"ACEPTAR");
   assertEquals(1,ocupados());
   var consecutiva=crear(fin,fin.plusHours(1));
   assertEquals("PENDIENTE_PAGO",agenda.accion(ACOMP,consecutiva.id(),"ACEPTAR").estado());
   assertEquals(1,ocupados());
-  assertEquals(HttpStatus.CONFLICT,assertThrows(ResponseStatusException.class,()->agenda.accion(ACOMP,b.id(),"ACEPTAR")).getStatusCode());
+
  }
  @Test void cancelaSinPagoYPermiteNuevaAceptacion(){
-  var a=crear(inicio,fin);var b=crear(inicio,fin);
+  var a=crear(inicio,fin);
   agenda.accion(ACOMP,a.id(),"ACEPTAR");
   assertEquals("CANCELADA",agenda.accion(ADULTO,a.id(),"CANCELAR").estado());
   assertEquals(0,ocupados());
+  var b=crear(inicio,fin);
   assertEquals("PENDIENTE_PAGO",agenda.accion(ACOMP,b.id(),"ACEPTAR").estado());
   assertEquals(1,ocupados());
  }
  @Test void pagoVencidoLiberaSinEsperarTarea(){
-  var a=crear(inicio,fin);var b=crear(inicio,fin);
+  var a=crear(inicio,fin);
   agenda.accion(ACOMP,a.id(),"ACEPTAR");
   var r=repo.findById(a.id()).orElseThrow();
   r.setVencePagoEn(OffsetDateTime.now().minusMinutes(1));repo.saveAndFlush(r);
   assertEquals(0,ocupados());
   assertEquals("EXPIRADA",agenda.obtener(ADULTO,a.id()).estado());
+  var b=crear(inicio,fin);
   assertEquals("PENDIENTE_PAGO",agenda.accion(ACOMP,b.id(),"ACEPTAR").estado());
   agenda.procesarPlazos();
   assertEquals(EstadoReserva.EXPIRADA,repo.findById(a.id()).orElseThrow().getEstadoActual());
  }
  @Test void cancelacionPagadaLiberaYConservaFlujoReembolso(){
-  var a=crear(inicio,fin);var b=crear(inicio,fin);
+  var a=crear(inicio,fin);
   agenda.accion(ACOMP,a.id(),"ACEPTAR");
   var tarjeta=pagos.agregar(ADULTO,new PasarelaLocalService.NuevaTarjeta(provisionarTarjeta(),"Adulto Agenda","DEBITO",(short)12,(short)2090,"123"));
   assertEquals("APROBADO",pagos.pagar(ADULTO,a.id(),new PasarelaLocalService.PagoRequest(tarjeta.id(),UUID.randomUUID(),"123")).estado());
   assertEquals(1,ocupados());
   assertEquals("CANCELADA",agenda.accion(ADULTO,a.id(),"CANCELAR").estado());
   assertEquals(0,ocupados());
+  var b=crear(inicio,fin);
   assertEquals("PENDIENTE_PAGO",agenda.accion(ACOMP,b.id(),"ACEPTAR").estado());
  }
  @Test void finalizacionLiberaAntesDeConfirmacion(){
-  var a=crear(inicio,fin);var b=crear(inicio,fin);
+  var a=crear(inicio,fin);
   agenda.accion(ACOMP,a.id(),"ACEPTAR");
   // Preparamos el estado operativo sin esperar tres días ni usar pagos reales.
   var r=repo.findById(a.id()).orElseThrow();
@@ -111,7 +115,15 @@ class AgendaReservasIntegrationTests {
   assertEquals("PENDIENTE_CONFIRMACION",agenda.accion(ACOMP,a.id(),"FINALIZAR").estado());
   assertEquals(0,ocupados());
   assertEquals("COMPLETADA",agenda.accion(ADULTO,a.id(),"CONFIRMAR").estado());
+  var b=crear(fin,fin.plusHours(1));
   assertEquals("PENDIENTE_PAGO",agenda.accion(ACOMP,b.id(),"ACEPTAR").estado());
+ }
+ @Test void reservaMultipleConsolidaHorasYJornadas(){
+  var vista=agenda.crear(ADULTO,new ReservaLocalService.NuevaReserva(ADULTO,ACOMP,servicio,inicio,fin,"Lima","Agenda",
+   List.of(new ReservaLocalService.JornadaInput(inicio,fin),new ReservaLocalService.JornadaInput(inicio.plusDays(1),fin.plusDays(1)))));
+  assertEquals(2,vista.jornadas().size());
+  assertEquals(0,new BigDecimal("4.00").compareTo(vista.totalHoras()));
+  assertEquals("PENDIENTE_PAGO",agenda.accion(ACOMP,vista.id(),"ACEPTAR").estado());
  }
  @Test void noPuedeQuitarHorarioConReservaAceptada(){
   var a=crear(inicio,fin);agenda.accion(ACOMP,a.id(),"ACEPTAR");
