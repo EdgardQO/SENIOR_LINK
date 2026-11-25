@@ -130,7 +130,7 @@ public class ReservaLocalService {
   Usuario a=r.getAdultoMayor()!=null?r.getAdultoMayor():r.getCliente();
   Usuario acomp=r.getAcompanante();
   Usuario solicitante=r.getSolicitante()==null?r.getCliente():r.getSolicitante();
-  return new ReservaVista(r.getId(),r.getEstadoActual().name(),a.getDni(),
+  return new ReservaVista(r.getId(),(plazoVencido(r,OffsetDateTime.now())?EstadoReserva.EXPIRADA:r.getEstadoActual()).name(),a.getDni(),
    a.getNombres()+" "+a.getApellidos(),
    r.getSolicitante()==null?r.getCliente().getDni():r.getSolicitante().getDni(),
    acomp.getDni(),acomp.getNombres()+" "+acomp.getApellidos(),
@@ -159,12 +159,20 @@ public class ReservaLocalService {
   HistorialEstadoReserva h=new HistorialEstadoReserva();
   h.setReserva(r);h.setEstado(e);h.setMotivoODetalle(motivo);h.setCambiadoPor(usuario);historial.save(h);
  }
+ private boolean plazoVencido(Reserva r,OffsetDateTime ahora){
+  OffsetDateTime limite=switch(r.getEstadoActual()){
+   case PENDIENTE_ACEPTACION -> r.getVenceAceptacionEn();
+   case PENDIENTE_PAGO -> r.getVencePagoEn();
+   default -> null;
+  };
+  if(r.getEstadoActual()!=EstadoReserva.PENDIENTE_ACEPTACION&&r.getEstadoActual()!=EstadoReserva.PENDIENTE_PAGO)return false;
+  return !ahora.isBefore(r.getFechaHoraInicio())||(limite!=null&&!ahora.isBefore(limite));
+ }
  private void expirar(Reserva r){
-  OffsetDateTime ahora=OffsetDateTime.now();
-  if((r.getEstadoActual()==EstadoReserva.PENDIENTE_ACEPTACION && r.getVenceAceptacionEn()!=null && !ahora.isBefore(r.getVenceAceptacionEn()))
-   ||(r.getEstadoActual()==EstadoReserva.PENDIENTE_PAGO && r.getVencePagoEn()!=null && !ahora.isBefore(r.getVencePagoEn()))){
-   cambiar(r,EstadoReserva.EXPIRADA,"Plazo de aceptación o pago vencido",null);
-  }
+  if(plazoVencido(r,OffsetDateTime.now()))cambiar(r,EstadoReserva.EXPIRADA,"Plazo de aceptación o pago vencido",null);
+ }
+ public OffsetDateTime plazoPago(OffsetDateTime inicio){
+  return antesDe(OffsetDateTime.now().plusMinutes(cfg().getMinutosPago()),inicio);
  }
  public ReservaVista crear(String dni,NuevaReserva input){
   Usuario solicitante=actor(dni);
@@ -217,11 +225,11 @@ public class ReservaLocalService {
   else if("ACOMPANANTE".equals(rol(u)))lista=reservas.findByAcompananteDni(dni);
   else if("FAMILIAR".equals(rol(u)))lista=reservas.findAll();
   else lista=reservas.visiblesCliente(dni);
-  return lista.stream().filter(r->puedeVer(dni,r)).peek(this::expirar)
+  return lista.stream().filter(r->puedeVer(dni,r))
    .sorted(Comparator.comparing(Reserva::getId).reversed()).map(this::vista).toList();
  }
  public ReservaVista obtener(String dni,Long id){
-  Reserva r=buscar(id);if(!puedeVer(dni,r))throw no();expirar(r);return vista(r);
+  Reserva r=buscar(id);if(!puedeVer(dni,r))throw no();return vista(r);
  }
  public ReservaVista accion(String dni,Long id,String accion){
   Usuario u=actor(dni),rActor=u;
@@ -274,11 +282,8 @@ public class ReservaLocalService {
  }
  public void procesarPlazos(){
   OffsetDateTime ahora=OffsetDateTime.now();
-  for(Reserva item:reservas.findAll()){
-   if(item.getEstadoActual()==EstadoReserva.PENDIENTE_ACEPTACION ||
-      item.getEstadoActual()==EstadoReserva.PENDIENTE_PAGO ||
-      item.getEstadoActual()==EstadoReserva.PENDIENTE_CONFIRMACION){
-    Reserva r=bloquear(item.getId());
+  for(Long id:reservas.idsPorEstados(EnumSet.of(EstadoReserva.PENDIENTE_ACEPTACION,EstadoReserva.PENDIENTE_PAGO,EstadoReserva.PENDIENTE_CONFIRMACION))){
+    Reserva r=bloquear(id);
     expirar(r);
     if(r.getEstadoActual()==EstadoReserva.PENDIENTE_CONFIRMACION &&
        r.getFinRealEn()!=null &&
@@ -286,7 +291,6 @@ public class ReservaLocalService {
      r.setConfirmadoEn(ahora);
      cambiar(r,EstadoReserva.COMPLETADA,"Confirmación automática tras 48 horas sin disputa",null);
     }
-   }
   }
  }
  @Transactional(readOnly=true)
