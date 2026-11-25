@@ -28,7 +28,7 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
     // Los intervalos son [inicio, fin): dos servicios consecutivos no se cruzan.
     String OCUPACION = """
        (r.estadoActual in :firmes
-        or (r.estadoActual = :pendientePago and (r.vencePagoEn is null or r.vencePagoEn > :ahora))
+        or (r.estadoActual = :pendientePago and r.fechaHoraInicio > :ahora and (r.vencePagoEn is null or r.vencePagoEn > :ahora))
         or (r.estadoActual = :disputa and r.finRealEn is null and not exists
           (select h.identificadorHistorial from HistorialEstadoReserva h where h.reserva = r
             and (h.estado = :completada or h.estado = :cancelada
