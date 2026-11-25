@@ -1,0 +1,55 @@
+---
+import RoleLayout from '../../layouts/RoleLayout.astro';
+---
+<RoleLayout role="ADMINISTRADOR" label="Administrador" description="Configuración del motor de reservas · Entorno local.">
+ <section class="local-card">
+  <h2>Parámetros de reservas</h2>
+  <p>Estos valores se aplican a solicitudes nuevas. La modificación no cambia automáticamente el precio de las reservas existentes.</p>
+  <form id="parametros-local-form" class="local-form">
+   <div id="parametros-local-campos" class="profile-grid"></div>
+   <button type="submit">Guardar parámetros</button>
+  </form>
+  <p id="parametros-local-status" aria-live="polite" role="status"></p>
+ </section>
+</RoleLayout>
+<script>
+ import {apiLocal} from '../../lib/local-api';
+ const campos=[
+  ['minutosAceptacion','Plazo para aceptar (min)',5,180,1],
+  ['minutosPago','Plazo para pagar (min)',5,120,1],
+  ['minutosAnticipacion','Anticipación mínima (min)',60,1440,1],
+  ['minutosDuracionMinima','Duración mínima (min)',30,1440,1],
+  ['minutosDuracionMaxima','Duración máxima (min)',30,1440,1],
+  ['minutosInicioAnticipado','Inicio anticipado (min)',0,60,1],
+  ['horasConfirmacionAutomatica','Confirmación automática (horas)',1,168,1],
+  ['tarifaMinimaHora','Tarifa mínima por hora (S/)',1,200,.01],
+  ['tarifaMaximaHora','Tarifa máxima por hora (S/)',1,200,.01],
+  ['porcentajeComision','Comisión plataforma (%)',0,30,.01]
+ ] as const;
+ const form=document.querySelector<HTMLFormElement>('#parametros-local-form')!;
+ const cont=document.querySelector<HTMLElement>('#parametros-local-campos')!;
+ const estado=document.querySelector<HTMLElement>('#parametros-local-status')!;
+ for(const [nombre,titulo,min,max,paso] of campos){
+  const label=document.createElement('label');label.textContent=titulo;
+  const input=document.createElement('input');input.type='number';input.name=nombre;
+  input.min=String(min);input.max=String(max);input.step=String(paso);input.required=true;
+  label.append(input);cont.append(label);
+ }
+ (async()=>{
+  const p=await apiLocal('/admin/configuracion-reservas');
+  for(const [nombre] of campos){
+   const input=form.elements.namedItem(nombre) as HTMLInputElement|null;
+   if(input)input.value=String(p[nombre]);
+  }
+ })().catch(e=>estado.textContent=String(e));
+ form.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const body:Record<string,number>={};
+  for(const [nombre] of campos){
+   body[nombre]=Number((form.elements.namedItem(nombre) as HTMLInputElement).value);
+  }
+  try{await apiLocal('/admin/configuracion-reservas',{method:'PUT',body:JSON.stringify(body)});
+   estado.textContent='Configuración de reservas actualizada correctamente.';
+  }catch(e){estado.textContent=e instanceof Error?e.message:String(e);}
+ });
+</script>

@@ -3,10 +3,15 @@ package com.seniorlink.api.model.enums;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum EstadoReserva {
+    PENDIENTE_ACEPTACION("PENDIENTE ACEPTACION"),
     PENDIENTE_PAGO("PENDIENTE PAGO"),
     CONFIRMADA("CONFIRMADA"),
     EN_PROGRESO("EN PROGRESO"),
     COMPLETADA("COMPLETADA"),
+    PENDIENTE_CONFIRMACION("PENDIENTE CONFIRMACION"),
+    RECHAZADA("RECHAZADA"),
+    EXPIRADA("EXPIRADA"),
+    EN_DISPUTA("EN DISPUTA"),
     CANCELADA("CANCELADA");
 
     private final String valor;

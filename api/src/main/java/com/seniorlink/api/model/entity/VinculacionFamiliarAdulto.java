@@ -26,6 +26,15 @@ public class VinculacionFamiliarAdulto {
     @Column(name = "estado", nullable = false)
     private String estado = "PENDIENTE";
 
+    @Column(name="permite_reservar",nullable=false) private boolean permiteReservar=false;
+    @Column(name="permite_pagar",nullable=false) private boolean permitePagar=false;
+    @Column(name="permite_gestionar",nullable=false) private boolean permiteGestionar=false;
+    public boolean isPermiteReservar(){return permiteReservar;}
+    public void setPermiteReservar(boolean v){permiteReservar=v;}
+    public boolean isPermitePagar(){return permitePagar;}
+    public void setPermitePagar(boolean v){permitePagar=v;}
+    public boolean isPermiteGestionar(){return permiteGestionar;}
+    public void setPermiteGestionar(boolean v){permiteGestionar=v;}
     @Column(name = "solicitado_en", nullable = false, updatable = false)
     private OffsetDateTime solicitadoEn = OffsetDateTime.now();
 

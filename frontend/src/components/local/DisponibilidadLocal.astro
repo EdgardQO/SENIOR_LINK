@@ -1,0 +1,63 @@
+<section class="local-card">
+ <h2>Mi disponibilidad semanal</h2>
+ <p>Define las horas en las que recibirás solicitudes. Las reservas ocupadas se bloquean automáticamente.</p>
+ <form id="horario-local-form" class="local-form">
+  <div id="horario-local-dias"></div>
+  <button type="submit">Guardar disponibilidad</button>
+ </form>
+ <p id="horario-local-status" role="status" aria-live="polite"></p>
+ <hr/>
+ <h2>Mi tarifa por hora</h2>
+ <form id="tarifa-local-form" class="local-form">
+  <label>Tarifa en soles (entre S/ 10 y S/ 50)
+   <input type="number" name="tarifa" min="10" max="50" step=".01" required />
+  </label>
+  <button type="submit">Actualizar tarifa</button>
+ </form>
+ <p id="tarifa-local-status" role="status" aria-live="polite"></p>
+</section>
+<script>
+ import {apiLocal} from '../../lib/local-api';
+ const dias=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+ const cont=document.querySelector<HTMLElement>('#horario-local-dias')!;
+ const estado=document.querySelector<HTMLElement>('#horario-local-status')!;
+ const tarEstado=document.querySelector<HTMLElement>('#tarifa-local-status')!;
+ for(let i=1;i<=7;i++){
+  const row=document.createElement('div');row.className='local-item local-day';
+  const label=document.createElement('label');
+  const check=document.createElement('input');check.type='checkbox';check.name='dia'+i;
+  label.append(check,document.createTextNode(' '+dias[i-1]));
+  const inicio=document.createElement('input');inicio.type='time';inicio.name='inicio'+i;inicio.value='08:00';
+  const fin=document.createElement('input');fin.type='time';fin.name='fin'+i;fin.value='18:00';
+  row.append(label,inicio,fin);cont.append(row);
+ }
+ const form=document.querySelector<HTMLFormElement>('#horario-local-form')!;
+ const cargar=async()=>{
+  const lista=await apiLocal('/mi-disponibilidad');
+  for(const h of lista){
+   const chk=form.querySelector<HTMLInputElement>('[name="dia'+h.diaSemana+'"]');
+   const ini=form.querySelector<HTMLInputElement>('[name="inicio'+h.diaSemana+'"]');
+   const fin=form.querySelector<HTMLInputElement>('[name="fin'+h.diaSemana+'"]');
+   if(chk&&ini&&fin){chk.checked=true;ini.value=h.horaInicio.slice(0,5);fin.value=h.horaFin.slice(0,5);}
+  }
+ };
+ form.addEventListener('submit',async e=>{
+  e.preventDefault();const lista=[];
+  for(let i=1;i<=7;i++){
+   const ch=form.querySelector<HTMLInputElement>('[name="dia'+i+'"]')!;
+   if(ch.checked)lista.push({diaSemana:i,
+    horaInicio:form.querySelector<HTMLInputElement>('[name="inicio'+i+'"]')!.value+':00',
+    horaFin:form.querySelector<HTMLInputElement>('[name="fin'+i+'"]')!.value+':00'});
+  }
+  try{await apiLocal('/mi-disponibilidad',{method:'PUT',body:JSON.stringify(lista)});
+   estado.textContent='Disponibilidad guardada.';
+  }catch(err){estado.textContent=err instanceof Error?err.message:String(err);}
+ });
+ document.querySelector<HTMLFormElement>('#tarifa-local-form')!.addEventListener('submit',async e=>{
+  e.preventDefault();const f=new FormData(e.currentTarget as HTMLFormElement);
+  try{await apiLocal('/mi-tarifa',{method:'PUT',body:JSON.stringify({tarifa:Number(f.get('tarifa'))})});
+   tarEstado.textContent='Tarifa guardada.';
+  }catch(err){tarEstado.textContent=err instanceof Error?err.message:String(err);}
+ });
+ cargar().catch(e=>estado.textContent=String(e));
+</script>

@@ -1,0 +1,66 @@
+---
+interface Props { rol: 'FAMILIAR'|'ADULTO_MAYOR' }
+const {rol}=Astro.props;
+---
+<section class="local-card" data-vinculos-rol={rol}>
+ <h2>Vinculaciones familiares</h2>
+ <p>Solo el adulto mayor puede aprobar la relación y autorizar reservas, pagos y gestión.</p>
+ <form id="vinculo-form" class="local-form">
+  <label>{rol==='FAMILIAR'?'DNI del adulto mayor':'DNI del familiar'}
+   <input name="otroDni" inputmode="numeric" pattern="[0-9]{8}" maxlength="8" required />
+  </label>
+  <label>Parentesco
+   <select name="parentescoId">
+    <option value="1">Hijo/a</option><option value="2">Nieto/a</option>
+    <option value="3">Hermano/a</option><option value="4">Sobrino/a</option>
+    <option value="5">Cónyuge</option><option value="13">Otro</option>
+   </select>
+  </label>
+  <button type="submit">Solicitar vinculación</button>
+ </form>
+ <p id="vinculos-status" aria-live="polite" role="status"></p>
+ <div id="vinculos-list" class="local-list"></div>
+</section>
+<script>
+ import {apiLocal} from '../../lib/local-api';
+ const root=document.querySelector<HTMLElement>('[data-vinculos-rol]')!;
+ const role=root.dataset.vinculosRol;
+ const estado=root.querySelector<HTMLElement>('#vinculos-status')!;
+ const list=root.querySelector<HTMLElement>('#vinculos-list')!;
+ const form=root.querySelector<HTMLFormElement>('#vinculo-form')!;
+ const cargar=async()=>{
+  const datos=await apiLocal('/vinculos');list.replaceChildren();
+  if(!datos.length){list.textContent='Aún no hay solicitudes.';return;}
+  for(const v of datos){
+   const row=document.createElement('article');row.className='local-item';
+   const info=document.createElement('p');
+   info.textContent=(role==='FAMILIAR'?v.adultoMayorNombre:v.familiarNombre)+' · '+v.estado;
+   row.append(info);
+   if(v.estado==='ACEPTADO'){
+    const p=document.createElement('p');
+    p.textContent='Permisos: reserva '+(v.permiteReservar?'sí':'no')+
+     ' · pago '+(v.permitePagar?'sí':'no')+' · gestión '+(v.permiteGestionar?'sí':'no');
+    row.append(p);
+   }
+   if(role==='ADULTO_MAYOR'&&v.estado==='PENDIENTE'){
+    for(const [nombre,aprobar] of [['Autorizar',true],['Rechazar',false]] as const){
+     const b=document.createElement('button');b.textContent=nombre;b.type='button';
+     b.addEventListener('click',async()=>{
+      try{await apiLocal('/vinculos/'+v.id+'/responder',{method:'POST',body:JSON.stringify({aprobar})});
+       estado.textContent='Solicitud respondida.';await cargar();
+      }catch(e){estado.textContent=e instanceof Error?e.message:String(e);}
+     });row.append(b);
+    }
+   }
+   list.append(row);
+  }
+ };
+ form.addEventListener('submit',async e=>{
+  e.preventDefault();const f=new FormData(form);
+  try{await apiLocal('/vinculos',{method:'POST',body:JSON.stringify({
+   otroDni:String(f.get('otroDni')),parentescoId:Number(f.get('parentescoId'))
+  })});form.reset();estado.textContent='Solicitud registrada.';await cargar();
+  }catch(err){estado.textContent=err instanceof Error?err.message:String(err);}
+ });
+ cargar().catch(e=>estado.textContent=String(e));
+</script>

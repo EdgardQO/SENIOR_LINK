@@ -18,6 +18,7 @@ public class Usuario {
     @Column(name = "correo_electronico", nullable = false, unique = true, length = 150)
     private String correoElectronico;
 
+    @com.fasterxml.jackson.annotation.JsonIgnore
     @Column(name = "contrasena_hash", nullable = false, length = 255)
     private String contrasenaHash;
 
