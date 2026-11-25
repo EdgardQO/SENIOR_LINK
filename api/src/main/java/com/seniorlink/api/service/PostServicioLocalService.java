@@ -82,14 +82,18 @@ public class PostServicioLocalService {
   // Las decisiones operativas y financieras conservan su flujo independiente.
   return vista(i);
  }
+ @Transactional(readOnly=true)
  public List<IncidenciaVista> incidencias(String dni){
   Usuario u=usuario(dni);
-  if(Boolean.TRUE.equals(u.getEstaActivo()) && esRol(u,"ADMINISTRADOR","SOPORTE"))
+  if(esRol(u,"ADMINISTRADOR","SOPORTE"))
    return incidencias.findAll().stream().map(i->vista(i,true)).toList();
-  return incidencias.findAll().stream().filter(i->{
-   try{motor.obtener(dni,i.getReserva().getId());return true;}
-   catch(ResponseStatusException ex){return false;}
-  }).map(this::vista).toList();
+  // Filtrar por las reservas autorizadas sin lanzar excepciones de acceso
+  // dentro de una transacción compartida.
+  Set<Long> autorizadas=new HashSet<>();
+  for(var r:motor.listar(dni))autorizadas.add(r.id());
+  return incidencias.findAll().stream()
+   .filter(i->autorizadas.contains(i.getReserva().getId()))
+   .map(this::vista).toList();
  }
  public IncidenciaVista resolver(String dni,Long id,String resolucion){
   Usuario u=usuario(dni);if(!esRol(u,"ADMINISTRADOR","SOPORTE"))throw no();
