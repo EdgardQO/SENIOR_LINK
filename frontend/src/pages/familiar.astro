@@ -1,43 +1,40 @@
 ---
 import RoleLayout from '../layouts/RoleLayout.astro';
-const accesos=[
- {titulo:'Acompañantes',detalle:'Encuentra y compara acompañantes verificados.',ruta:'/familiar/acompanantes',accion:'Ver catálogo'},
- {titulo:'Reservas familiares',detalle:'Administra las solicitudes y servicios de tus familiares.',ruta:'/familiar/reservas',accion:'Ver reservas'},
- {titulo:'Vinculaciones',detalle:'Consulta y administra tus vinculaciones con adultos mayores.',ruta:'/familiar/vinculaciones',accion:'Ver vinculaciones'},
- {titulo:'Métodos de pago',detalle:'Administra tus tarjetas registradas.',ruta:'/familiar/metodos-pago',accion:'Ver métodos de pago'},
- {titulo:'Mis incidencias',detalle:'Solicita ayuda y consulta las respuestas de soporte.',ruta:'/familiar/incidencias',accion:'Solicitar ayuda'},
- {titulo:'Mi perfil',detalle:'Consulta tus datos personales y actualiza tu fotografía.',ruta:'/familiar/mi-perfil',accion:'Consultar perfil'}
+const indicadores=[
+ {id:'pendientes',titulo:'Solicitudes pendientes',ruta:'/familiar/reservas',icono:'calendar',tono:'verde'},
+ {id:'activas',titulo:'Servicios activos',ruta:'/familiar/reservas',icono:'users',tono:'verde'},
+ {id:'completadas',titulo:'Servicios completados',ruta:'/familiar/reservas',icono:'check',tono:'verde'},
+ {id:'canceladas',titulo:'Reservas canceladas',ruta:'/familiar/reservas',icono:'cancel',tono:'rojo'},
+ {id:'vinculos',titulo:'Vinculaciones aceptadas',ruta:'/familiar/vinculaciones',icono:'link',tono:'verde'},
+ {id:'incidencias',titulo:'Incidencias abiertas',ruta:'/familiar/incidencias',icono:'alert',tono:'ambar'}
 ];
+const accesos=[
+ {titulo:'Buscar acompañante',ruta:'/familiar/acompanantes',icono:'search'},
+ {titulo:'Vincular adulto mayor',ruta:'/familiar/vinculaciones',icono:'users'},
+ {titulo:'Mis reservas',ruta:'/familiar/reservas',icono:'calendar'},
+ {titulo:'Métodos de pago',ruta:'/familiar/metodos-pago',icono:'card'}
+];
+const trazos:Record<string,string>={calendar:'M5 5h14v16H5zM8 3v4M16 3v4M5 10h14',users:'M8 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21v-3a6 6 0 0 1 12 0v3M16 4a3 3 0 0 1 0 6M17 14a5 5 0 0 1 5 5v2',check:'M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18zM8 12l3 3 5-6',cancel:'M5 5h14v16H5zM8 3v4M16 3v4M5 10h14M9 13l6 5m0-5-6 5',link:'M10 13a4 4 0 0 0 6 1l4-4a4 4 0 0 0-6-6l-2 2M14 11a4 4 0 0 0-6-1l-4 4a4 4 0 0 0 6 6l2-2',alert:'M12 3 2 21h20zM12 9v4m0 4h.01',search:'M10 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM15 15l6 6',card:'M3 5h18v14H3zM3 10h18M7 15h5'};
 ---
 <RoleLayout role="FAMILIAR" label="Familiar" description="Organiza el acompañamiento de tus familiares y consulta el estado de sus servicios.">
  <section class="familiar-home">
-  <div class="section-heading"><h2>Resumen de tus reservas familiares</h2></div>
-  <div class="dashboard-grid">
-   <article class="dashboard-card"><h3>Solicitudes pendientes</h3><strong id="familiar-pendientes">—</strong></article>
-   <article class="dashboard-card"><h3>Servicios activos</h3><strong id="familiar-activas">—</strong></article>
-   <article class="dashboard-card"><h3>Servicios completados</h3><strong id="familiar-completadas">—</strong></article>
-   <article class="dashboard-card"><h3>Reservas canceladas</h3><strong id="familiar-canceladas">—</strong></article>
-   <article class="dashboard-card"><h3>Vinculaciones aceptadas</h3><strong id="familiar-vinculos">—</strong></article>
-   <article class="dashboard-card"><h3>Incidencias abiertas</h3><strong id="familiar-incidencias">—</strong></article>
+  <div class="familiar-kpis">
+   {indicadores.map(k=><a class="familiar-kpi" href={k.ruta}><span class="familiar-icon" data-tono={k.tono}><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={trazos[k.icono]}/></svg></span><div><strong id={'familiar-'+k.id}>—</strong><span>{k.titulo}</span></div><svg class="familiar-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></a>)}
   </div>
   <p id="familiar-resumen-status" role="status" aria-live="polite"></p>
-  <div class="section-heading"><h2>Próximos servicios confirmados</h2><a href="/familiar/reservas">Ver reservas</a></div>
-  <div id="familiar-proximas" class="local-list" aria-live="polite">Consultando reservas...</div>
-  <div class="section-heading"><h2>Accesos directos</h2></div>
-  <div class="dashboard-grid">
-   {accesos.map(a=><article class="dashboard-card"><h3>{a.titulo}</h3><p>{a.detalle}</p><a href={a.ruta}>{a.accion}</a></article>)}
+  <div class="familiar-bottom">
+   <section class="familiar-pane"><div class="familiar-heading"><h2>Próxima reserva</h2><a href="/familiar/reservas">Ver mis reservas</a></div><div id="familiar-proximas" class="local-list" aria-live="polite">Consultando reservas...</div></section>
+   <section class="familiar-pane"><div class="familiar-heading"><h2>Accesos rápidos</h2></div><div class="familiar-quick">{accesos.map(a=><a href={a.ruta}><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={trazos[a.icono]}/></svg><span>{a.titulo}</span><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></a>)}</div></section>
   </div>
  </section>
 </RoleLayout>
 <style>
-.familiar-home .dashboard-card strong{display:block;color:#087a70;font-size:2rem;margin-top:12px}
-.familiar-home a{color:#087a70;font-weight:600;text-decoration:underline;text-underline-offset:3px}
-.familiar-home .dashboard-card a{display:inline-block;margin-top:12px}
-.familiar-home a:focus-visible{outline:2px solid #087a70;outline-offset:3px}
+.familiar-home{margin-top:16px}.familiar-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.familiar-kpi{display:flex;align-items:center;gap:12px;padding:16px;background:white;border:1px solid #dce9e3;border-radius:12px;text-decoration:none;color:#173d35;box-shadow:0 2px 7px #173d3507;min-width:0}.familiar-kpi:hover{border-color:#91ccbc;background:#fafffd}.familiar-kpi>div{flex:1;min-width:0}.familiar-kpi strong{display:block;font-size:27px;line-height:1.15;font-weight:750}.familiar-kpi div span{font-size:12px;color:#405d55}.familiar-icon{display:grid;place-items:center;width:48px;height:48px;flex-shrink:0;border-radius:12px;background:#e1f5e9;color:#087a70}.familiar-icon[data-tono="rojo"]{background:#fcebed;color:#a83d49}.familiar-icon[data-tono="ambar"]{background:#fff4d9;color:#976508}.familiar-chevron{color:#52665f;flex-shrink:0}.familiar-bottom{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:14px}.familiar-pane{background:#fff;border:1px solid #dce9e3;padding:18px;border-radius:14px;min-width:0}.familiar-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.familiar-heading h2{font-size:18px;margin:0;color:#173d35}.familiar-heading a{font-size:12px;color:#087a70;font-weight:600;text-decoration:none}.familiar-quick{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:15px}.familiar-quick a{display:flex;align-items:center;gap:9px;background:#eef8f4;border:1px solid #dcebe3;border-radius:10px;padding:14px 10px;color:#173d35;text-decoration:none;font-size:12px;font-weight:600}.familiar-quick a span{flex:1}.familiar-quick svg{flex-shrink:0;color:#087a70}.familiar-home a:focus-visible{outline:2px solid #087a70;outline-offset:2px}.familiar-home :global(.familiar-next){display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:12px;background:#f8fcfa;border-radius:10px}.familiar-home :global(.familiar-next-photo){width:60px;height:60px;border-radius:50%;object-fit:cover;background:#e1f5e9;display:grid;place-items:center;color:#087a70;font-weight:700}.familiar-home :global(.familiar-next-info){flex:1;min-width:160px}.familiar-home :global(.familiar-next-info p){font-size:12px;margin:5px 0;color:#52665f}.familiar-home :global(.familiar-next-badge){font-size:11px;background:#e0f5e7;color:#12634a;padding:6px 9px;border-radius:20px}@media(max-width:1050px){.familiar-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.familiar-bottom{grid-template-columns:1fr}}@media(max-width:520px){.familiar-kpis{grid-template-columns:1fr}.familiar-quick{grid-template-columns:1fr}}
 </style>
 <script>
  import {apiLocal,horaLocal} from '../lib/local-api';
- type Reserva={id:number,estado:string,inicio:string,fin:string,adultoMayorNombre:string,acompananteNombre:string};
+ import {mostrarFotoProtegida,limpiarFoto} from '../lib/profile-photo';
+ type Reserva={id:number,estado:string,inicio:string,fin:string,adultoMayorNombre:string,acompananteNombre:string,acompananteDni:string,acompananteFotoUrl?:string};
  type Estado={estado:string};
  const mostrar=(id:string,valor:string)=>{const el=document.querySelector('#familiar-'+id);if(el)el.textContent=valor;};
  async function resumen(){
@@ -48,10 +45,17 @@ const accesos=[
    const datos:Reserva[]=reservas.value;
    const grupos:Record<string,string[]>={pendientes:['PENDIENTE_ACEPTACION','PENDIENTE_PAGO'],activas:['CONFIRMADA','EN_PROGRESO','PENDIENTE_CONFIRMACION','EN_DISPUTA'],completadas:['COMPLETADA'],canceladas:['CANCELADA']};
    for(const [id,estados] of Object.entries(grupos))mostrar(id,String(datos.filter(r=>estados.includes(r.estado)).length));
-   const proximas=datos.filter(r=>r.estado==='CONFIRMADA'&&Date.parse(r.fin)>Date.now()).sort((a,b)=>Date.parse(a.inicio)-Date.parse(b.inicio)).slice(0,5);
-   lista.replaceChildren();
+   const proximas=datos.filter(r=>r.estado==='CONFIRMADA'&&Date.parse(r.fin)>Date.now()).sort((a,b)=>Date.parse(a.inicio)-Date.parse(b.inicio)).slice(0,1);
+   lista.querySelectorAll('img').forEach(limpiarFoto);lista.replaceChildren();
    if(!proximas.length)lista.textContent='No hay próximos servicios confirmados.';
-   for(const r of proximas){const item=document.createElement('article');item.className='local-item local-booking';const titulo=document.createElement('strong');titulo.textContent='#'+r.id+' · '+r.adultoMayorNombre;const acomp=document.createElement('p');acomp.textContent='Acompañante: '+r.acompananteNombre;const fecha=document.createElement('p');fecha.textContent=horaLocal(r.inicio)+' — '+horaLocal(r.fin);item.append(titulo,acomp,fecha);lista.append(item);}
+   for(const r of proximas){
+    const item=document.createElement('article');item.className='familiar-next';
+    const img=document.createElement('img');img.className='familiar-next-photo';img.alt='Fotografía del acompañante';img.hidden=true;
+    const inicial=document.createElement('span');inicial.className='familiar-next-photo';inicial.textContent=r.acompananteNombre.split(/\s+/).slice(0,2).map(n=>n[0]).join('');
+    const info=document.createElement('div');info.className='familiar-next-info';const titulo=document.createElement('strong');titulo.textContent=r.acompananteNombre;const adulto=document.createElement('p');adulto.textContent='Adulto mayor: '+r.adultoMayorNombre;const fecha=document.createElement('p');fecha.textContent=horaLocal(r.inicio)+' — '+horaLocal(r.fin);info.append(titulo,adulto,fecha);
+    const badge=document.createElement('span');badge.className='familiar-next-badge';badge.textContent='Confirmada';item.append(img,inicial,info,badge);lista.append(item);
+    if(r.acompananteFotoUrl)void mostrarFotoProtegida(r.acompananteDni,img,r.id).then(ok=>{inicial.hidden=ok;});
+   }
   }else{avisos.push('reservas');lista.textContent='No se pudieron consultar los próximos servicios.';}
   if(vinculos.status==='fulfilled'&&Array.isArray(vinculos.value))mostrar('vinculos',String(vinculos.value.filter((v:Estado)=>v.estado==='ACEPTADO').length));else avisos.push('vinculaciones');
   if(incidencias.status==='fulfilled'&&Array.isArray(incidencias.value))mostrar('incidencias',String(incidencias.value.filter((v:Estado)=>v.estado==='ABIERTA').length));else avisos.push('incidencias');
