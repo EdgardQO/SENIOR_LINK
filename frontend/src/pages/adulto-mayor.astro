@@ -15,7 +15,7 @@ import RoleLayout from '../layouts/RoleLayout.astro';
    <article class="dashboard-card"><h3>Encontrar acompañante</h3><p>Consulta perfiles y opiniones.</p><a href="/adulto-mayor/acompanantes">Ver catálogo</a></article>
    <article class="dashboard-card"><h3>Mis reservas</h3><p>Consulta y administra tus solicitudes.</p><a href="/adulto-mayor/reservas">Ver reservas</a></article>
    <article class="dashboard-card"><h3>Mi perfil</h3><p>Revisa tus datos personales y fotografía.</p><a href="/adulto-mayor/mi-perfil">Consultar perfil</a></article>
-   <article class="dashboard-card"><h3>Herramientas</h3><p>Accede a tus tarjetas, familiares y contacto de emergencia.</p><a href="/adulto-mayor/herramientas">Abrir herramientas</a></article>
+   <article class="dashboard-card"><h3>Familiares</h3><p>Consulta y administra tus vinculaciones familiares.</p><a href="/adulto-mayor/vinculaciones">Ver familiares</a></article>
   </div>
  </section>
 </RoleLayout>
@@ -35,5 +35,6 @@ import RoleLayout from '../layouts/RoleLayout.astro';
  }
  document.addEventListener('seniorlink:profile',()=>void resumen(),{once:true});
  const hash=window.location.hash;
- if(hash==='#mi-perfil'||hash==='#herramientas')window.location.replace('/adulto-mayor/'+hash.slice(1));
+ if(hash==='#mi-perfil')window.location.replace('/adulto-mayor/mi-perfil');
+ if(hash==='#herramientas')window.history.replaceState(null,'','/adulto-mayor');
 </script>
