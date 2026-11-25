@@ -256,6 +256,8 @@ const pasos=rol==='ACOMPANANTE'?[
     const controles=document.createElement('div');controles.className='local-actions';
     contacto.append(titulo,destino,detalle,controles);div.append(contacto);
     const ruta='/reservas/'+b.id+'/whatsapp';
+    let consultando=false;
+    const avisoConsulta=nuevo('small','');avisoConsulta.setAttribute('role','status');contacto.append(avisoConsulta);
     const mostrar=(v:any)=>{
      controles.replaceChildren();
      if(v.destinatarioNombre)destino.textContent='Destinatario: '+v.destinatarioNombre+' · '+({FAMILIAR:'Familiar',ADULTO_MAYOR:'Adulto mayor',ACOMPANANTE:'Acompañante'} as Record<string,string>)[v.destinatarioRol];
@@ -275,16 +277,18 @@ const pasos=rol==='ACOMPANANTE'?[
       try{mostrar(await apiLocal(ruta,{method:'PUT',body:JSON.stringify({autorizar,mayorDeEdad:autorizar})}));}
       catch(e){detalle.textContent=e instanceof Error?e.message:String(e);btn.disabled=false;}
      });controles.append(btn);
-     const recargar=nuevo('button','Actualizar contacto') as HTMLButtonElement;recargar.type='button';recargar.addEventListener('click',()=>void consultar());controles.append(recargar);
+     const recargar=nuevo('button','Consultar estado del contacto') as HTMLButtonElement;recargar.type='button';recargar.addEventListener('click',()=>void consultar(true));controles.append(recargar);
     };
-    async function consultar(){
-     try{mostrar(await apiLocal(ruta));}
+    async function consultar(manual=false){
+     if(consultando)return;consultando=true;
+     if(manual){avisoConsulta.textContent='Consultando el contacto registrado…';controles.querySelectorAll('button').forEach(btn=>btn.disabled=true);}
+     try{mostrar(await apiLocal(ruta));avisoConsulta.textContent=manual?'Estado consultado correctamente. Si el teléfono no es válido, edítalo en Mi perfil.':'';}
      catch(e){
       controles.replaceChildren();
       const status=(e as {status?:number})?.status;
       detalle.textContent=status===404?'No se encontró el servicio de contacto o la reserva. Comprueba que el backend esté actualizado y reiniciado.':e instanceof Error?e.message:String(e);
-      const retry=nuevo('button','Reintentar contacto') as HTMLButtonElement;retry.type='button';retry.onclick=()=>void consultar();controles.append(retry);
-     }
+      const retry=nuevo('button','Reintentar contacto') as HTMLButtonElement;retry.type='button';retry.onclick=()=>void consultar(true);controles.append(retry);avisoConsulta.textContent='No se pudo consultar el contacto.';
+     }finally{consultando=false;}
     }
     void consultar();
    }
