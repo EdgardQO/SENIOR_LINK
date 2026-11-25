@@ -1,20 +1,23 @@
 <section class="local-card">
- <h2>Métodos de pago</h2>
- <div class="local-test-notice"><p>Entorno local · Sin cargos reales. No introduzcas información bancaria real.</p></div>
+ <header class="pay-heading"><div><div class="pay-brand">SeniorLink <span>Pay</span></div><h2>Métodos de pago</h2></div><span class="pay-tag">Entorno de pruebas</span></header>
+ <p class="pay-help">Gestiona tus tarjetas registradas. Utiliza únicamente los datos del catálogo de pruebas.</p>
  <div class="local-payment-grid"><section class="local-payment-panel"><h3>Agregar tarjeta</h3>
- <div class="local-card-preview" aria-hidden="true"><span>SeniorLink</span><strong id="preview-number">•••• •••• •••• ••••</strong><div><span id="preview-name">TITULAR DE LA TARJETA</span><span id="preview-expiry">MM / AAAA</span></div></div>
+ <div class="local-card-preview" aria-hidden="true"><span>SeniorLink Pay</span><strong id="preview-number">•••• •••• •••• ••••</strong><div><span id="preview-name">TITULAR DE LA TARJETA</span><span id="preview-expiry">MM / AAAA</span></div></div>
  <form id="demo-card-form" class="local-form">
   <label>Nombre del titular<input name="nombreTitular" type="text" maxlength="150" required autocomplete="off"/></label>
-  <label>Identificador de tarjeta de simulación<input name="numeroDemo" type="text" placeholder="DEMO-00000000" pattern="DEMO-[0-9]{8}" maxlength="13" required autocomplete="off" aria-describedby="tarjeta-numero-info"/></label><small id="tarjeta-numero-info">Usa únicamente una tarjeta existente del catálogo local de simulación.</small>
+  <label>Identificador de tarjeta<input name="numeroDemo" type="text" placeholder="DEMO-00000000" pattern="DEMO-[0-9]{8}" maxlength="13" required autocomplete="off" aria-describedby="tarjeta-numero-info"/></label><small id="tarjeta-numero-info">Introduce el identificador de una tarjeta registrada en el catálogo de pruebas.</small>
   <label>Tipo de tarjeta<select name="tipo"><option value="DEBITO">Débito</option><option value="CREDITO">Crédito</option></select></label>
   <label>Mes de vencimiento<input name="mesVencimiento" type="number" min="1" max="12" placeholder="MM" required/></label>
   <label>Año de vencimiento<input name="anioVencimiento" type="number" min="2026" max="2199" placeholder="AAAA" required/></label>
-  <label>Código de seguridad de simulación<input name="cvv" type="password" inputmode="numeric" pattern="[0-9]{3,4}" maxlength="4" autocomplete="off" required/></label>
+  <label>Código de seguridad<input name="cvv" type="password" inputmode="numeric" pattern="[0-9]{3,4}" maxlength="4" autocomplete="off" required/></label>
   <button type="submit">Validar y guardar tarjeta</button>
  </form>
  <p id="demo-card-status" role="status" aria-live="polite"></p>
  </section><section class="local-payment-panel"><h3>Tarjetas guardadas</h3><div id="demo-card-list" class="local-list"></div></section></div>
 </section>
+<style>
+.pay-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}.pay-brand{font-size:23px;font-weight:750;letter-spacing:-.7px;color:#173d35;margin-bottom:8px}.pay-brand span{color:#0078b5}.pay-tag{font-size:12px;color:#52665f;border:1px solid #dce8e3;border-radius:6px;padding:5px 9px}.pay-help{font-size:14px;margin:0 0 24px}.local-card-preview{background:linear-gradient(135deg,#123e62,#087eb0);border:1px solid #0c6d99;box-shadow:0 8px 22px #123e621f}.local-form button{background:#086fa8}.local-form button:hover{background:#075e91}#tarjeta-numero-info{color:#52665f;font-size:12px}
+</style>
 <script>
  import {apiLocal} from '../../lib/local-api';
  const form=document.querySelector<HTMLFormElement>('#demo-card-form')!;
