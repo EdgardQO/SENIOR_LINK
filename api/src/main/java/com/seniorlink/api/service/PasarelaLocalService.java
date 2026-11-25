@@ -154,6 +154,15 @@ public class PasarelaLocalService {
   motor.cambiar(r,EstadoReserva.CONFIRMADA,"Pago simulado acreditado",usuarios.getReferenceById(dni));
   return resultado(tr);
  }
+ public record Recibo(UUID referencia,Long reservaId,String estado,BigDecimal monto,String moneda,OffsetDateTime fecha,String metodo,String ultimosCuatro){}
+ @Transactional(readOnly=true)
+ public List<Recibo> recibos(String dni){
+  actor(dni);
+  return motor.listar(dni).stream().flatMap(r->transacciones.findByReservaIdAndEstadoInOrderByCreadoEnDesc(r.id(),List.of("APROBADO","REEMBOLSADO")).stream())
+   .filter(t->dni.equals(t.getTarjeta().getTitularDni()))
+   .map(t->{String numero=t.getTarjeta().getNumeroTarjeta();return new Recibo(t.getId(),t.getReservaId(),t.getEstado(),t.getMonto(),"PEN",t.getCreadoEn(),t.getTarjeta().getTipoTarjeta(),numero.substring(numero.length()-4));})
+   .toList();
+ }
  private void movimiento(Tarjeta tarjeta,Transaccion tr,String tipo,BigDecimal monto,BigDecimal antes,BigDecimal despues){
   MovimientoTarjeta mv=new MovimientoTarjeta();mv.setTarjeta(tarjeta);mv.setTransaccion(tr);
   mv.setTipoMovimiento(tipo);mv.setMonto(monto);mv.setSaldoAnterior(antes);
