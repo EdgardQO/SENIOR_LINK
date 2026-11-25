@@ -2,15 +2,15 @@
  <h2>Métodos de pago</h2>
  <div class="local-test-notice"><p>Entorno local · Sin cargos reales. No introduzcas información bancaria real.</p></div>
  <div class="local-payment-grid"><section class="local-payment-panel"><h3>Agregar tarjeta</h3>
- <div class="local-card-preview" aria-hidden="true"><span>SeniorLink</span><strong id="preview-number">•••• •••• •••• ••••</strong><div><span id="preview-name">TITULAR DE LA TARJETA</span><span id="preview-expiry">12 / 2090</span></div></div>
+ <div class="local-card-preview" aria-hidden="true"><span>SeniorLink</span><strong id="preview-number">•••• •••• •••• ••••</strong><div><span id="preview-name">TITULAR DE LA TARJETA</span><span id="preview-expiry">MM / AAAA</span></div></div>
  <form id="demo-card-form" class="local-form">
   <label>Nombre del titular<input name="nombreTitular" type="text" maxlength="150" required autocomplete="off"/></label>
-  <label>Número de tarjeta<input type="text" value="Asignado automáticamente" readonly aria-describedby="tarjeta-numero-info"/></label><small id="tarjeta-numero-info">El sistema asignará un identificador local al guardar.</small>
+  <label>Identificador de tarjeta de simulación<input name="numeroDemo" type="text" placeholder="DEMO-00000000" pattern="DEMO-[0-9]{8}" maxlength="13" required autocomplete="off" aria-describedby="tarjeta-numero-info"/></label><small id="tarjeta-numero-info">Usa únicamente una tarjeta existente del catálogo local de simulación.</small>
   <label>Tipo de tarjeta<select name="tipo"><option value="DEBITO">Débito</option><option value="CREDITO">Crédito</option></select></label>
-  <label>Mes de vencimiento<input name="mesVencimiento" type="number" min="1" max="12" value="12" required/></label>
-  <label>Año de vencimiento<input name="anioVencimiento" type="number" min="2026" max="2199" value="2090" required/></label>
-  <label>Código de seguridad<input type="text" value="123" readonly aria-describedby="tarjeta-numero-info"/></label>
-  <button type="submit">Guardar tarjeta</button>
+  <label>Mes de vencimiento<input name="mesVencimiento" type="number" min="1" max="12" placeholder="MM" required/></label>
+  <label>Año de vencimiento<input name="anioVencimiento" type="number" min="2026" max="2199" placeholder="AAAA" required/></label>
+  <label>Código de seguridad de simulación<input name="cvv" type="password" inputmode="numeric" pattern="[0-9]{3,4}" maxlength="4" autocomplete="off" required/></label>
+  <button type="submit">Validar y guardar tarjeta</button>
  </form>
  <p id="demo-card-status" role="status" aria-live="polite"></p>
  </section><section class="local-payment-panel"><h3>Tarjetas guardadas</h3><div id="demo-card-list" class="local-list"></div></section></div>
@@ -21,7 +21,7 @@
  const list=document.querySelector<HTMLElement>('#demo-card-list')!;
  const estado=document.querySelector<HTMLElement>('#demo-card-status')!;
  const submit=form.querySelector<HTMLButtonElement>('button[type=submit]')!;
- const preview=()=>{const fd=new FormData(form);document.querySelector('#preview-name')!.textContent=String(fd.get('nombreTitular')||'TITULAR DE LA TARJETA').toUpperCase();document.querySelector('#preview-number')!.textContent='•••• •••• •••• ••••';document.querySelector('#preview-expiry')!.textContent=String(fd.get('mesVencimiento')||'12').padStart(2,'0')+' / '+String(fd.get('anioVencimiento')||'2090');};
+ const preview=()=>{const fd=new FormData(form);document.querySelector('#preview-name')!.textContent=String(fd.get('nombreTitular')||'TITULAR DE LA TARJETA').toUpperCase();const numero=String(fd.get('numeroDemo')||'');document.querySelector('#preview-number')!.textContent='•••• •••• •••• '+(/^DEMO-[0-9]{8}$/.test(numero)?numero.slice(-4):'••••');document.querySelector('#preview-expiry')!.textContent=String(fd.get('mesVencimiento')||'MM').padStart(2,'0')+' / '+String(fd.get('anioVencimiento')||'AAAA');};
  form.addEventListener('input',preview);
  const cargar=async()=>{
   const datos=await apiLocal('/metodos-pago');
@@ -30,7 +30,7 @@
   for(const item of datos){
    const row=document.createElement('div');row.className='local-item';
    const span=document.createElement('span');
-   span.textContent=(item.tipo==='DEBITO'?'Débito':'Crédito')+' · '+item.numeroEnmascarado.replace(/•/g,'X')+' · Vence '+item.mesVencimiento+'/'+item.anioVencimiento;
+   span.textContent=(item.tipo==='DEBITO'?'Débito':'Crédito')+' · '+item.numeroEnmascarado+' · Vence '+item.mesVencimiento+'/'+item.anioVencimiento;
    const btn=document.createElement('button');btn.type='button';btn.textContent='Quitar';
    btn.addEventListener('click',async()=>{
     if(!confirm('¿Quitar este método de pago?'))return;
@@ -39,17 +39,17 @@
   }
  };
  form.addEventListener('submit',async e=>{
-  e.preventDefault();if(submit.disabled)return;submit.disabled=true;estado.textContent='Guardando tarjeta…';
+  e.preventDefault();if(submit.disabled)return;submit.disabled=true;estado.textContent='Validando tarjeta…';
   const fd=new FormData(form);
   try{
    await apiLocal('/metodos-pago',{method:'POST',body:JSON.stringify({
     nombreTitular:String(fd.get('nombreTitular')),tipo:String(fd.get('tipo')),
-    numeroDemo:'',
+    numeroDemo:String(fd.get('numeroDemo')).trim(),
     mesVencimiento:Number(fd.get('mesVencimiento')),
     anioVencimiento:Number(fd.get('anioVencimiento')),
-    cvv:'123'})});
+    cvv:String(fd.get('cvv'))})});
    form.reset();preview();estado.textContent='Tarjeta guardada correctamente.';await cargar();
-  }catch(err){estado.textContent=err instanceof Error?err.message:String(err);}finally{submit.disabled=false;}
+  }catch(err){estado.textContent=err instanceof Error?err.message:String(err);}finally{(form.elements.namedItem('cvv') as HTMLInputElement).value='';submit.disabled=false;}
  });
  cargar().catch(e=>estado.textContent=String(e));
 </script>
