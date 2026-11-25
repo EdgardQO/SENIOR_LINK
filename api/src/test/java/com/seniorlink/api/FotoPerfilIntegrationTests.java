@@ -48,6 +48,7 @@ class FotoPerfilIntegrationTests {
     @Autowired UsuarioRepository usuarios;
     @Autowired UsuarioController controller;
     @Autowired ReservaLocalService reservas;
+    @jakarta.persistence.PersistenceContext jakarta.persistence.EntityManager em;
 
     static MockMultipartFile imagen(String formato) throws IOException {
         BufferedImage img = new BufferedImage(8, 8, BufferedImage.TYPE_INT_RGB);
@@ -109,6 +110,8 @@ class FotoPerfilIntegrationTests {
         assertFalse(usuario.isFotoVerificada());
         usuario.revisarFoto("VERIFICADO", "96000003", null);
         usuarios.saveAndFlush(usuario);
+        em.flush();
+        em.clear();
         var perfil = reservas.acompanantes().stream()
                 .filter(item -> item.dni().equals("96000002"))
                 .findFirst().orElseThrow();
