@@ -4,5 +4,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.*;
 public interface MetodoPagoRepository extends JpaRepository<MetodoPago,UUID> {
  List<MetodoPago> findByUsuarioDniAndActivoTrue(String dni);
+ Optional<MetodoPago> findByToken(UUID token);
  Optional<MetodoPago> findByIdAndUsuarioDniAndActivoTrue(UUID id,String dni);
 }
