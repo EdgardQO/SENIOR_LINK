@@ -61,6 +61,7 @@ public class Reserva {
     @Column(name = "monto_total", nullable = false, precision = 10, scale = 2)
     private BigDecimal montoTotal;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "estado_actual", nullable = false)
     private EstadoReserva estadoActual = EstadoReserva.PENDIENTE_PAGO;
 
