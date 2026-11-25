@@ -1,0 +1,49 @@
+<section class="local-card">
+ <h2>Mis tarjetas ficticias</h2>
+ <p>Prueba exclusivamente local. SeniorLink no consulta ni muestra saldos bancarios.</p>
+ <form id="demo-card-form" class="local-form">
+  <label>Nombre del titular<input name="nombreTitular" type="text" maxlength="150" required autocomplete="off"/></label>
+  <label>Tipo de tarjeta<select name="tipo"><option value="DEBITO">Débito ficticio</option><option value="CREDITO">Crédito ficticio</option></select></label>
+  <label>Mes de vencimiento<input name="mesVencimiento" type="number" min="1" max="12" required/></label>
+  <label>Año de vencimiento<input name="anioVencimiento" type="number" min="2026" max="2199" required/></label>
+  <label>CVV ficticio<input name="cvv" type="password" inputmode="numeric" minlength="3" maxlength="4" pattern="[0-9]{3,4}" required autocomplete="off"/></label>
+  <p>El número DEMO-######## se genera automáticamente. No introduzcas tarjetas bancarias reales.</p>
+  <button type="submit">Añadir tarjeta de prueba</button>
+ </form>
+ <p id="demo-card-status" role="status" aria-live="polite"></p>
+ <div id="demo-card-list" class="local-list"></div>
+</section>
+<script>
+ import {apiLocal} from '../../lib/local-api';
+ const form=document.querySelector<HTMLFormElement>('#demo-card-form')!;
+ const list=document.querySelector<HTMLElement>('#demo-card-list')!;
+ const estado=document.querySelector<HTMLElement>('#demo-card-status')!;
+ const cargar=async()=>{
+  const datos=await apiLocal('/metodos-pago');
+  list.replaceChildren();
+  if(!datos.length){list.textContent='Todavía no has añadido tarjetas de prueba.';return;}
+  for(const item of datos){
+   const row=document.createElement('div');row.className='local-item';
+   const span=document.createElement('span');
+   span.textContent=item.tipo+' · '+item.numeroEnmascarado+' · '+item.mesVencimiento+'/'+item.anioVencimiento;
+   const btn=document.createElement('button');btn.type='button';btn.textContent='Quitar';
+   btn.addEventListener('click',async()=>{
+    if(!confirm('¿Quitar este método de pago?'))return;
+    try{await apiLocal('/metodos-pago/'+item.id,{method:'DELETE'});await cargar();}catch(e){estado.textContent=String(e);}
+   });row.append(span,btn);list.append(row);
+  }
+ };
+ form.addEventListener('submit',async e=>{
+  e.preventDefault();estado.textContent='Registrando tarjeta ficticia…';
+  const fd=new FormData(form);
+  try{
+   await apiLocal('/metodos-pago',{method:'POST',body:JSON.stringify({
+    nombreTitular:String(fd.get('nombreTitular')),tipo:String(fd.get('tipo')),
+    mesVencimiento:Number(fd.get('mesVencimiento')),
+    anioVencimiento:Number(fd.get('anioVencimiento')),
+    cvv:String(fd.get('cvv'))})});
+   form.reset();estado.textContent='Tarjeta ficticia registrada.';await cargar();
+  }catch(err){estado.textContent=err instanceof Error?err.message:String(err);}
+ });
+ cargar().catch(e=>estado.textContent=String(e));
+</script>
